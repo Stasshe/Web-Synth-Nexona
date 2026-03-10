@@ -291,7 +291,7 @@ These features are not part of the initial implementation but the architecture s
 ---
 
 ## Directory Structure
-
+```
 src
 
 app/
@@ -327,7 +327,7 @@ schema.ts
 serializer.ts
 
 utils/
-
+```
 ---
 
 ## Minimal Implementation Phase
