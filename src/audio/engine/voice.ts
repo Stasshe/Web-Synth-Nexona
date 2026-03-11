@@ -205,8 +205,8 @@ export class Voice {
     let mixR = 0;
 
     if (p.oscAOn) {
-      // Pitch: ±48 semitones (4 octaves)
-      const detuneTotal = p.oscADetune / 100 + modOscAPitch * 48;
+      // Pitch: detune ±100 cents + mod ±1 semitone (matches knob range)
+      const detuneTotal = p.oscADetune / 100 + modOscAPitch;
       const freq = midiToFreq(this.note + detuneTotal);
       this.oscA.setFrequency(freq * (p.driftAmount > 0 ? this.drift.getFreqMultiplier() : 1));
       this.oscA.setFramePosition(clamp(p.oscAFramePosition + modOscAFrame, 0, 1));
@@ -223,7 +223,7 @@ export class Voice {
     }
 
     if (p.oscBOn) {
-      const detuneTotal = p.oscBDetune / 100 + modOscBPitch * 48;
+      const detuneTotal = p.oscBDetune / 100 + modOscBPitch;
       const freq = midiToFreq(this.note + detuneTotal);
       this.oscB.setFrequency(freq * (p.driftAmount > 0 ? this.drift.getFreqMultiplier() : 1));
       this.oscB.setFramePosition(clamp(p.oscBFramePosition + modOscBFrame, 0, 1));
