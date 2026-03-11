@@ -22,6 +22,7 @@ import { Code, Download, Power, Share2, Upload, Volume2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { subscribe } from "valtio";
 import { useSnapshot } from "valtio";
+import { useGlobalScrollLock } from "@/hooks/scrollLock";
 
 export default function Home() {
   const [started, setStarted] = useState(false);
@@ -31,6 +32,7 @@ export default function Home() {
   const [paramEditorOpen, setParamEditorOpen] = useState(false);
   const [waveEditorOsc, setWaveEditorOsc] = useState<"a" | "b" | "sub" | null>(null);
   const snap = useSnapshot(synthState);
+  useGlobalScrollLock();
 
   // Load patch from URL hash on mount
   useEffect(() => {
