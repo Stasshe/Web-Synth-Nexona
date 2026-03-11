@@ -1,0 +1,9 @@
+node_modules/
+.next/
+out/
+dist/
+public/worklet/
+*.tsbuildinfo
+.env
+.env.local
+.vercel
