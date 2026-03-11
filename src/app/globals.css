@@ -66,6 +66,7 @@
   box-sizing: border-box;
 }
 
+html,
 body {
   margin: 0;
   padding: 0;
@@ -75,6 +76,8 @@ body {
   -webkit-font-smoothing: antialiased;
   user-select: none;
   -webkit-user-select: none;
+  overflow: hidden;
+  height: 100%;
 }
 
 /* Allow text selection in textareas and inputs */

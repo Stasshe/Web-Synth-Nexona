@@ -23,6 +23,8 @@ export class SynthEngine {
   private wavetableB: Wavetable;
   private wtTypeA: WavetableType = 0;
   private wtTypeB: WavetableType = 0;
+  private customWtA = false;
+  private customWtB = false;
   private lfo1: LFO;
   private lfo2: LFO;
   private macros = [0, 0, 0, 0];
@@ -110,11 +112,13 @@ export class SynthEngine {
 
   setWavetableA(wt: Wavetable): void {
     this.wavetableA = wt;
+    this.customWtA = true;
     this.voiceManager.setWavetableA(wt);
   }
 
   setWavetableB(wt: Wavetable): void {
     this.wavetableB = wt;
+    this.customWtB = true;
     this.voiceManager.setWavetableB(wt);
   }
 
@@ -175,10 +179,11 @@ export class SynthEngine {
     this.voiceParams.oscAWarp2Type = getParam(this.sab, SabParam.OscAWarp2Type) as WarpType;
     this.voiceParams.oscAWarp2Amount = getParam(this.sab, SabParam.OscAWarp2Amount);
 
-    // Regenerate wavetable A if type changed
+    // Regenerate wavetable A if type changed (and not custom)
     const newWtTypeA = Math.round(getParam(this.sab, SabParam.OscAWavetableIndex)) as WavetableType;
     if (newWtTypeA !== this.wtTypeA) {
       this.wtTypeA = newWtTypeA;
+      this.customWtA = false;
       this.wavetableA = generateTable(newWtTypeA, 2048);
       this.voiceManager.setWavetableA(this.wavetableA);
     }
@@ -196,10 +201,11 @@ export class SynthEngine {
     this.voiceParams.oscBWarp2Type = getParam(this.sab, SabParam.OscBWarp2Type) as WarpType;
     this.voiceParams.oscBWarp2Amount = getParam(this.sab, SabParam.OscBWarp2Amount);
 
-    // Regenerate wavetable B if type changed
+    // Regenerate wavetable B if type changed (and not custom)
     const newWtTypeB = Math.round(getParam(this.sab, SabParam.OscBWavetableIndex)) as WavetableType;
     if (newWtTypeB !== this.wtTypeB) {
       this.wtTypeB = newWtTypeB;
+      this.customWtB = false;
       this.wavetableB = generateTable(newWtTypeB, 2048);
       this.voiceManager.setWavetableB(this.wavetableB);
     }

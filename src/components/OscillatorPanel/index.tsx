@@ -25,9 +25,10 @@ const WAVEFORM_OPTIONS = [
 
 interface OscillatorPanelProps {
   osc: "a" | "b";
+  onOpenWaveEditor?: () => void;
 }
 
-export function OscillatorPanel({ osc }: OscillatorPanelProps) {
+export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps) {
   const snap = useSnapshot(synthState);
   const data = snap.oscillators[osc];
   const state = synthState.oscillators[osc];
@@ -37,12 +38,20 @@ export function OscillatorPanel({ osc }: OscillatorPanelProps) {
     <Panel title={`OSC ${osc.toUpperCase()}`} color={color}>
       <div className="flex items-center justify-between mb-3">
         <Toggle value={data.on} onChange={(v) => (state.on = v)} color={color} />
-        <div className="flex gap-2">
+        <div className="flex gap-1">
           <Select
             value={String(data.waveformType)}
             options={WAVEFORM_OPTIONS}
             onChange={(v) => (state.waveformType = Number(v))}
           />
+          <button
+            type="button"
+            onClick={onOpenWaveEditor}
+            className="px-1.5 py-0.5 text-[9px] text-text-muted hover:text-text-primary bg-bg-surface border border-border-default rounded cursor-pointer transition-colors"
+            title="Open waveform editor"
+          >
+            Draw
+          </button>
           <Select
             value={String(data.warpType)}
             options={WARP_OPTIONS}

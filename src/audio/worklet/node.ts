@@ -49,7 +49,9 @@ export async function createSynthNode(ctx: AudioContext): Promise<SynthNode> {
       node.port.postMessage({ type: "noteOff", note });
     },
     setModRoutes(routes: ModRoute[]) {
-      node.port.postMessage({ type: "setModRoutes", routes });
+      // Strip Valtio proxies — postMessage structured clone can't handle Proxy objects
+      const plain = routes.map((r) => ({ source: r.source, target: r.target, amount: r.amount }));
+      node.port.postMessage({ type: "setModRoutes", routes: plain });
     },
     loadWavetableA(wt: Wavetable) {
       node.port.postMessage({ type: "loadWavetableA", wavetable: wt });

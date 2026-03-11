@@ -12,6 +12,7 @@ import { OscillatorPanel } from "@/components/OscillatorPanel";
 import { ParamEditor } from "@/components/ParamEditor";
 import { SubNoisePanel } from "@/components/SubNoisePanel";
 import { Visualizer } from "@/components/Visualizer";
+import { WaveformEditor } from "@/components/WaveformEditor";
 import { Knob } from "@/components/ui/Knob";
 import { loadPatchIntoState, urlToPatch } from "@/patch/loader";
 import { patchToUrl, stateToPatch } from "@/patch/serializer";
@@ -26,6 +27,7 @@ export default function Home() {
   const unbindRef = useRef<(() => void) | null>(null);
   const [waveformData, setWaveformData] = useState<Float32Array | null>(null);
   const [paramEditorOpen, setParamEditorOpen] = useState(false);
+  const [waveEditorOsc, setWaveEditorOsc] = useState<"a" | "b" | null>(null);
   const snap = useSnapshot(synthState);
 
   // Load patch from URL hash on mount
@@ -124,9 +126,12 @@ export default function Home() {
     <main className="h-screen bg-bg-darkest p-1.5 flex flex-col overflow-hidden">
       {/* Header */}
       <header className="flex items-center justify-between px-3 py-1 mb-1 bg-bg-panel rounded-lg border border-border-default shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-accent-green animate-pulse" />
-          <span className="text-xs font-medium tracking-wider">WEB WAVETABLE SYNTH</span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-accent-green animate-pulse" />
+            <span className="text-xs font-medium tracking-wider">WEB WAVETABLE SYNTH</span>
+          </div>
+          <Visualizer waveformData={waveformData} />
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1">
@@ -191,22 +196,19 @@ export default function Home() {
       <div className="flex-1 flex flex-col gap-1 min-h-0">
         {/* Row 1: Oscillators + Filter */}
         <div className="grid grid-cols-[1fr_1fr_auto_1fr] gap-1 min-h-0">
-          <OscillatorPanel osc="a" />
-          <OscillatorPanel osc="b" />
+          <OscillatorPanel osc="a" onOpenWaveEditor={() => setWaveEditorOsc("a")} />
+          <OscillatorPanel osc="b" onOpenWaveEditor={() => setWaveEditorOsc("b")} />
           <SubNoisePanel />
           <FilterPanel />
         </div>
 
-        {/* Row 2: Envelope + LFOs + Effects + Mod/Scope */}
+        {/* Row 2: Envelope + LFOs + Effects + Mod */}
         <div className="grid grid-cols-5 gap-1 min-h-0">
           <EnvelopePanel />
           <LfoPanel index="lfo1" />
           <LfoPanel index="lfo2" />
           <EffectsPanel />
-          <div className="flex flex-col gap-1">
-            <ModulationPanel onModRoutesChange={handleModRoutesChange} />
-            <Visualizer waveformData={waveformData} />
-          </div>
+          <ModulationPanel onModRoutesChange={handleModRoutesChange} />
         </div>
 
         {/* Row 3: Macros */}
@@ -236,6 +238,22 @@ export default function Home() {
 
       {/* Param Editor Modal */}
       <ParamEditor open={paramEditorOpen} onClose={() => setParamEditorOpen(false)} />
+
+      {/* Waveform Editor Modal */}
+      {waveEditorOsc && (
+        <WaveformEditor
+          open={true}
+          onClose={() => setWaveEditorOsc(null)}
+          osc={waveEditorOsc}
+          onApply={(wt) => {
+            if (waveEditorOsc === "a") {
+              synthRef.current?.loadWavetableA(wt);
+            } else {
+              synthRef.current?.loadWavetableB(wt);
+            }
+          }}
+        />
+      )}
     </main>
   );
 }
