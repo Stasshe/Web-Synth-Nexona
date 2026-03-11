@@ -9,13 +9,14 @@ import { Keyboard } from "@/components/Keyboard";
 import { LfoPanel } from "@/components/LfoPanel";
 import { ModulationPanel } from "@/components/ModulationPanel";
 import { OscillatorPanel } from "@/components/OscillatorPanel";
+import { ParamEditor } from "@/components/ParamEditor";
 import { SubNoisePanel } from "@/components/SubNoisePanel";
 import { Visualizer } from "@/components/Visualizer";
 import { Knob } from "@/components/ui/Knob";
 import { loadPatchIntoState, urlToPatch } from "@/patch/loader";
 import { patchToUrl, stateToPatch } from "@/patch/serializer";
 import { bindStateToSAB, synthState } from "@/state/synthState";
-import { Download, Power, Share2, Upload, Volume2 } from "lucide-react";
+import { Code, Download, Power, Share2, Upload, Volume2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSnapshot } from "valtio";
 
@@ -24,6 +25,7 @@ export default function Home() {
   const synthRef = useRef<SynthNode | null>(null);
   const unbindRef = useRef<(() => void) | null>(null);
   const [waveformData, setWaveformData] = useState<Float32Array | null>(null);
+  const [paramEditorOpen, setParamEditorOpen] = useState(false);
   const snap = useSnapshot(synthState);
 
   // Load patch from URL hash on mount
@@ -159,6 +161,16 @@ export default function Home() {
               <Share2 size={12} />
               Share
             </button>
+            <button
+              type="button"
+              onClick={() => setParamEditorOpen(true)}
+              className="flex items-center gap-1 px-2 py-1 text-[10px] text-text-muted hover:text-accent-purple
+                         bg-bg-surface border border-border-default rounded transition-colors cursor-pointer"
+              title="Edit all parameters as JSON"
+            >
+              <Code size={12} />
+              Edit
+            </button>
           </div>
           {/* Master volume */}
           <div className="flex items-center gap-2">
@@ -225,6 +237,9 @@ export default function Home() {
 
       {/* Keyboard */}
       <Keyboard onNoteOn={handleNoteOn} onNoteOff={handleNoteOff} />
+
+      {/* Param Editor Modal */}
+      <ParamEditor open={paramEditorOpen} onClose={() => setParamEditorOpen(false)} />
     </main>
   );
 }
