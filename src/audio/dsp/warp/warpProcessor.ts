@@ -8,8 +8,8 @@ export class WarpProcessor {
   private amount2: ParamSmoother;
 
   constructor() {
-    this.amount1 = new ParamSmoother(0, 0.001);
-    this.amount2 = new ParamSmoother(0, 0.001);
+    this.amount1 = new ParamSmoother(0, 0.01);
+    this.amount2 = new ParamSmoother(0, 0.01);
   }
 
   setParams(type1: WarpType, amount1: number, type2: WarpType, amount2: number): void {

@@ -1,5 +1,6 @@
 "use client";
 
+import { WavetableType, generateTable } from "@/audio/dsp/wavetable/wavetableEngine";
 import type { Wavetable } from "@/audio/dsp/wavetable/wavetableEngine";
 import { synthState } from "@/state/synthState";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -13,6 +14,13 @@ const WAVEFORM_NAMES: Record<string, string> = {
   saw: "Saw",
   square: "Square",
   triangle: "Triangle",
+};
+
+const PRESET_MAP: Record<string, WavetableType> = {
+  sine: WavetableType.SINE,
+  saw: WavetableType.SAW,
+  square: WavetableType.SQUARE,
+  triangle: WavetableType.TRIANGLE,
 };
 
 interface WaveformEditorProps {
@@ -42,6 +50,8 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [waveform, setWaveform] = useState<Float32Array>(() => loadExistingWaveform(osc));
   const [currentName, setCurrentName] = useState<string>(() => synthState.oscillators[osc].waveformName);
+  // Track pending multi-frame wavetable for presets (null = single-frame custom)
+  const pendingWavetableRef = useRef<Wavetable | null>(null);
   const drawingRef = useRef(false);
   const lastPosRef = useRef<{ x: number; y: number } | null>(null);
 
@@ -50,6 +60,7 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
     if (open) {
       setWaveform(loadExistingWaveform(osc));
       setCurrentName(synthState.oscillators[osc].waveformName);
+      pendingWavetableRef.current = null;
     }
   }, [open, osc]);
 
@@ -69,19 +80,16 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
     // Grid
     ctx.strokeStyle = "#1a1a2e";
     ctx.lineWidth = 0.5;
-    // Center line
     ctx.beginPath();
     ctx.moveTo(0, h / 2);
     ctx.lineTo(w, h / 2);
     ctx.stroke();
-    // Quarter lines
     ctx.beginPath();
     ctx.moveTo(0, h / 4);
     ctx.lineTo(w, h / 4);
     ctx.moveTo(0, (3 * h) / 4);
     ctx.lineTo(w, (3 * h) / 4);
     ctx.stroke();
-    // Vertical lines
     for (let i = 1; i < 8; i++) {
       ctx.beginPath();
       ctx.moveTo((w * i) / 8, 0);
@@ -150,7 +158,6 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
           const val = p1.idx <= p2.idx ? p1.val + (p2.val - p1.val) * t : p2.val + (p1.val - p2.val) * (1 - t);
           next[i] = val;
         }
-        // Wrap endpoint
         next[TABLE_SIZE] = next[0];
         return next;
       });
@@ -174,6 +181,7 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
           return next;
         });
         setCurrentName("Custom");
+        pendingWavetableRef.current = null;
       }
     },
     [posToWaveform],
@@ -197,9 +205,12 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
   }, []);
 
   const handleApply = useCallback(() => {
-    const table = new Float32Array(waveform);
-    const wt: Wavetable = { frames: [table], tableSize: TABLE_SIZE, numFrames: 1 };
-    // Store waveform data and name in state for patch export
+    // Use multi-frame wavetable for presets, single-frame for custom drawings
+    const wt = pendingWavetableRef.current ?? {
+      frames: [new Float32Array(waveform)],
+      tableSize: TABLE_SIZE,
+      numFrames: 1,
+    };
     synthState.oscillators[osc].waveformName = currentName;
     synthState.oscillators[osc].customWaveform = Array.from(waveform);
     onApply(wt);
@@ -207,33 +218,17 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
   }, [waveform, currentName, osc, onApply, onClose]);
 
   const handlePreset = useCallback((type: "sine" | "saw" | "square" | "triangle") => {
-    const data = new Float32Array(TABLE_SIZE + 1);
-    for (let i = 0; i <= TABLE_SIZE; i++) {
-      const phase = i / TABLE_SIZE;
-      switch (type) {
-        case "sine":
-          data[i] = Math.sin(2 * Math.PI * phase);
-          break;
-        case "saw":
-          data[i] = 2 * phase - 1;
-          break;
-        case "square":
-          data[i] = phase < 0.5 ? 1 : -1;
-          break;
-        case "triangle":
-          if (phase < 0.25) data[i] = phase * 4;
-          else if (phase < 0.75) data[i] = 2 - phase * 4;
-          else data[i] = phase * 4 - 4;
-          break;
-      }
-    }
-    data[TABLE_SIZE] = data[0];
-    setWaveform(data);
+    // Generate multi-frame wavetable for frame morph support
+    const wt = generateTable(PRESET_MAP[type], TABLE_SIZE);
+    pendingWavetableRef.current = wt;
+    // Show the last frame (full harmonic content) in the editor
+    setWaveform(new Float32Array(wt.frames[wt.numFrames - 1]));
     setCurrentName(WAVEFORM_NAMES[type]);
   }, []);
 
   const handleClear = useCallback(() => {
     setWaveform(new Float32Array(TABLE_SIZE + 1));
+    pendingWavetableRef.current = null;
   }, []);
 
   const handleSmooth = useCallback(() => {
@@ -247,6 +242,7 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
       next[TABLE_SIZE] = next[0];
       return next;
     });
+    pendingWavetableRef.current = null;
   }, []);
 
   const handleNormalize = useCallback(() => {
@@ -262,6 +258,7 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
       }
       return next;
     });
+    pendingWavetableRef.current = null;
   }, []);
 
   const handleHarmonics = useCallback((harmonicCount: number) => {
@@ -272,13 +269,13 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
         data[i] += amp * Math.sin(2 * Math.PI * h * (i / TABLE_SIZE));
       }
     }
-    // Normalize
     let max = 0;
     for (let i = 0; i < TABLE_SIZE; i++) max = Math.max(max, Math.abs(data[i]));
     if (max > 0) for (let i = 0; i <= TABLE_SIZE; i++) data[i] /= max;
     data[TABLE_SIZE] = data[0];
     setWaveform(data);
     setCurrentName(`Harm ${harmonicCount}`);
+    pendingWavetableRef.current = null;
   }, []);
 
   if (!open) return null;
