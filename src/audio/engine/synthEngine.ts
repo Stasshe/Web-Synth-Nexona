@@ -5,7 +5,7 @@ import type { ModRoute } from "../dsp/modulation/modMatrix";
 import { NoiseType } from "../dsp/utils/noise";
 import { ParamSmoother } from "../dsp/utils/smoothing";
 import { WarpType } from "../dsp/warp/warpTypes";
-import { generateSineTable } from "../dsp/wavetable/wavetableEngine";
+import { type WavetableType, generateTable } from "../dsp/wavetable/wavetableEngine";
 import type { Wavetable } from "../dsp/wavetable/wavetableEngine";
 import { SabParam, getParam } from "../sab/layout";
 import type { VoiceParams } from "./voice";
@@ -21,6 +21,8 @@ export class SynthEngine {
   private masterVolume: ParamSmoother;
   private wavetableA: Wavetable;
   private wavetableB: Wavetable;
+  private wtTypeA: WavetableType = 0;
+  private wtTypeB: WavetableType = 0;
   private lfo1: LFO;
   private lfo2: LFO;
   private macros = [0, 0, 0, 0];
@@ -93,8 +95,8 @@ export class SynthEngine {
     this.voiceManager = new VoiceManager(sampleRate);
     this.effectsChain = new EffectsChain(sampleRate);
     this.masterVolume = new ParamSmoother(0.8);
-    this.wavetableA = generateSineTable(2048);
-    this.wavetableB = generateSineTable(2048);
+    this.wavetableA = generateTable(0, 2048);
+    this.wavetableB = generateTable(0, 2048);
     this.lfo1 = new LFO(sampleRate, BLOCK_SIZE);
     this.lfo2 = new LFO(sampleRate, BLOCK_SIZE);
 
@@ -173,6 +175,14 @@ export class SynthEngine {
     this.voiceParams.oscAWarp2Type = getParam(this.sab, SabParam.OscAWarp2Type) as WarpType;
     this.voiceParams.oscAWarp2Amount = getParam(this.sab, SabParam.OscAWarp2Amount);
 
+    // Regenerate wavetable A if type changed
+    const newWtTypeA = Math.round(getParam(this.sab, SabParam.OscAWavetableIndex)) as WavetableType;
+    if (newWtTypeA !== this.wtTypeA) {
+      this.wtTypeA = newWtTypeA;
+      this.wavetableA = generateTable(newWtTypeA, 2048);
+      this.voiceManager.setWavetableA(this.wavetableA);
+    }
+
     // Osc B
     this.voiceParams.oscBOn = getParam(this.sab, SabParam.OscBOn) > 0.5;
     this.voiceParams.oscBLevel = getParam(this.sab, SabParam.OscBLevel);
@@ -185,6 +195,14 @@ export class SynthEngine {
     this.voiceParams.oscBWarpAmount = getParam(this.sab, SabParam.OscBWarpAmount);
     this.voiceParams.oscBWarp2Type = getParam(this.sab, SabParam.OscBWarp2Type) as WarpType;
     this.voiceParams.oscBWarp2Amount = getParam(this.sab, SabParam.OscBWarp2Amount);
+
+    // Regenerate wavetable B if type changed
+    const newWtTypeB = Math.round(getParam(this.sab, SabParam.OscBWavetableIndex)) as WavetableType;
+    if (newWtTypeB !== this.wtTypeB) {
+      this.wtTypeB = newWtTypeB;
+      this.wavetableB = generateTable(newWtTypeB, 2048);
+      this.voiceManager.setWavetableB(this.wavetableB);
+    }
 
     // Sub + Noise
     this.voiceParams.subOn = getParam(this.sab, SabParam.SubOn) > 0.5;

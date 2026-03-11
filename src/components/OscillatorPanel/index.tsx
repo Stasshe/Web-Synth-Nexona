@@ -16,6 +16,13 @@ const WARP_OPTIONS = [
   { value: "6", label: "FM" },
 ];
 
+const WAVEFORM_OPTIONS = [
+  { value: "0", label: "Sine" },
+  { value: "1", label: "Saw" },
+  { value: "2", label: "Square" },
+  { value: "3", label: "Triangle" },
+];
+
 interface OscillatorPanelProps {
   osc: "a" | "b";
 }
@@ -31,6 +38,11 @@ export function OscillatorPanel({ osc }: OscillatorPanelProps) {
       <div className="flex items-center justify-between mb-3">
         <Toggle value={data.on} onChange={(v) => (state.on = v)} color={color} />
         <div className="flex gap-2">
+          <Select
+            value={String(data.waveformType)}
+            options={WAVEFORM_OPTIONS}
+            onChange={(v) => (state.waveformType = Number(v))}
+          />
           <Select
             value={String(data.warpType)}
             options={WARP_OPTIONS}

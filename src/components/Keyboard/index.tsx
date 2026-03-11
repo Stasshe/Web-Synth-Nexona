@@ -57,7 +57,7 @@ export function Keyboard({ onNoteOn, onNoteOff }: KeyboardProps) {
   return (
     <div
       ref={containerRef}
-      className="relative h-[100px] flex select-none"
+      className="relative h-[72px] flex select-none shrink-0"
       style={{ touchAction: "none" }}
     >
       {WHITE_KEYS.map((key) => (

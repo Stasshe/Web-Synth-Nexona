@@ -75,8 +75,8 @@ export function Visualizer({ waveformData }: VisualizerProps) {
     <canvas
       ref={canvasRef}
       width={280}
-      height={80}
-      className="w-full h-[80px] rounded border border-border-default"
+      height={60}
+      className="w-full h-[60px] rounded border border-border-default"
     />
   );
 }

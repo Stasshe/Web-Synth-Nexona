@@ -202,13 +202,11 @@ export class Voice {
     let mixR = 0;
 
     if (p.oscAOn) {
-      // Pitch: modulation in semitones (range: ±24)
-      const detuneTotal = p.oscADetune / 100 + modOscAPitch * 24;
+      // Pitch: ±48 semitones (4 octaves)
+      const detuneTotal = p.oscADetune / 100 + modOscAPitch * 48;
       const freq = midiToFreq(this.note + detuneTotal);
       this.oscA.setFrequency(freq * (p.driftAmount > 0 ? this.drift.getFreqMultiplier() : 1));
-      // Frame position modulation
       this.oscA.setFramePosition(clamp(p.oscAFramePosition + modOscAFrame, 0, 1));
-      // Warp amount modulation
       this.oscA.setWarp(
         p.oscAWarpType,
         clamp(p.oscAWarpAmount + modOscAWarp, 0, 1),
@@ -222,7 +220,7 @@ export class Voice {
     }
 
     if (p.oscBOn) {
-      const detuneTotal = p.oscBDetune / 100 + modOscBPitch * 24;
+      const detuneTotal = p.oscBDetune / 100 + modOscBPitch * 48;
       const freq = midiToFreq(this.note + detuneTotal);
       this.oscB.setFrequency(freq * (p.driftAmount > 0 ? this.drift.getFreqMultiplier() : 1));
       this.oscB.setFramePosition(clamp(p.oscBFramePosition + modOscBFrame, 0, 1));
@@ -256,28 +254,28 @@ export class Voice {
       mixR = Math.tanh(mixR * p.filterDrive) / p.filterDrive;
     }
 
-    // Filter with modulation
+    // Filter with modulation — exponential cutoff scaling for musical response
     const baseCutoff = this.cutoffSmoother.tick();
-    const cutoff = clamp(
-      baseCutoff + filterEnvLevel * p.filterEnvAmount * 10000 + modFilterCutoff * 5000,
-      20,
-      this.sampleRate * 0.49,
-    );
-    const resonance = clamp(p.filterResonance + modFilterReso * 0.5, 0, 0.99);
+    const envMod = filterEnvLevel * p.filterEnvAmount;
+    const totalMod = envMod + modFilterCutoff;
+    // Each unit of totalMod = ±7 octaves of cutoff shift (2^7 = 128x)
+    const cutoff = clamp(baseCutoff * 2 ** (totalMod * 7), 20, this.sampleRate * 0.49);
+    const resonance = clamp(p.filterResonance + modFilterReso * 0.99, 0, 0.99);
     this.filterL.setParams(cutoff, resonance, 1, p.filterType);
     this.filterR.setParams(cutoff, resonance, 1, p.filterType);
     mixL = this.filterL.process(mixL);
     mixR = this.filterR.process(mixR);
 
-    // Amp with modulation
+    // Amp with modulation — full range (0 to 3x for overdrive)
     const level = this.levelSmoother.tick();
-    const ampMod = clamp(1 + modAmpLevel, 0, 2);
+    const ampMod = clamp(1 + modAmpLevel * 2, 0, 3);
     mixL *= ampLevel * level * this.velocity * ampMod;
     mixR *= ampLevel * level * this.velocity * ampMod;
 
-    // Pan modulation
-    if (modPan !== 0) {
-      const panR = clamp(0.5 + modPan * 0.5, 0, 1);
+    // Pan modulation — full stereo range
+    const panVal = clamp(modPan, -1, 1);
+    if (panVal !== 0) {
+      const panR = clamp(0.5 + panVal * 0.5, 0, 1);
       const panL = 1 - panR;
       // Apply pan as cross-fade from center
       const mono = (mixL + mixR) * 0.5;

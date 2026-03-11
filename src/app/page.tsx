@@ -121,67 +121,65 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-bg-darkest p-2">
+    <main className="h-screen bg-bg-darkest p-1.5 flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="flex items-center justify-between px-4 py-2 mb-2 bg-bg-panel rounded-lg border border-border-default">
-        <div className="flex items-center gap-3">
+      <header className="flex items-center justify-between px-3 py-1 mb-1 bg-bg-panel rounded-lg border border-border-default shrink-0">
+        <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-accent-green animate-pulse" />
-          <span className="text-sm font-medium tracking-wider">WEB WAVETABLE SYNTH</span>
+          <span className="text-xs font-medium tracking-wider">WEB WAVETABLE SYNTH</span>
         </div>
-        <div className="flex items-center gap-4">
-          {/* Patch buttons */}
+        <div className="flex items-center gap-3">
           <div className="flex items-center gap-1">
             <button
               type="button"
               onClick={handleSave}
-              className="flex items-center gap-1 px-2 py-1 text-[10px] text-text-muted hover:text-text-primary
+              className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-text-muted hover:text-text-primary
                          bg-bg-surface border border-border-default rounded transition-colors cursor-pointer"
               title="Save patch to file"
             >
-              <Download size={12} />
+              <Download size={11} />
               Save
             </button>
             <button
               type="button"
               onClick={handleLoad}
-              className="flex items-center gap-1 px-2 py-1 text-[10px] text-text-muted hover:text-text-primary
+              className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-text-muted hover:text-text-primary
                          bg-bg-surface border border-border-default rounded transition-colors cursor-pointer"
               title="Load patch from file"
             >
-              <Upload size={12} />
+              <Upload size={11} />
               Load
             </button>
             <button
               type="button"
               onClick={handleShare}
-              className="flex items-center gap-1 px-2 py-1 text-[10px] text-text-muted hover:text-accent-blue
+              className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-text-muted hover:text-accent-blue
                          bg-bg-surface border border-border-default rounded transition-colors cursor-pointer"
               title="Copy share URL to clipboard"
             >
-              <Share2 size={12} />
+              <Share2 size={11} />
               Share
             </button>
             <button
               type="button"
               onClick={() => setParamEditorOpen(true)}
-              className="flex items-center gap-1 px-2 py-1 text-[10px] text-text-muted hover:text-accent-purple
+              className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-text-muted hover:text-accent-purple
                          bg-bg-surface border border-border-default rounded transition-colors cursor-pointer"
               title="Edit all parameters as JSON"
             >
-              <Code size={12} />
+              <Code size={11} />
               Edit
             </button>
           </div>
-          {/* Master volume */}
-          <div className="flex items-center gap-2">
-            <Volume2 size={14} className="text-text-muted" />
+          <div className="flex items-center gap-1.5">
+            <Volume2 size={13} className="text-text-muted" />
             <Knob
               label=""
               value={snap.master.volume}
               min={0}
               max={1}
               onChange={(v) => (synthState.master.volume = v)}
-              size={32}
+              size={28}
               color="var(--accent-green)"
               formatValue={(v) => `${(v * 100).toFixed(0)}%`}
             />
@@ -189,35 +187,33 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Main grid */}
-      <div className="grid grid-cols-[1fr_1fr_auto_1fr] gap-2 mb-2">
-        <OscillatorPanel osc="a" />
-        <OscillatorPanel osc="b" />
-        <SubNoisePanel />
-        <FilterPanel />
-      </div>
+      {/* Main content — fills remaining space */}
+      <div className="flex-1 flex flex-col gap-1 min-h-0">
+        {/* Row 1: Oscillators + Filter */}
+        <div className="grid grid-cols-[1fr_1fr_auto_1fr] gap-1 min-h-0">
+          <OscillatorPanel osc="a" />
+          <OscillatorPanel osc="b" />
+          <SubNoisePanel />
+          <FilterPanel />
+        </div>
 
-      {/* Middle row */}
-      <div className="grid grid-cols-4 gap-2 mb-2">
-        <EnvelopePanel />
-        <LfoPanel index="lfo1" />
-        <LfoPanel index="lfo2" />
-        <EffectsPanel />
-      </div>
+        {/* Row 2: Envelope + LFOs + Effects + Mod/Scope */}
+        <div className="grid grid-cols-5 gap-1 min-h-0">
+          <EnvelopePanel />
+          <LfoPanel index="lfo1" />
+          <LfoPanel index="lfo2" />
+          <EffectsPanel />
+          <div className="flex flex-col gap-1">
+            <ModulationPanel onModRoutesChange={handleModRoutesChange} />
+            <Visualizer waveformData={waveformData} />
+          </div>
+        </div>
 
-      {/* Bottom row */}
-      <div className="grid grid-cols-[1fr_1fr] gap-2 mb-2">
-        <ModulationPanel onModRoutesChange={handleModRoutesChange} />
-        <div className="flex flex-col gap-2">
-          <Visualizer waveformData={waveformData} />
-          {/* Macros */}
-          <div className="bg-bg-panel rounded-lg border border-border-default p-3">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-[10px] uppercase tracking-wider text-text-secondary">
-                Macros
-              </span>
-            </div>
-            <div className="grid grid-cols-4 gap-2">
+        {/* Row 3: Macros */}
+        <div className="bg-bg-panel rounded border border-border-default px-3 py-1 shrink-0">
+          <div className="flex items-center gap-4">
+            <span className="text-[9px] uppercase tracking-wider text-text-secondary">Macros</span>
+            <div className="flex gap-3">
               {[0, 1, 2, 3].map((i) => (
                 <Knob
                   key={i}
@@ -226,17 +222,17 @@ export default function Home() {
                   min={0}
                   max={1}
                   onChange={(v) => (synthState.macros[i] = v)}
-                  size={36}
+                  size={28}
                   color="var(--accent-orange)"
                 />
               ))}
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Keyboard */}
-      <Keyboard onNoteOn={handleNoteOn} onNoteOff={handleNoteOff} />
+        {/* Keyboard */}
+        <Keyboard onNoteOn={handleNoteOn} onNoteOff={handleNoteOff} />
+      </div>
 
       {/* Param Editor Modal */}
       <ParamEditor open={paramEditorOpen} onClose={() => setParamEditorOpen(false)} />

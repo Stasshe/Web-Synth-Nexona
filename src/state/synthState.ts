@@ -6,6 +6,7 @@ export const synthState = proxy({
   oscillators: {
     a: {
       on: true,
+      waveformType: 0,
       level: 0.8,
       framePosition: 0,
       detune: 0,
@@ -20,6 +21,7 @@ export const synthState = proxy({
     },
     b: {
       on: false,
+      waveformType: 0,
       level: 0.8,
       framePosition: 0,
       detune: 0,
@@ -88,6 +90,7 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
     subscribe(synthState.oscillators.a, () => {
       const a = synthState.oscillators.a;
       setParam(sabView, SabParam.OscAOn, a.on ? 1 : 0);
+      setParam(sabView, SabParam.OscAWavetableIndex, a.waveformType);
       setParam(sabView, SabParam.OscALevel, a.level);
       setParam(sabView, SabParam.OscAFramePosition, a.framePosition);
       setParam(sabView, SabParam.OscADetune, a.detune);
@@ -106,6 +109,7 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
     subscribe(synthState.oscillators.b, () => {
       const b = synthState.oscillators.b;
       setParam(sabView, SabParam.OscBOn, b.on ? 1 : 0);
+      setParam(sabView, SabParam.OscBWavetableIndex, b.waveformType);
       setParam(sabView, SabParam.OscBLevel, b.level);
       setParam(sabView, SabParam.OscBFramePosition, b.framePosition);
       setParam(sabView, SabParam.OscBDetune, b.detune);

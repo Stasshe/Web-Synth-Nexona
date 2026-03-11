@@ -61,7 +61,7 @@ export function ModulationPanel({ onModRoutesChange }: ModPanelProps) {
 
   return (
     <Panel title="MODULATION" color="var(--accent-purple)">
-      <div className="space-y-1.5 max-h-[150px] overflow-y-auto">
+      <div className="space-y-1 max-h-[100px] overflow-y-auto">
         {routes.map((route, idx) => (
           <div key={idx} className="flex items-center gap-1">
             <Select

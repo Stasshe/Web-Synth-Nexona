@@ -80,8 +80,8 @@ export function LfoPanel({ index }: LfoPanelProps) {
       <canvas
         ref={canvasRef}
         width={200}
-        height={50}
-        className="w-full h-[50px] rounded bg-bg-dark mb-2"
+        height={40}
+        className="w-full h-[40px] rounded bg-bg-dark mb-1"
       />
 
       <div className="flex gap-1 mb-2">

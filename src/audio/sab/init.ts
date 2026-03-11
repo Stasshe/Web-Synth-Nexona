@@ -9,6 +9,7 @@ export function createSAB(): SharedArrayBuffer {
 
   // Osc A defaults
   setParam(view, SabParam.OscAOn, 1);
+  setParam(view, SabParam.OscAWavetableIndex, 0);
   setParam(view, SabParam.OscALevel, 0.8);
   setParam(view, SabParam.OscAFramePosition, 0);
   setParam(view, SabParam.OscADetune, 0);
@@ -23,6 +24,7 @@ export function createSAB(): SharedArrayBuffer {
 
   // Osc B defaults (off)
   setParam(view, SabParam.OscBOn, 0);
+  setParam(view, SabParam.OscBWavetableIndex, 0);
   setParam(view, SabParam.OscBLevel, 0.8);
   setParam(view, SabParam.OscBFramePosition, 0);
   setParam(view, SabParam.OscBDetune, 0);

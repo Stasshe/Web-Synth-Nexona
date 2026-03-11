@@ -117,8 +117,8 @@ export function EnvelopePanel() {
       <canvas
         ref={canvasRef}
         width={280}
-        height={100}
-        className="w-full h-[100px] rounded bg-bg-dark mb-2"
+        height={70}
+        className="w-full h-[70px] rounded bg-bg-dark mb-2"
       />
 
       <div className="grid grid-cols-4 gap-1">

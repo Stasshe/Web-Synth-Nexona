@@ -37,6 +37,7 @@ export interface PatchData {
 
 interface OscPatch {
   on: boolean;
+  waveformType: number;
   level: number;
   framePosition: number;
   detune: number;

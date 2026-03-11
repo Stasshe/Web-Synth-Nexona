@@ -17,7 +17,7 @@ export function FilterPanel() {
 
   return (
     <Panel title="FILTER" color="var(--filter)">
-      <div className="flex gap-1 mb-3">
+      <div className="flex gap-1 mb-2">
         {FILTER_TYPES.map((t) => (
           <button
             key={t.value}
@@ -34,7 +34,7 @@ export function FilterPanel() {
         ))}
       </div>
 
-      <div className="flex justify-center mb-3">
+      <div className="flex justify-center mb-2">
         <Knob
           label="Cutoff"
           value={f.cutoff}
@@ -42,7 +42,7 @@ export function FilterPanel() {
           max={20000}
           step={1}
           onChange={(v) => (synthState.filter.cutoff = v)}
-          size={72}
+          size={56}
           color="var(--filter)"
           formatValue={(v) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${v.toFixed(0)}`)}
         />

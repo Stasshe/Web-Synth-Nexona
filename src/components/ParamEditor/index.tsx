@@ -16,6 +16,7 @@ function stateToAnnotatedJson(): string {
   const lines: string[] = ["{"];
 
   const ranges: Record<string, [number, number]> = {
+    waveformType: [0, 3],
     level: [0, 1],
     framePosition: [0, 1],
     detune: [-100, 100],
@@ -47,6 +48,7 @@ function stateToAnnotatedJson(): string {
     amount: [-1, 1],
   };
 
+  const waveformNames = ["SINE", "SAW", "SQUARE", "TRIANGLE"];
   const warpNames = ["NONE", "BEND", "SYNC", "PHASE_DIST", "MIRROR", "QUANTIZE", "FM"];
   const filterNames = ["LOWPASS", "HIGHPASS", "BANDPASS", "NOTCH"];
   const noiseNames = ["WHITE", "PINK", "BROWN"];
@@ -59,6 +61,7 @@ function stateToAnnotatedJson(): string {
     if (r) comment = ` // ${r[0]}..${r[1]}`;
 
     if (typeof value === "number") {
+      if (key === "waveformType") comment += ` (${waveformNames[value] ?? value})`;
       if (key === "warpType" || key === "warp2Type") comment += ` (${warpNames[value] ?? value})`;
       if (key === "type" && value <= 3) comment += ` (${filterNames[value] ?? value})`;
       if (key === "shape" && value <= 1) comment += ` (${subShapeNames[value] ?? value})`;
