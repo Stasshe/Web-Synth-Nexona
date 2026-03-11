@@ -16,13 +16,6 @@ const WARP_OPTIONS = [
   { value: "6", label: "FM" },
 ];
 
-const WAVEFORM_OPTIONS = [
-  { value: "0", label: "Sine" },
-  { value: "1", label: "Saw" },
-  { value: "2", label: "Square" },
-  { value: "3", label: "Triangle" },
-];
-
 interface OscillatorPanelProps {
   osc: "a" | "b";
   onOpenWaveEditor?: () => void;
@@ -39,18 +32,13 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
       <div className="flex items-center justify-between mb-3">
         <Toggle value={data.on} onChange={(v) => (state.on = v)} color={color} />
         <div className="flex gap-1">
-          <Select
-            value={String(data.waveformType)}
-            options={WAVEFORM_OPTIONS}
-            onChange={(v) => (state.waveformType = Number(v))}
-          />
           <button
             type="button"
             onClick={onOpenWaveEditor}
-            className="px-1.5 py-0.5 text-[9px] text-text-muted hover:text-text-primary bg-bg-surface border border-border-default rounded cursor-pointer transition-colors"
-            title="Open waveform editor"
+            className="px-2 py-0.5 text-[10px] text-text-secondary hover:text-text-primary bg-bg-surface border border-border-default rounded cursor-pointer transition-colors"
+            title="Edit waveform"
           >
-            Draw
+            {data.waveformName}{data.customWaveform ? "*" : ""}
           </button>
           <Select
             value={String(data.warpType)}

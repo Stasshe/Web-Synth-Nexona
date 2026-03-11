@@ -90,7 +90,10 @@ function stateToAnnotatedJson(): string {
         addObject(val as Record<string, unknown>, indent + 1, key);
         lines.push(`${pad}}${comma}`);
       } else if (Array.isArray(val)) {
-        if (key === "modulations") {
+        // Skip large waveform data arrays in editor
+        if (key === "customWaveform") {
+          lines.push(`${pad}"${key}": ${val.length > 0 ? `[...${val.length} samples]` : "null"}${comma}`);
+        } else if (key === "modulations") {
           if (val.length === 0) {
             lines.push(`${pad}"${key}": []${comma} // [{source, target, amount}]`);
           } else {

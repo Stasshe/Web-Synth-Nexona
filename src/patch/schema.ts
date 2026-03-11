@@ -38,6 +38,8 @@ export interface PatchData {
 interface OscPatch {
   on: boolean;
   waveformType: number;
+  waveformName?: string;
+  customWaveform?: number[] | null;
   level: number;
   framePosition: number;
   detune: number;

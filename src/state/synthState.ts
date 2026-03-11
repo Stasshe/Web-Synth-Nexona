@@ -7,6 +7,8 @@ export const synthState = proxy({
     a: {
       on: true,
       waveformType: 0,
+      waveformName: "Sine",
+      customWaveform: null as number[] | null,
       level: 0.8,
       framePosition: 0,
       detune: 0,
@@ -22,6 +24,8 @@ export const synthState = proxy({
     b: {
       on: false,
       waveformType: 0,
+      waveformName: "Sine",
+      customWaveform: null as number[] | null,
       level: 0.8,
       framePosition: 0,
       detune: 0,

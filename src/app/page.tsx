@@ -17,6 +17,7 @@ import { Knob } from "@/components/ui/Knob";
 import { loadPatchIntoState, urlToPatch } from "@/patch/loader";
 import { patchToUrl, stateToPatch } from "@/patch/serializer";
 import { bindStateToSAB, synthState } from "@/state/synthState";
+import type { Wavetable } from "@/audio/dsp/wavetable/wavetableEngine";
 import { Code, Download, Power, Share2, Upload, Volume2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSnapshot } from "valtio";
@@ -40,6 +41,18 @@ export default function Home() {
     }
   }, []);
 
+  const applyCustomWavetables = useCallback((synth: SynthNode) => {
+    for (const oscKey of ["a", "b"] as const) {
+      const oscState = synthState.oscillators[oscKey];
+      if (oscState.customWaveform && oscState.customWaveform.length > 0) {
+        const table = new Float32Array(oscState.customWaveform);
+        const wt: Wavetable = { frames: [table], tableSize: table.length - 1, numFrames: 1 };
+        if (oscKey === "a") synth.loadWavetableA(wt);
+        else synth.loadWavetableB(wt);
+      }
+    }
+  }, []);
+
   const handleStart = useCallback(async () => {
     if (started) return;
     const ctx = new AudioContext({ sampleRate: 48000 });
@@ -47,8 +60,10 @@ export default function Home() {
     synthRef.current = synth;
     unbindRef.current = bindStateToSAB(synth.sabView);
     synth.onWaveformData(setWaveformData);
+    // Apply any custom wavetables loaded from URL hash before start
+    applyCustomWavetables(synth);
     setStarted(true);
-  }, [started]);
+  }, [started, applyCustomWavetables]);
 
   const handleNoteOn = useCallback((note: number, velocity: number) => {
     synthRef.current?.noteOn(note, velocity);
@@ -95,13 +110,14 @@ export default function Home() {
         loadPatchIntoState(patch);
         if (synthRef.current) {
           synthRef.current.setModRoutes(synthState.modulations as ModRoute[]);
+          applyCustomWavetables(synthRef.current);
         }
       } catch {
         // ignore invalid files
       }
     };
     input.click();
-  }, []);
+  }, [applyCustomWavetables]);
 
   if (!started) {
     return (

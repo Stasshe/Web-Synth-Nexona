@@ -1,11 +1,19 @@
 "use client";
 
 import type { Wavetable } from "@/audio/dsp/wavetable/wavetableEngine";
+import { synthState } from "@/state/synthState";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const TABLE_SIZE = 2048;
 const CANVAS_W = 600;
 const CANVAS_H = 240;
+
+const WAVEFORM_NAMES: Record<string, string> = {
+  sine: "Sine",
+  saw: "Saw",
+  square: "Square",
+  triangle: "Triangle",
+};
 
 interface WaveformEditorProps {
   open: boolean;
@@ -22,11 +30,28 @@ function createDefaultWaveform(): Float32Array {
   return data;
 }
 
+function loadExistingWaveform(osc: "a" | "b"): Float32Array {
+  const custom = synthState.oscillators[osc].customWaveform;
+  if (custom && custom.length === TABLE_SIZE + 1) {
+    return new Float32Array(custom);
+  }
+  return createDefaultWaveform();
+}
+
 export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [waveform, setWaveform] = useState<Float32Array>(() => createDefaultWaveform());
+  const [waveform, setWaveform] = useState<Float32Array>(() => loadExistingWaveform(osc));
+  const [currentName, setCurrentName] = useState<string>(() => synthState.oscillators[osc].waveformName);
   const drawingRef = useRef(false);
   const lastPosRef = useRef<{ x: number; y: number } | null>(null);
+
+  // Reload waveform when opening for a different osc
+  useEffect(() => {
+    if (open) {
+      setWaveform(loadExistingWaveform(osc));
+      setCurrentName(synthState.oscillators[osc].waveformName);
+    }
+  }, [open, osc]);
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -148,6 +173,7 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
           next[TABLE_SIZE] = next[0];
           return next;
         });
+        setCurrentName("Custom");
       }
     },
     [posToWaveform],
@@ -173,9 +199,12 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
   const handleApply = useCallback(() => {
     const table = new Float32Array(waveform);
     const wt: Wavetable = { frames: [table], tableSize: TABLE_SIZE, numFrames: 1 };
+    // Store waveform data and name in state for patch export
+    synthState.oscillators[osc].waveformName = currentName;
+    synthState.oscillators[osc].customWaveform = Array.from(waveform);
     onApply(wt);
     onClose();
-  }, [waveform, onApply, onClose]);
+  }, [waveform, currentName, osc, onApply, onClose]);
 
   const handlePreset = useCallback((type: "sine" | "saw" | "square" | "triangle") => {
     const data = new Float32Array(TABLE_SIZE + 1);
@@ -200,6 +229,7 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
     }
     data[TABLE_SIZE] = data[0];
     setWaveform(data);
+    setCurrentName(WAVEFORM_NAMES[type]);
   }, []);
 
   const handleClear = useCallback(() => {
@@ -248,6 +278,7 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
     if (max > 0) for (let i = 0; i <= TABLE_SIZE; i++) data[i] /= max;
     data[TABLE_SIZE] = data[0];
     setWaveform(data);
+    setCurrentName(`Harm ${harmonicCount}`);
   }, []);
 
   if (!open) return null;

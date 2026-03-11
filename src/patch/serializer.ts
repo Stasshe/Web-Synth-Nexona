@@ -3,12 +3,17 @@ import type { PatchData } from "./schema";
 
 export function stateToPatch(name = "Init"): PatchData {
   const s = synthState;
+  const oscA = { ...s.oscillators.a };
+  const oscB = { ...s.oscillators.b };
+  // Ensure customWaveform is plain array (not Valtio proxy)
+  oscA.customWaveform = oscA.customWaveform ? [...oscA.customWaveform] : null;
+  oscB.customWaveform = oscB.customWaveform ? [...oscB.customWaveform] : null;
   return {
     version: 1,
     name,
     oscillators: {
-      a: { ...s.oscillators.a },
-      b: { ...s.oscillators.b },
+      a: oscA,
+      b: oscB,
       sub: { ...s.oscillators.sub },
     },
     noise: { ...s.noise },
