@@ -12,8 +12,6 @@ export interface SynthNode {
   loadWavetableA: (wt: Wavetable) => void;
   loadWavetableB: (wt: Wavetable) => void;
   loadWavetableSub: (wt: Wavetable) => void;
-  resetWavetableA: () => void;
-  resetWavetableB: () => void;
   onWaveformData: (callback: (data: Float32Array) => void) => void;
   disconnect: () => void;
 }
@@ -64,12 +62,6 @@ export async function createSynthNode(ctx: AudioContext): Promise<SynthNode> {
     },
     loadWavetableSub(wt: Wavetable) {
       node.port.postMessage({ type: "loadWavetableSub", wavetable: wt });
-    },
-    resetWavetableA() {
-      node.port.postMessage({ type: "resetWavetableA" });
-    },
-    resetWavetableB() {
-      node.port.postMessage({ type: "resetWavetableB" });
     },
     onWaveformData(callback: (data: Float32Array) => void) {
       waveformCallback = callback;

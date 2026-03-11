@@ -5,8 +5,7 @@ import type { ModRoute } from "../dsp/modulation/modMatrix";
 import { NoiseType } from "../dsp/utils/noise";
 import { ParamSmoother } from "../dsp/utils/smoothing";
 import { WarpType } from "../dsp/warp/warpTypes";
-import { WavetableType, generateTable } from "../dsp/wavetable/wavetableEngine";
-import type { Wavetable } from "../dsp/wavetable/wavetableEngine";
+import { type Wavetable, WavetableType, generateTable } from "../dsp/wavetable/wavetableEngine";
 import { SabParam, getParam } from "../sab/layout";
 import type { VoiceParams } from "./voice";
 import { VoiceManager } from "./voiceManager";
@@ -21,10 +20,8 @@ export class SynthEngine {
   private masterVolume: ParamSmoother;
   private wavetableA: Wavetable;
   private wavetableB: Wavetable;
-  private wtTypeA: WavetableType = 0;
-  private wtTypeB: WavetableType = 0;
-  private customWtA = false;
-  private customWtB = false;
+  private wtTypeA = 0;
+  private wtTypeB = 0;
   private wavetableSub: Wavetable;
   private lfo1: LFO;
   private lfo2: LFO;
@@ -116,31 +113,17 @@ export class SynthEngine {
 
   setWavetableA(wt: Wavetable): void {
     this.wavetableA = wt;
-    this.customWtA = true;
     this.voiceManager.setWavetableA(wt);
   }
 
   setWavetableB(wt: Wavetable): void {
     this.wavetableB = wt;
-    this.customWtB = true;
     this.voiceManager.setWavetableB(wt);
   }
 
   setWavetableSub(wt: Wavetable): void {
     this.wavetableSub = wt;
     this.voiceManager.setWavetableSub(wt);
-  }
-
-  resetWavetableA(): void {
-    this.customWtA = false;
-    this.wavetableA = generateTable(this.wtTypeA, 2048);
-    this.voiceManager.setWavetableA(this.wavetableA);
-  }
-
-  resetWavetableB(): void {
-    this.customWtB = false;
-    this.wavetableB = generateTable(this.wtTypeB, 2048);
-    this.voiceManager.setWavetableB(this.wavetableB);
   }
 
   setModRoutes(routes: ModRoute[]): void {
@@ -200,12 +183,13 @@ export class SynthEngine {
     this.voiceParams.oscAWarp2Type = getParam(this.sab, SabParam.OscAWarp2Type) as WarpType;
     this.voiceParams.oscAWarp2Amount = getParam(this.sab, SabParam.OscAWarp2Amount);
 
-    // Regenerate wavetable A if type changed — but skip if a custom wavetable was loaded via message
-    const newWtTypeA = Math.round(getParam(this.sab, SabParam.OscAWavetableIndex)) as WavetableType;
+    // Regenerate wavetable A when SAB type changes to a valid preset (0-3).
+    // Value -1 means a custom wavetable was loaded via postMessage — skip regen.
+    const newWtTypeA = Math.round(getParam(this.sab, SabParam.OscAWavetableIndex));
     if (newWtTypeA !== this.wtTypeA) {
       this.wtTypeA = newWtTypeA;
-      if (!this.customWtA) {
-        this.wavetableA = generateTable(newWtTypeA, 2048);
+      if (newWtTypeA >= 0 && newWtTypeA <= 3) {
+        this.wavetableA = generateTable(newWtTypeA as WavetableType, 2048);
         this.voiceManager.setWavetableA(this.wavetableA);
       }
     }
@@ -223,12 +207,12 @@ export class SynthEngine {
     this.voiceParams.oscBWarp2Type = getParam(this.sab, SabParam.OscBWarp2Type) as WarpType;
     this.voiceParams.oscBWarp2Amount = getParam(this.sab, SabParam.OscBWarp2Amount);
 
-    // Regenerate wavetable B if type changed — but skip if a custom wavetable was loaded via message
-    const newWtTypeB = Math.round(getParam(this.sab, SabParam.OscBWavetableIndex)) as WavetableType;
+    // Regenerate wavetable B when SAB type changes to a valid preset (0-3).
+    const newWtTypeB = Math.round(getParam(this.sab, SabParam.OscBWavetableIndex));
     if (newWtTypeB !== this.wtTypeB) {
       this.wtTypeB = newWtTypeB;
-      if (!this.customWtB) {
-        this.wavetableB = generateTable(newWtTypeB, 2048);
+      if (newWtTypeB >= 0 && newWtTypeB <= 3) {
+        this.wavetableB = generateTable(newWtTypeB as WavetableType, 2048);
         this.voiceManager.setWavetableB(this.wavetableB);
       }
     }

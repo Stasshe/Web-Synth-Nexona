@@ -43,7 +43,6 @@ interface WaveformEditorProps {
   open: boolean;
   onClose: () => void;
   onApply: (wt: Wavetable) => void;
-  onResetPreset?: () => void;
   osc: "a" | "b" | "sub";
 }
 
@@ -119,7 +118,7 @@ function findHitPoint(
   return best;
 }
 
-export function WaveformEditor({ open, onClose, onApply, onResetPreset, osc }: WaveformEditorProps) {
+export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [model, setModel] = useState<WaveformModel>(() => loadExistingModel(osc));
   const [currentName, setCurrentName] = useState<string>(() => loadExistingName(osc));
@@ -127,10 +126,7 @@ export function WaveformEditor({ open, onClose, onApply, onResetPreset, osc }: W
   const [draggingPointId, setDraggingPointId] = useState<string | null>(null);
 
   // Always derive display waveform from the model — single source of truth
-  const displayWaveform = useMemo(
-    () => generateWaveformFromPoints(model, TABLE_SIZE),
-    [model],
-  );
+  const displayWaveform = useMemo(() => generateWaveformFromPoints(model, TABLE_SIZE), [model]);
 
   // Reload when opening for a different osc
   useEffect(() => {
@@ -347,17 +343,18 @@ export function WaveformEditor({ open, onClose, onApply, onResetPreset, osc }: W
     oscState.controlPoints = model.points.map((p) => ({ ...p }));
 
     if (isPresetName(currentName)) {
-      // Preset: generate the correct wavetable and send it directly via onApply
-      // to avoid race conditions with SAB/reset messages.
+      // Preset: set state only — SAB propagates waveformType to the worklet,
+      // which regenerates the wavetable in readParams(). No postMessage needed.
       oscState.customWaveform = null;
       if (osc !== "sub") {
-        (oscState as Record<string, unknown>).waveformType = PRESET_WAVEFORM_TYPE[currentName];
+        oscState.waveformType = PRESET_WAVEFORM_TYPE[currentName];
+      } else {
+        // Sub has no SAB wavetable slot — send directly via postMessage
+        const wt = generateTable(PRESET_WAVEFORM_TYPE[currentName], TABLE_SIZE);
+        onApply(wt);
       }
-      const wt = generateTable(PRESET_WAVEFORM_TYPE[currentName], TABLE_SIZE);
-      onApply(wt);
     } else {
-      // Custom: multi-frame wavetable via spectral morph.
-      // Frame 0 = MIN_HARMONICS harmonics, frame 63 = full waveform.
+      // Custom: multi-frame wavetable via spectral morph, sent via postMessage.
       const waveform = generateWaveformFromPoints(model, TABLE_SIZE);
       const NUM_FRAMES = 64;
       const MAX_HARMONICS = 128;
@@ -383,7 +380,8 @@ export function WaveformEditor({ open, onClose, onApply, onResetPreset, osc }: W
       const frames: Float32Array[] = [];
       for (let f = 0; f < NUM_FRAMES; f++) {
         const table = new Float32Array(TABLE_SIZE + 1);
-        const numH = MIN_HARMONICS + Math.floor((f / (NUM_FRAMES - 1)) * (MAX_HARMONICS - MIN_HARMONICS));
+        const numH =
+          MIN_HARMONICS + Math.floor((f / (NUM_FRAMES - 1)) * (MAX_HARMONICS - MIN_HARMONICS));
         for (let h = 1; h <= numH; h++) {
           if (mags[h] < 1e-6) continue;
           for (let i = 0; i <= TABLE_SIZE; i++) {
@@ -405,10 +403,14 @@ export function WaveformEditor({ open, onClose, onApply, onResetPreset, osc }: W
 
       const wt: Wavetable = { frames, tableSize: TABLE_SIZE, numFrames: NUM_FRAMES };
       oscState.customWaveform = Array.from(waveform);
+      if (osc !== "sub") {
+        // Sentinel value: tells worklet's readParams() to skip preset regeneration
+        oscState.waveformType = -1;
+      }
       onApply(wt);
     }
     onClose();
-  }, [model, currentName, osc, onApply, onResetPreset, onClose]);
+  }, [model, currentName, osc, onApply, onClose]);
 
   const handlePreset = useCallback((name: PresetName) => {
     setModel(presetModel(name));

@@ -1,7 +1,7 @@
 "use client";
 
 import type { ModRoute } from "@/audio/dsp/modulation/modMatrix";
-import { generateTable, type Wavetable, type WavetableType } from "@/audio/dsp/wavetable/wavetableEngine";
+import type { Wavetable } from "@/audio/dsp/wavetable/wavetableEngine";
 import { type SynthNode, createSynthNode } from "@/audio/worklet/node";
 import { DndProvider } from "@/components/DndProvider";
 import { EffectsPanel } from "@/components/EffectsPanel";
@@ -15,6 +15,7 @@ import { SubNoisePanel } from "@/components/SubNoisePanel";
 import { Visualizer } from "@/components/Visualizer";
 import { WaveformEditor } from "@/components/WaveformEditor";
 import { Knob } from "@/components/ui/Knob";
+import { useGlobalScrollLock } from "@/hooks/scrollLock";
 import { loadPatchIntoState, urlToPatch } from "@/patch/loader";
 import { patchToUrl, stateToPatch } from "@/patch/serializer";
 import { bindStateToSAB, synthState } from "@/state/synthState";
@@ -22,7 +23,6 @@ import { Code, Download, Power, Share2, Upload, Volume2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { subscribe } from "valtio";
 import { useSnapshot } from "valtio";
-import { useGlobalScrollLock } from "@/hooks/scrollLock";
 
 export default function Home() {
   const [started, setStarted] = useState(false);
@@ -59,19 +59,13 @@ export default function Home() {
     return unsub;
   }, []);
 
+  // Send custom wavetables to the worklet (presets are handled via SAB)
   const applyCustomWavetables = useCallback((synth: SynthNode) => {
-    const TABLE_SIZE = 2048;
     for (const oscKey of ["a", "b"] as const) {
       const oscState = synthState.oscillators[oscKey];
       if (oscState.customWaveform && oscState.customWaveform.length > 0) {
-        // Custom drawn waveform: single-frame
         const table = new Float32Array(oscState.customWaveform);
         const wt: Wavetable = { frames: [table], tableSize: table.length - 1, numFrames: 1 };
-        if (oscKey === "a") synth.loadWavetableA(wt);
-        else synth.loadWavetableB(wt);
-      } else {
-        // Built-in preset: regenerate full multi-frame band-limited wavetable
-        const wt = generateTable(oscState.waveformType as WavetableType, TABLE_SIZE);
         if (oscKey === "a") synth.loadWavetableA(wt);
         else synth.loadWavetableB(wt);
       }
@@ -297,13 +291,6 @@ export default function Home() {
                 synthRef.current?.loadWavetableB(wt);
               } else if (waveEditorOsc === "sub") {
                 synthRef.current?.loadWavetableSub(wt);
-              }
-            }}
-            onResetPreset={() => {
-              if (waveEditorOsc === "a") {
-                synthRef.current?.resetWavetableA();
-              } else if (waveEditorOsc === "b") {
-                synthRef.current?.resetWavetableB();
               }
             }}
           />
