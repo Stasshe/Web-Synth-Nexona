@@ -13,6 +13,10 @@ export enum WavetableType {
 
 const NUM_FRAMES = 64;
 const MAX_HARMONICS = 128;
+// Minimum harmonics at frame 0 so the waveform shape is audible even at
+// the lowest frame position.  Frame 0 used to be 1 harmonic (= sine) for
+// every preset, which made all presets sound identical when framePosition=0.
+const MIN_HARMONICS = 32;
 
 function normalize(data: Float32Array, size: number): void {
   let max = 0;
@@ -51,14 +55,12 @@ function addHarmonic(
 
 export function generateSineTable(tableSize: number): Wavetable {
   const sineLut = buildSineLookup(tableSize);
-  // Morph from pure sine (frame 0) to a harmonically rich sine variant (frame 63).
-  // Each frame adds progressively more odd harmonics with decreasing amplitude,
-  // creating a smooth timbral sweep from sine → bell-like → buzzy.
+  // Sine is special: frame 0 = pure sine, higher frames add harmonics for
+  // timbral sweep from sine → bell-like → buzzy.
   const frames: Float32Array[] = [];
   for (let f = 0; f < NUM_FRAMES; f++) {
     const table = new Float32Array(tableSize + 1);
     addHarmonic(table, sineLut, tableSize, 1, 1);
-    // Add harmonics 2..maxH with decreasing amplitude, scaled by frame position
     const maxH = 1 + Math.floor((f / (NUM_FRAMES - 1)) * (MAX_HARMONICS - 1));
     for (let h = 2; h <= maxH; h++) {
       addHarmonic(table, sineLut, tableSize, h, (1 / (h * h)) * (f / (NUM_FRAMES - 1)));
@@ -75,7 +77,7 @@ export function generateSawTable(tableSize: number): Wavetable {
   const frames: Float32Array[] = [];
   for (let f = 0; f < NUM_FRAMES; f++) {
     const table = new Float32Array(tableSize + 1);
-    const numH = 1 + Math.floor((f / (NUM_FRAMES - 1)) * (MAX_HARMONICS - 1));
+    const numH = MIN_HARMONICS + Math.floor((f / (NUM_FRAMES - 1)) * (MAX_HARMONICS - MIN_HARMONICS));
     for (let h = 1; h <= numH; h++) {
       addHarmonic(table, sineLut, tableSize, h, 1 / h);
     }
@@ -91,7 +93,7 @@ export function generateSquareTable(tableSize: number): Wavetable {
   const frames: Float32Array[] = [];
   for (let f = 0; f < NUM_FRAMES; f++) {
     const table = new Float32Array(tableSize + 1);
-    const numH = 1 + Math.floor((f / (NUM_FRAMES - 1)) * (MAX_HARMONICS - 1));
+    const numH = MIN_HARMONICS + Math.floor((f / (NUM_FRAMES - 1)) * (MAX_HARMONICS - MIN_HARMONICS));
     for (let h = 1; h <= numH; h += 2) {
       addHarmonic(table, sineLut, tableSize, h, 1 / h);
     }
@@ -107,7 +109,7 @@ export function generateTriangleTable(tableSize: number): Wavetable {
   const frames: Float32Array[] = [];
   for (let f = 0; f < NUM_FRAMES; f++) {
     const table = new Float32Array(tableSize + 1);
-    const numH = 1 + Math.floor((f / (NUM_FRAMES - 1)) * (MAX_HARMONICS - 1));
+    const numH = MIN_HARMONICS + Math.floor((f / (NUM_FRAMES - 1)) * (MAX_HARMONICS - MIN_HARMONICS));
     for (let h = 1; h <= numH; h += 2) {
       const sign = ((h - 1) / 2) % 2 === 0 ? 1 : -1;
       addHarmonic(table, sineLut, tableSize, h, sign / (h * h));

@@ -347,23 +347,21 @@ export function WaveformEditor({ open, onClose, onApply, onResetPreset, osc }: W
     oscState.controlPoints = model.points.map((p) => ({ ...p }));
 
     if (isPresetName(currentName)) {
-      // Preset: just set the waveform type on state — the SAB/worklet will handle
-      // regeneration automatically. Clear custom flag via reset message.
+      // Preset: generate the correct wavetable and send it directly via onApply
+      // to avoid race conditions with SAB/reset messages.
       oscState.customWaveform = null;
       if (osc !== "sub") {
         (oscState as Record<string, unknown>).waveformType = PRESET_WAVEFORM_TYPE[currentName];
-        onResetPreset?.();
-      } else {
-        // Sub osc doesn't use SAB wavetable index, so send directly
-        const wt = generateTable(PRESET_WAVEFORM_TYPE[currentName], TABLE_SIZE);
-        onApply(wt);
       }
+      const wt = generateTable(PRESET_WAVEFORM_TYPE[currentName], TABLE_SIZE);
+      onApply(wt);
     } else {
       // Custom: multi-frame wavetable via spectral morph.
-      // Frame 0 = fundamental only, frame 63 = full waveform.
+      // Frame 0 = MIN_HARMONICS harmonics, frame 63 = full waveform.
       const waveform = generateWaveformFromPoints(model, TABLE_SIZE);
       const NUM_FRAMES = 64;
       const MAX_HARMONICS = 128;
+      const MIN_HARMONICS = 32;
 
       // Compute harmonic magnitudes + phases via DFT of the base waveform
       const mags = new Float64Array(MAX_HARMONICS + 1);
@@ -385,7 +383,7 @@ export function WaveformEditor({ open, onClose, onApply, onResetPreset, osc }: W
       const frames: Float32Array[] = [];
       for (let f = 0; f < NUM_FRAMES; f++) {
         const table = new Float32Array(TABLE_SIZE + 1);
-        const numH = 1 + Math.floor((f / (NUM_FRAMES - 1)) * (MAX_HARMONICS - 1));
+        const numH = MIN_HARMONICS + Math.floor((f / (NUM_FRAMES - 1)) * (MAX_HARMONICS - MIN_HARMONICS));
         for (let h = 1; h <= numH; h++) {
           if (mags[h] < 1e-6) continue;
           for (let i = 0; i <= TABLE_SIZE; i++) {
