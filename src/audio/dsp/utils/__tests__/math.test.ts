@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { midiToFreq, centsToRatio, clamp } from "../math";
+import { centsToRatio, clamp, midiToFreq } from "../math";
 
 describe("math utilities", () => {
   it("midiToFreq: A4 = 440 Hz", () => {

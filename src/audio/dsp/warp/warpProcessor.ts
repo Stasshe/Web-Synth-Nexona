@@ -1,5 +1,5 @@
-import { WarpType, applyWarp } from "./warpTypes";
 import { ParamSmoother } from "../utils/smoothing";
+import { WarpType, applyWarp } from "./warpTypes";
 
 export class WarpProcessor {
   private type1: WarpType = WarpType.NONE;
@@ -12,12 +12,7 @@ export class WarpProcessor {
     this.amount2 = new ParamSmoother(0, 0.001);
   }
 
-  setParams(
-    type1: WarpType,
-    amount1: number,
-    type2: WarpType,
-    amount2: number,
-  ): void {
+  setParams(type1: WarpType, amount1: number, type2: WarpType, amount2: number): void {
     this.type1 = type1;
     this.amount1.setTarget(amount1);
     this.type2 = type2;

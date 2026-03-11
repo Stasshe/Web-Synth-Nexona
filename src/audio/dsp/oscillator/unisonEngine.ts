@@ -1,8 +1,8 @@
 import { lerp } from "../utils/interpolation";
 import { centsToRatio } from "../utils/math";
-import type { Wavetable } from "../wavetable/wavetableEngine";
 import { WarpProcessor } from "../warp/warpProcessor";
-import { WarpType } from "../warp/warpTypes";
+import type { WarpType } from "../warp/warpTypes";
+import type { Wavetable } from "../wavetable/wavetableEngine";
 
 interface UnisonVoice {
   phase: number;
@@ -51,7 +51,7 @@ export class UnisonEngine {
         pan = 0;
       } else {
         detuneOffset = (i / (n - 1) - 0.5) * 2 * detuneCents;
-        pan = (i / (n - 1) * 2 - 1) * spread;
+        pan = ((i / (n - 1)) * 2 - 1) * spread;
       }
       this.voices.push({
         phase: Math.random(),

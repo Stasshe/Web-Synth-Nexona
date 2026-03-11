@@ -57,9 +57,7 @@ export class Reverb {
     const scale = sampleRate / 44100;
 
     this.combsL = COMB_SIZES.map((s) => new CombFilter(Math.floor(s * scale)));
-    this.combsR = COMB_SIZES.map(
-      (s) => new CombFilter(Math.floor((s + STEREO_SPREAD) * scale)),
-    );
+    this.combsR = COMB_SIZES.map((s) => new CombFilter(Math.floor((s + STEREO_SPREAD) * scale)));
     this.allpassL = ALLPASS_SIZES.map((s) => new AllpassFilter(Math.floor(s * scale)));
     this.allpassR = ALLPASS_SIZES.map(
       (s) => new AllpassFilter(Math.floor((s + STEREO_SPREAD) * scale)),

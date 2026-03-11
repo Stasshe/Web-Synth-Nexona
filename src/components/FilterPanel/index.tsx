@@ -1,93 +1,82 @@
 "use client";
-
+import { Knob } from "@/components/ui/Knob";
+import { Panel } from "@/components/ui/Panel";
+import { synthState } from "@/state/synthState";
 import { useSnapshot } from "valtio";
-import { synthState } from "../../state/synthState";
+
+const FILTER_TYPES = [
+  { value: "0", label: "LP" },
+  { value: "1", label: "HP" },
+  { value: "2", label: "BP" },
+  { value: "3", label: "NOTCH" },
+];
 
 export function FilterPanel() {
   const snap = useSnapshot(synthState);
+  const f = snap.filter;
 
   return (
-    <section style={panelStyle}>
-      <h2 style={titleStyle}>Filter</h2>
+    <Panel title="FILTER" color="var(--filter)">
+      <div className="flex gap-1 mb-3">
+        {FILTER_TYPES.map((t) => (
+          <button
+            key={t.value}
+            type="button"
+            onClick={() => (synthState.filter.type = Number(t.value))}
+            className={`flex-1 text-[10px] py-1 rounded border transition-colors ${
+              f.type === Number(t.value)
+                ? "bg-filter/20 border-filter text-filter"
+                : "bg-transparent border-border-default text-text-muted hover:text-text-secondary"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-      <label style={labelStyle}>
-        Cutoff
-        <input
-          type="range"
+      <div className="flex justify-center mb-3">
+        <Knob
+          label="Cutoff"
+          value={f.cutoff}
           min={20}
           max={20000}
           step={1}
-          value={snap.filter.cutoff}
-          onChange={(e) => {
-            synthState.filter.cutoff = Number(e.target.value);
-          }}
-          style={sliderStyle}
+          onChange={(v) => (synthState.filter.cutoff = v)}
+          size={72}
+          color="var(--filter)"
+          formatValue={(v) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${v.toFixed(0)}`)}
         />
-        <span style={valueStyle}>{snap.filter.cutoff}</span>
-      </label>
+      </div>
 
-      <label style={labelStyle}>
-        Resonance
-        <input
-          type="range"
+      <div className="grid grid-cols-3 gap-2">
+        <Knob
+          label="Reso"
+          value={f.resonance}
           min={0}
           max={0.99}
-          step={0.01}
-          value={snap.filter.resonance}
-          onChange={(e) => {
-            synthState.filter.resonance = Number(e.target.value);
-          }}
-          style={sliderStyle}
+          onChange={(v) => (synthState.filter.resonance = v)}
+          color="var(--filter)"
         />
-        <span style={valueStyle}>{snap.filter.resonance.toFixed(2)}</span>
-      </label>
-
-      <label style={labelStyle}>
-        Drive
-        <input
-          type="range"
+        <Knob
+          label="Drive"
+          value={f.drive}
           min={1}
           max={10}
           step={0.1}
-          value={snap.filter.drive}
-          onChange={(e) => {
-            synthState.filter.drive = Number(e.target.value);
-          }}
-          style={sliderStyle}
+          onChange={(v) => (synthState.filter.drive = v)}
+          color="var(--filter)"
+          formatValue={(v) => `${v.toFixed(1)}x`}
         />
-        <span style={valueStyle}>{snap.filter.drive.toFixed(1)}</span>
-      </label>
-    </section>
+        <Knob
+          label="Env"
+          value={f.envAmount}
+          min={-1}
+          max={1}
+          onChange={(v) => (synthState.filter.envAmount = v)}
+          color="var(--filter)"
+          formatValue={(v) => `${(v * 100).toFixed(0)}%`}
+        />
+      </div>
+    </Panel>
   );
 }
-
-const panelStyle: React.CSSProperties = {
-  backgroundColor: "#252540",
-  borderRadius: 8,
-  padding: 16,
-};
-
-const titleStyle: React.CSSProperties = {
-  fontSize: 14,
-  margin: "0 0 12px",
-  textTransform: "uppercase",
-  letterSpacing: 1,
-  color: "#8888aa",
-};
-
-const labelStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-  marginBottom: 8,
-  fontSize: 13,
-};
-
-const sliderStyle: React.CSSProperties = { flex: 1 };
-
-const valueStyle: React.CSSProperties = {
-  width: 50,
-  textAlign: "right",
-  fontFamily: "monospace",
-  fontSize: 12,
-};

@@ -1,101 +1,99 @@
 "use client";
-
-import { useCallback } from "react";
+import { useCallback, useRef, useState } from "react";
 
 interface KeyboardProps {
-  onNoteOn: (note: number) => void;
+  onNoteOn: (note: number, velocity: number) => void;
   onNoteOff: (note: number) => void;
 }
 
-const KEYS = [
-  { note: 60, label: "C", black: false },
-  { note: 61, label: "C#", black: true },
-  { note: 62, label: "D", black: false },
-  { note: 63, label: "D#", black: true },
-  { note: 64, label: "E", black: false },
-  { note: 65, label: "F", black: false },
-  { note: 66, label: "F#", black: true },
-  { note: 67, label: "G", black: false },
-  { note: 68, label: "G#", black: true },
-  { note: 69, label: "A", black: false },
-  { note: 70, label: "A#", black: true },
-  { note: 71, label: "B", black: false },
-  { note: 72, label: "C", black: false },
-];
+// C2 (36) to C6 (84) = 4 octaves + 1
+const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+
+function buildKeys() {
+  const keys: { note: number; label: string; black: boolean }[] = [];
+  for (let note = 36; note <= 84; note++) {
+    const name = NOTE_NAMES[note % 12];
+    keys.push({ note, label: name, black: name.includes("#") });
+  }
+  return keys;
+}
+
+const ALL_KEYS = buildKeys();
+const WHITE_KEYS = ALL_KEYS.filter((k) => !k.black);
+const BLACK_KEYS = ALL_KEYS.filter((k) => k.black);
 
 export function Keyboard({ onNoteOn, onNoteOff }: KeyboardProps) {
-  const handlePointerDown = useCallback(
-    (note: number) => (e: React.PointerEvent) => {
+  const [activeNotes, setActiveNotes] = useState<Set<number>>(new Set());
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleDown = useCallback(
+    (note: number, e: React.PointerEvent) => {
       e.preventDefault();
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
-      onNoteOn(note);
+      // Velocity from vertical position on key (higher = louder at bottom)
+      const rect = (e.target as HTMLElement).getBoundingClientRect();
+      const posY = (e.clientY - rect.top) / rect.height;
+      const velocity = Math.floor(40 + posY * 87); // 40-127
+      onNoteOn(note, velocity);
+      setActiveNotes((s) => new Set(s).add(note));
     },
     [onNoteOn],
   );
 
-  const handlePointerUp = useCallback(
-    (note: number) => (e: React.PointerEvent) => {
-      e.preventDefault();
+  const handleUp = useCallback(
+    (note: number) => {
       onNoteOff(note);
+      setActiveNotes((s) => {
+        const next = new Set(s);
+        next.delete(note);
+        return next;
+      });
     },
     [onNoteOff],
   );
 
+  const totalWhite = WHITE_KEYS.length;
+
   return (
-    <div 
-      style={{ 
-        position: "relative", 
-        height: 140, 
-        display: "flex",
-        userSelect: "none",
-      }}>
-      {KEYS.filter((k) => !k.black).map((key) => (
+    <div
+      ref={containerRef}
+      className="relative h-[100px] flex select-none"
+      style={{ touchAction: "none" }}
+    >
+      {WHITE_KEYS.map((key) => (
         <div
           key={key.note}
-          onPointerDown={handlePointerDown(key.note)}
-          onPointerUp={handlePointerUp(key.note)}
-          onPointerLeave={handlePointerUp(key.note)}
+          onPointerDown={(e) => handleDown(key.note, e)}
+          onPointerUp={() => handleUp(key.note)}
+          onPointerLeave={() => handleUp(key.note)}
+          className="flex-1 flex items-end justify-center pb-1 text-[9px] cursor-pointer rounded-b border border-border-default transition-colors"
           style={{
-            flex: 1,
-            backgroundColor: "#e8e8e8",
-            border: "1px solid #999",
-            borderRadius: "0 0 4px 4px",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "flex-end",
-            justifyContent: "center",
-            paddingBottom: 8,
-            fontSize: 11,
-            color: "#666",
+            backgroundColor: activeNotes.has(key.note) ? "var(--accent-blue)" : "#d8d8e0",
+            color: activeNotes.has(key.note) ? "#fff" : "#666",
             userSelect: "none",
             touchAction: "none",
           }}
         >
-          {key.label}
+          {key.note % 12 === 0 ? `C${Math.floor(key.note / 12) - 1}` : ""}
         </div>
       ))}
-      {KEYS.filter((k) => k.black).map((key) => {
-        const whiteKeys = KEYS.filter((k) => !k.black);
-        const whiteIndex = whiteKeys.findIndex((w) => w.note > key.note) - 1;
-        const totalWhite = whiteKeys.length;
+      {BLACK_KEYS.map((key) => {
+        const whiteIndex = WHITE_KEYS.findIndex((w) => w.note > key.note) - 1;
         const leftPercent = ((whiteIndex + 0.65) / totalWhite) * 100;
 
         return (
           <div
             key={key.note}
-            onPointerDown={handlePointerDown(key.note)}
-            onPointerUp={handlePointerUp(key.note)}
-            onPointerLeave={handlePointerUp(key.note)}
+            onPointerDown={(e) => handleDown(key.note, e)}
+            onPointerUp={() => handleUp(key.note)}
+            onPointerLeave={() => handleUp(key.note)}
+            className="absolute rounded-b cursor-pointer z-10 transition-colors"
             style={{
-              position: "absolute",
               left: `${leftPercent}%`,
-              width: `${(0.6 / totalWhite) * 100}%`,
+              width: `${(0.55 / totalWhite) * 100}%`,
               height: "60%",
-              backgroundColor: "#333",
+              backgroundColor: activeNotes.has(key.note) ? "var(--accent-blue)" : "#222",
               border: "1px solid #111",
-              borderRadius: "0 0 3px 3px",
-              cursor: "pointer",
-              zIndex: 1,
               userSelect: "none",
               touchAction: "none",
             }}

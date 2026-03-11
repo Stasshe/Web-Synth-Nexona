@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { UnisonEngine } from "../unisonEngine";
 import { generateSineTable } from "../../wavetable/wavetableEngine";
+import { UnisonEngine } from "../unisonEngine";
 
 describe("UnisonEngine", () => {
   const SR = 48000;

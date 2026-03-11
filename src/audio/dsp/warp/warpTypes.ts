@@ -16,10 +16,10 @@ export function applyWarp(phase: number, type: WarpType, amount: number, fmSigna
 
     case WarpType.BEND: {
       if (phase < 0.5) {
-        return 0.5 * phase ** (1 + amount * 3) / (0.5 ** (1 + amount * 3));
+        return (0.5 * phase ** (1 + amount * 3)) / 0.5 ** (1 + amount * 3);
       }
       const inv = 1 - phase;
-      return 1 - 0.5 * inv ** (1 + amount * 3) / (0.5 ** (1 + amount * 3));
+      return 1 - (0.5 * inv ** (1 + amount * 3)) / 0.5 ** (1 + amount * 3);
     }
 
     case WarpType.SYNC: {
@@ -36,9 +36,9 @@ export function applyWarp(phase: number, type: WarpType, amount: number, fmSigna
     case WarpType.MIRROR: {
       const threshold = 0.1 + amount * 0.8;
       if (phase < threshold) {
-        return phase / threshold * 0.5;
+        return (phase / threshold) * 0.5;
       }
-      return 0.5 - (phase - threshold) / (1 - threshold) * 0.5;
+      return 0.5 - ((phase - threshold) / (1 - threshold)) * 0.5;
     }
 
     case WarpType.QUANTIZE: {

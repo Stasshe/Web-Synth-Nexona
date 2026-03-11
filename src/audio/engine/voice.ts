@@ -1,13 +1,13 @@
-import { UnisonEngine } from "../dsp/oscillator/unisonEngine";
-import { SubOscillator, SubShape } from "../dsp/oscillator/subOscillator";
-import { FilterType, SVFilter } from "../dsp/filter/svf";
 import { ADSREnvelope } from "../dsp/envelope/adsr";
-import { NoiseGenerator, NoiseType } from "../dsp/utils/noise";
+import { FilterType, SVFilter } from "../dsp/filter/svf";
+import { ModSource, ModTarget, ModulationMatrix } from "../dsp/modulation/modMatrix";
+import { SubOscillator, type SubShape } from "../dsp/oscillator/subOscillator";
+import { UnisonEngine } from "../dsp/oscillator/unisonEngine";
 import { AnalogDrift } from "../dsp/utils/drift";
-import { ParamSmoother } from "../dsp/utils/smoothing";
-import { ModulationMatrix, ModSource, ModTarget } from "../dsp/modulation/modMatrix";
 import { clamp, midiToFreq } from "../dsp/utils/math";
-import { WarpType } from "../dsp/warp/warpTypes";
+import { NoiseGenerator, type NoiseType } from "../dsp/utils/noise";
+import { ParamSmoother } from "../dsp/utils/smoothing";
+import type { WarpType } from "../dsp/warp/warpTypes";
 import type { Wavetable } from "../dsp/wavetable/wavetableEngine";
 
 export interface VoiceParams {
@@ -165,7 +165,12 @@ export class Voice {
 
     this.cutoffSmoother.setTarget(p.filterCutoff);
     this.ampEnvelope.setParams(p.ampAttack, p.ampDecay, p.ampSustain, p.ampRelease);
-    this.filterEnvelope.setParams(p.filterEnvAttack, p.filterEnvDecay, p.filterEnvSustain, p.filterEnvRelease);
+    this.filterEnvelope.setParams(
+      p.filterEnvAttack,
+      p.filterEnvDecay,
+      p.filterEnvSustain,
+      p.filterEnvRelease,
+    );
 
     this._params = p;
   }

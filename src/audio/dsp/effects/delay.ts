@@ -19,10 +19,7 @@ export class Delay {
   }
 
   setParams(time: number, feedback: number, mix: number): void {
-    this.delaySamples = Math.min(
-      Math.floor(time * this.sampleRate),
-      this.maxDelaySamples - 1,
-    );
+    this.delaySamples = Math.min(Math.floor(time * this.sampleRate), this.maxDelaySamples - 1);
     this.feedback = Math.min(feedback, 0.95);
     this.mix = mix;
   }

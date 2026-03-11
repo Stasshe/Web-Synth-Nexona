@@ -1,6 +1,6 @@
 import { EffectsChain, type EffectsParams } from "../dsp/effects/effectsChain";
 import { FilterType } from "../dsp/filter/svf";
-import { LFO } from "../dsp/lfo/lfo";
+import { LFO, type LfoShape } from "../dsp/lfo/lfo";
 import type { ModRoute } from "../dsp/modulation/modMatrix";
 import { NoiseType } from "../dsp/utils/noise";
 import { ParamSmoother } from "../dsp/utils/smoothing";
@@ -160,6 +160,7 @@ export class SynthEngine {
 
     this.masterVolume.setTarget(getParam(this.sab, SabParam.MasterVolume));
 
+    // Osc A
     this.voiceParams.oscAOn = getParam(this.sab, SabParam.OscAOn) > 0.5;
     this.voiceParams.oscALevel = getParam(this.sab, SabParam.OscALevel);
     this.voiceParams.oscAFramePosition = getParam(this.sab, SabParam.OscAFramePosition);
@@ -169,16 +170,74 @@ export class SynthEngine {
     this.voiceParams.oscAUnisonSpread = getParam(this.sab, SabParam.OscAUnisonSpread);
     this.voiceParams.oscAWarpType = getParam(this.sab, SabParam.OscAWarpType) as WarpType;
     this.voiceParams.oscAWarpAmount = getParam(this.sab, SabParam.OscAWarpAmount);
+    this.voiceParams.oscAWarp2Type = getParam(this.sab, SabParam.OscAWarp2Type) as WarpType;
+    this.voiceParams.oscAWarp2Amount = getParam(this.sab, SabParam.OscAWarp2Amount);
 
+    // Osc B
+    this.voiceParams.oscBOn = getParam(this.sab, SabParam.OscBOn) > 0.5;
+    this.voiceParams.oscBLevel = getParam(this.sab, SabParam.OscBLevel);
+    this.voiceParams.oscBFramePosition = getParam(this.sab, SabParam.OscBFramePosition);
+    this.voiceParams.oscBDetune = getParam(this.sab, SabParam.OscBDetune);
+    this.voiceParams.oscBUnisonVoices = getParam(this.sab, SabParam.OscBUnisonVoices);
+    this.voiceParams.oscBUnisonDetune = getParam(this.sab, SabParam.OscBUnisonDetune);
+    this.voiceParams.oscBUnisonSpread = getParam(this.sab, SabParam.OscBUnisonSpread);
+    this.voiceParams.oscBWarpType = getParam(this.sab, SabParam.OscBWarpType) as WarpType;
+    this.voiceParams.oscBWarpAmount = getParam(this.sab, SabParam.OscBWarpAmount);
+    this.voiceParams.oscBWarp2Type = getParam(this.sab, SabParam.OscBWarp2Type) as WarpType;
+    this.voiceParams.oscBWarp2Amount = getParam(this.sab, SabParam.OscBWarp2Amount);
+
+    // Sub + Noise
+    this.voiceParams.subOn = getParam(this.sab, SabParam.SubOn) > 0.5;
+    this.voiceParams.subOctave = getParam(this.sab, SabParam.SubOctave);
+    this.voiceParams.subShape = getParam(this.sab, SabParam.SubShape);
+    this.voiceParams.subLevel = getParam(this.sab, SabParam.SubLevel);
+    this.voiceParams.noiseType = getParam(this.sab, SabParam.NoiseType) as NoiseType;
+    this.voiceParams.noiseLevel = getParam(this.sab, SabParam.NoiseLevel);
+
+    // Filter
     this.voiceParams.filterCutoff = getParam(this.sab, SabParam.FilterCutoff);
     this.voiceParams.filterResonance = getParam(this.sab, SabParam.FilterResonance);
     this.voiceParams.filterDrive = getParam(this.sab, SabParam.FilterDrive);
     this.voiceParams.filterType = getParam(this.sab, SabParam.FilterType) as FilterType;
     this.voiceParams.filterEnvAmount = getParam(this.sab, SabParam.FilterEnvAmount);
 
+    // Amp Envelope
     this.voiceParams.ampAttack = getParam(this.sab, SabParam.AmpEnvAttack);
     this.voiceParams.ampDecay = getParam(this.sab, SabParam.AmpEnvDecay);
     this.voiceParams.ampSustain = getParam(this.sab, SabParam.AmpEnvSustain);
     this.voiceParams.ampRelease = getParam(this.sab, SabParam.AmpEnvRelease);
+
+    // Filter Envelope
+    this.voiceParams.filterEnvAttack = getParam(this.sab, SabParam.FilterEnvAttack);
+    this.voiceParams.filterEnvDecay = getParam(this.sab, SabParam.FilterEnvDecay);
+    this.voiceParams.filterEnvSustain = getParam(this.sab, SabParam.FilterEnvSustain);
+    this.voiceParams.filterEnvRelease = getParam(this.sab, SabParam.FilterEnvRelease);
+
+    // LFOs
+    this.lfo1.setParams(
+      getParam(this.sab, SabParam.Lfo1Rate),
+      getParam(this.sab, SabParam.Lfo1Shape) as LfoShape,
+    );
+    this.lfo2.setParams(
+      getParam(this.sab, SabParam.Lfo2Rate),
+      getParam(this.sab, SabParam.Lfo2Shape) as LfoShape,
+    );
+
+    // Effects
+    this.effectsParams.chorusRate = getParam(this.sab, SabParam.ChorusRate);
+    this.effectsParams.chorusDepth = getParam(this.sab, SabParam.ChorusDepth);
+    this.effectsParams.chorusMix = getParam(this.sab, SabParam.ChorusMix);
+    this.effectsParams.delayTime = getParam(this.sab, SabParam.DelayTime);
+    this.effectsParams.delayFeedback = getParam(this.sab, SabParam.DelayFeedback);
+    this.effectsParams.delayMix = getParam(this.sab, SabParam.DelayMix);
+    this.effectsParams.reverbDecay = getParam(this.sab, SabParam.ReverbDecay);
+    this.effectsParams.reverbMix = getParam(this.sab, SabParam.ReverbMix);
+
+    // Misc
+    this.voiceParams.driftAmount = getParam(this.sab, SabParam.DriftAmount);
+    this.macros[0] = getParam(this.sab, SabParam.Macro1);
+    this.macros[1] = getParam(this.sab, SabParam.Macro2);
+    this.macros[2] = getParam(this.sab, SabParam.Macro3);
+    this.macros[3] = getParam(this.sab, SabParam.Macro4);
   }
 }

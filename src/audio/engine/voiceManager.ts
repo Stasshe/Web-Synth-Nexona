@@ -1,7 +1,7 @@
-import { Voice, type VoiceParams } from "./voice";
-import type { Wavetable } from "../dsp/wavetable/wavetableEngine";
-import { type ModRoute, ModSource } from "../dsp/modulation/modMatrix";
 import { EnvelopeState } from "../dsp/envelope/adsr";
+import { type ModRoute, ModSource } from "../dsp/modulation/modMatrix";
+import type { Wavetable } from "../dsp/wavetable/wavetableEngine";
+import { Voice, type VoiceParams } from "./voice";
 
 const MAX_VOICES = 16;
 

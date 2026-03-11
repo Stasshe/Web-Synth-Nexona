@@ -23,10 +23,13 @@ describe("SynthEngine", () => {
     const engine = new SynthEngine(SR);
     engine.noteOn(60, 127);
 
-    const out = makeOutput();
-    engine.processBlock(out);
-
-    const hasSound = out[0].some((v) => Math.abs(v) > 0.0001);
+    // Process a few blocks (limiter has 5ms lookahead delay)
+    let hasSound = false;
+    for (let i = 0; i < 5; i++) {
+      const out = makeOutput();
+      engine.processBlock(out);
+      if (out[0].some((v) => Math.abs(v) > 0.0001)) hasSound = true;
+    }
     expect(hasSound).toBe(true);
   });
 
@@ -71,10 +74,12 @@ describe("SynthEngine", () => {
     engine.noteOn(64, 100);
     engine.noteOn(67, 100);
 
-    const out = makeOutput();
-    engine.processBlock(out);
-
-    const hasSound = out[0].some((v) => Math.abs(v) > 0.0001);
+    let hasSound = false;
+    for (let i = 0; i < 5; i++) {
+      const out = makeOutput();
+      engine.processBlock(out);
+      if (out[0].some((v) => Math.abs(v) > 0.0001)) hasSound = true;
+    }
     expect(hasSound).toBe(true);
   });
 
