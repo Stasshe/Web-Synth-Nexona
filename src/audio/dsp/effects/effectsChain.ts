@@ -60,7 +60,7 @@ export class EffectsChain {
   private limiter: Limiter;
 
   constructor(sampleRate: number) {
-    this.distortion = new Distortion(sampleRate);
+    this.distortion = new Distortion();
     this.compressor = new Compressor(sampleRate);
     this.chorus = new Chorus(sampleRate);
     this.flanger = new Flanger(sampleRate);
