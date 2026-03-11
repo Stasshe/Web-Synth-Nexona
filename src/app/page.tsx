@@ -9,6 +9,7 @@ import { EnvelopePanel } from "@/components/EnvelopePanel";
 import { FilterPanel } from "@/components/FilterPanel";
 import { Keyboard } from "@/components/Keyboard";
 import { LfoPanel } from "@/components/LfoPanel";
+import { MacroPanel } from "@/components/MacroPanel";
 import { OscillatorPanel } from "@/components/OscillatorPanel";
 import { ParamEditor } from "@/components/ParamEditor";
 import { SubNoisePanel } from "@/components/SubNoisePanel";
@@ -249,27 +250,7 @@ export default function Home() {
           </div>
 
           {/* Row 3: Macros */}
-          <div className="bg-bg-panel rounded border border-border-default px-3 py-1 shrink-0">
-            <div className="flex items-center gap-4">
-              <span className="text-[9px] uppercase tracking-wider text-text-secondary">
-                Macros
-              </span>
-              <div className="flex gap-3">
-                {[0, 1, 2, 3].map((i) => (
-                  <Knob
-                    key={i}
-                    label={`M${i + 1}`}
-                    value={snap.macros[i]}
-                    min={0}
-                    max={1}
-                    onChange={(v) => (synthState.macros[i] = v)}
-                    size={28}
-                    color="var(--accent-orange)"
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
+          <MacroPanel />
 
           {/* Keyboard */}
           <Keyboard onNoteOn={handleNoteOn} onNoteOff={handleNoteOff} />
