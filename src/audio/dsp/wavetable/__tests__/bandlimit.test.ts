@@ -7,7 +7,7 @@ describe("bandlimit", () => {
     const saw = generateSawTable(2048);
     const limited = bandLimit(saw, 60, 48000);
 
-    expect(limited.frames.length).toBe(256);
+    expect(limited.frames.length).toBe(64);
     expect(limited.tableSize).toBe(2048);
 
     // Output should be bounded

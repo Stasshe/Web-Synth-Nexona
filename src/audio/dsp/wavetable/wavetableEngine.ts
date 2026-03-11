@@ -11,8 +11,8 @@ export enum WavetableType {
   TRIANGLE = 3,
 }
 
-const NUM_FRAMES = 256;
-const MAX_HARMONICS = 256;
+const NUM_FRAMES = 64;
+const MAX_HARMONICS = 128;
 
 function normalize(data: Float32Array, size: number): void {
   let max = 0;
@@ -27,16 +27,36 @@ function normalize(data: Float32Array, size: number): void {
   }
 }
 
+// Pre-compute a full-period sine lookup to avoid repeated Math.sin calls
+function buildSineLookup(tableSize: number): Float32Array {
+  const lut = new Float32Array(tableSize);
+  const twoPiOverN = (2 * Math.PI) / tableSize;
+  for (let i = 0; i < tableSize; i++) {
+    lut[i] = Math.sin(i * twoPiOverN);
+  }
+  return lut;
+}
+
+function addHarmonic(
+  table: Float32Array,
+  sineLut: Float32Array,
+  tableSize: number,
+  harmonic: number,
+  amp: number,
+): void {
+  for (let i = 0; i <= tableSize; i++) {
+    table[i] += amp * sineLut[(i * harmonic) % tableSize];
+  }
+}
+
 export function generateSineTable(tableSize: number): Wavetable {
+  const sineLut = buildSineLookup(tableSize);
   const frames: Float32Array[] = [];
   for (let f = 0; f < NUM_FRAMES; f++) {
     const table = new Float32Array(tableSize + 1);
     const numH = 1 + Math.floor((f / (NUM_FRAMES - 1)) * (MAX_HARMONICS - 1));
     for (let h = 1; h <= numH; h++) {
-      const amp = 1 / h;
-      for (let i = 0; i <= tableSize; i++) {
-        table[i] += amp * Math.sin((2 * Math.PI * h * i) / tableSize);
-      }
+      addHarmonic(table, sineLut, tableSize, h, 1 / h);
     }
     normalize(table, tableSize);
     table[tableSize] = table[0];
@@ -46,15 +66,13 @@ export function generateSineTable(tableSize: number): Wavetable {
 }
 
 export function generateSawTable(tableSize: number): Wavetable {
+  const sineLut = buildSineLookup(tableSize);
   const frames: Float32Array[] = [];
   for (let f = 0; f < NUM_FRAMES; f++) {
     const table = new Float32Array(tableSize + 1);
     const numH = 1 + Math.floor((f / (NUM_FRAMES - 1)) * (MAX_HARMONICS - 1));
     for (let h = 1; h <= numH; h++) {
-      const amp = 1 / h;
-      for (let i = 0; i <= tableSize; i++) {
-        table[i] += amp * Math.sin((2 * Math.PI * h * i) / tableSize);
-      }
+      addHarmonic(table, sineLut, tableSize, h, 1 / h);
     }
     normalize(table, tableSize);
     table[tableSize] = table[0];
@@ -64,15 +82,13 @@ export function generateSawTable(tableSize: number): Wavetable {
 }
 
 export function generateSquareTable(tableSize: number): Wavetable {
+  const sineLut = buildSineLookup(tableSize);
   const frames: Float32Array[] = [];
   for (let f = 0; f < NUM_FRAMES; f++) {
     const table = new Float32Array(tableSize + 1);
     const numH = 1 + Math.floor((f / (NUM_FRAMES - 1)) * (MAX_HARMONICS - 1));
     for (let h = 1; h <= numH; h += 2) {
-      const amp = 1 / h;
-      for (let i = 0; i <= tableSize; i++) {
-        table[i] += amp * Math.sin((2 * Math.PI * h * i) / tableSize);
-      }
+      addHarmonic(table, sineLut, tableSize, h, 1 / h);
     }
     normalize(table, tableSize);
     table[tableSize] = table[0];
@@ -82,16 +98,14 @@ export function generateSquareTable(tableSize: number): Wavetable {
 }
 
 export function generateTriangleTable(tableSize: number): Wavetable {
+  const sineLut = buildSineLookup(tableSize);
   const frames: Float32Array[] = [];
   for (let f = 0; f < NUM_FRAMES; f++) {
     const table = new Float32Array(tableSize + 1);
     const numH = 1 + Math.floor((f / (NUM_FRAMES - 1)) * (MAX_HARMONICS - 1));
     for (let h = 1; h <= numH; h += 2) {
       const sign = ((h - 1) / 2) % 2 === 0 ? 1 : -1;
-      const amp = sign / (h * h);
-      for (let i = 0; i <= tableSize; i++) {
-        table[i] += amp * Math.sin((2 * Math.PI * h * i) / tableSize);
-      }
+      addHarmonic(table, sineLut, tableSize, h, sign / (h * h));
     }
     normalize(table, tableSize);
     table[tableSize] = table[0];
