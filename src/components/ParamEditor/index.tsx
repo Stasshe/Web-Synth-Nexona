@@ -4,6 +4,132 @@ import { loadPatchIntoState } from "@/patch/loader";
 import { stateToPatch } from "@/patch/serializer";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+interface HighlightToken {
+  type: "key" | "string" | "number" | "boolean" | "null" | "comment" | "punctuation" | "whitespace";
+  content: string;
+}
+
+function tokenizeJson(text: string): HighlightToken[] {
+  const tokens: HighlightToken[] = [];
+  let i = 0;
+
+  while (i < text.length) {
+    const char = text[i];
+
+    // Whitespace
+    if (/\s/.test(char)) {
+      let ws = "";
+      while (i < text.length && /\s/.test(text[i])) {
+        ws += text[i];
+        i++;
+      }
+      tokens.push({ type: "whitespace", content: ws });
+      continue;
+    }
+
+    // Comments
+    if (char === "/" && text[i + 1] === "/") {
+      let comment = "";
+      while (i < text.length && text[i] !== "\n") {
+        comment += text[i];
+        i++;
+      }
+      tokens.push({ type: "comment", content: comment });
+      continue;
+    }
+
+    // Strings
+    if (char === '"') {
+      let str = '"';
+      i++;
+      while (i < text.length && text[i] !== '"') {
+        if (text[i] === "\\") {
+          str += text[i] + text[i + 1];
+          i += 2;
+        } else {
+          str += text[i];
+          i++;
+        }
+      }
+      if (i < text.length) {
+        str += text[i];
+        i++;
+      }
+      // Check if this is a key (followed by a colon)
+      let j = i;
+      while (j < text.length && /\s/.test(text[j])) j++;
+      const isKey = j < text.length && text[j] === ":";
+      tokens.push({ type: isKey ? "key" : "string", content: str });
+      continue;
+    }
+
+    // Numbers
+    if (/[-\d]/.test(char)) {
+      let num = "";
+      while (i < text.length && /[\d.\-eE+]/.test(text[i])) {
+        num += text[i];
+        i++;
+      }
+      // Validate if it's actually a number
+      if (/^-?\d+(\.\d+)?([eE][+-]?\d+)?$/.test(num)) {
+        tokens.push({ type: "number", content: num });
+        continue;
+      } else {
+        // Revert if not a valid number
+        i -= num.length;
+      }
+    }
+
+    // Keywords (true, false, null)
+    if (text.slice(i, i + 4) === "true") {
+      tokens.push({ type: "boolean", content: "true" });
+      i += 4;
+      continue;
+    }
+    if (text.slice(i, i + 5) === "false") {
+      tokens.push({ type: "boolean", content: "false" });
+      i += 5;
+      continue;
+    }
+    if (text.slice(i, i + 4) === "null") {
+      tokens.push({ type: "null", content: "null" });
+      i += 4;
+      continue;
+    }
+
+    // Punctuation
+    tokens.push({ type: "punctuation", content: char });
+    i++;
+  }
+
+  return tokens;
+}
+
+function HighlightedCode({ text }: { text: string }) {
+  const tokens = tokenizeJson(text);
+
+  const colorMap: Record<HighlightToken["type"], string> = {
+    key: "text-accent-cyan",
+    string: "text-accent-green",
+    number: "text-accent-orange",
+    boolean: "text-accent-blue",
+    null: "text-accent-orange",
+    comment: "text-text-muted italic",
+    punctuation: "text-text-secondary",
+    whitespace: "",
+  };
+
+  return (
+    <pre className="absolute top-0 left-0 right-0 bottom-0 p-4 bg-bg-darkest text-text-primary text-[12px] leading-[1.5] font-mono pointer-events-none overflow-auto">
+      {tokens.map((token, idx) => (
+        <span key={idx} className={colorMap[token.type]}>
+          {token.content}
+        </span>
+      ))}
+    </pre>
+  );
+}
+
 interface ParamEditorProps {
   open: boolean;
   onClose: () => void;
@@ -194,14 +320,19 @@ export function ParamEditor({ open, onClose }: ParamEditorProps) {
         )}
 
         {/* Editor */}
-        <textarea
-          ref={textareaRef}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          spellCheck={false}
-          className="flex-1 p-4 bg-bg-darkest text-text-primary text-[12px] leading-[1.5]
-                     font-mono resize-none border-none outline-none overflow-auto min-h-[400px]"
-        />
+        <div className="flex-1 relative min-h-[400px] overflow-hidden">
+          <HighlightedCode text={text} />
+          <textarea
+            ref={textareaRef}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            spellCheck={false}
+            className="absolute top-0 left-0 right-0 bottom-0 p-4 bg-transparent text-text-primary text-[12px] leading-[1.5]
+                       font-mono resize-none border-none outline-none overflow-auto min-h-[400px]
+                       caret-accent-blue"
+            style={{ color: "transparent", textShadow: "0 0 0 var(--text-primary)" }}
+          />
+        </div>
 
         {/* Footer hint */}
         <div className="px-4 py-1.5 text-[10px] text-text-muted border-t border-border-default">
