@@ -200,9 +200,9 @@ export function Knob({
       </svg>
       <span className="text-[10px] text-text-secondary">{displayValue}</span>
       <span className="text-[9px] text-text-muted uppercase tracking-wider">{label}</span>
-      {/* Mini mod route indicators */}
+      {/* Mini mod route knobs */}
       {modRoutes && modRoutes.length > 0 && (
-        <div className="flex flex-col gap-0.5 w-full">
+        <div className="flex gap-1">
           {modRoutes.map((route) => (
             <ModRouteTag key={route.index} route={route} />
           ))}
@@ -213,37 +213,112 @@ export function Knob({
 }
 
 function ModRouteTag({ route }: { route: ModRouteInfo }) {
-  const handleAmountChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+  const dragRef = useRef<{ startY: number; startValue: number } | null>(null);
+  const sz = 24;
+  const kr = sz / 2 - 3;
+  const kcx = sz / 2;
+  const kcy = sz / 2;
+  const sA = -135;
+  const eA = 135;
+  const rng = eA - sA;
+  const norm = (route.amount + 1) / 2; // -1..1 → 0..1
+  const ang = sA + norm * rng;
+
+  const miniArc = (s: number, e: number) => {
+    const sr = ((s - 90) * Math.PI) / 180;
+    const er = ((e - 90) * Math.PI) / 180;
+    const x1 = kcx + kr * Math.cos(sr);
+    const y1 = kcy + kr * Math.sin(sr);
+    const x2 = kcx + kr * Math.cos(er);
+    const y2 = kcy + kr * Math.sin(er);
+    const la = Math.abs(e - s) > 180 ? 1 : 0;
+    return `M ${x1} ${y1} A ${kr} ${kr} 0 ${la} 1 ${x2} ${y2}`;
+  };
+
+  // Arc from center (0) to current value
+  const centerAngle = sA + 0.5 * rng; // 0 position
+  const arcStart = route.amount >= 0 ? centerAngle : ang;
+  const arcEnd = route.amount >= 0 ? ang : centerAngle;
+
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      dragRef.current = { startY: e.clientY, startValue: route.amount };
+    },
+    [route.amount],
+  );
+
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!dragRef.current) return;
+      const dy = dragRef.current.startY - e.clientY;
+      const sensitivity = e.shiftKey ? 400 : 150;
+      const delta = (dy / sensitivity) * 2; // range is -1..1 = 2
+      const newVal = Math.min(1, Math.max(-1, dragRef.current.startValue + delta));
+      const stepped = Math.round(newVal / 0.05) * 0.05;
       const r = synthState.modulations[route.index];
-      if (r) r.amount = Number(e.target.value);
+      if (r) r.amount = stepped;
     },
     [route.index],
   );
+
+  const handlePointerUp = useCallback(() => {
+    dragRef.current = null;
+  }, []);
+
+  const handleDoubleClick = useCallback(() => {
+    const r = synthState.modulations[route.index];
+    if (r) r.amount = 0;
+  }, [route.index]);
 
   const handleRemove = useCallback(() => {
     synthState.modulations.splice(route.index, 1);
   }, [route.index]);
 
   return (
-    <div className="flex items-center gap-0.5">
-      <span className="text-[7px] text-lfo font-bold w-4 shrink-0">
+    <div className="flex flex-col items-center gap-0">
+      <svg
+        width={sz}
+        height={sz}
+        className="cursor-pointer"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onDoubleClick={handleDoubleClick}
+        style={{ touchAction: "none" }}
+      >
+        <path
+          d={miniArc(sA, eA)}
+          fill="none"
+          stroke="var(--knob-track)"
+          strokeWidth={2}
+          strokeLinecap="round"
+        />
+        {Math.abs(route.amount) > 0.01 && arcEnd > arcStart + 0.1 && (
+          <path
+            d={miniArc(arcStart, arcEnd)}
+            fill="none"
+            stroke="var(--lfo)"
+            strokeWidth={2}
+            strokeLinecap="round"
+          />
+        )}
+        <circle
+          cx={kcx + (kr - 4) * Math.cos(((ang - 90) * Math.PI) / 180)}
+          cy={kcy + (kr - 4) * Math.sin(((ang - 90) * Math.PI) / 180)}
+          r={1.5}
+          fill="var(--lfo)"
+        />
+      </svg>
+      <span className="text-[7px] text-lfo font-bold leading-none">
         {SOURCE_LABELS[route.source] ?? "?"}
       </span>
-      <input
-        type="range"
-        min={-1}
-        max={1}
-        step={0.05}
-        value={route.amount}
-        onChange={handleAmountChange}
-        className="flex-1 h-2"
-        style={{ accentColor: "#8844ff" }}
-      />
       <button
         type="button"
         onClick={handleRemove}
-        className="text-[8px] text-text-muted hover:text-accent-red cursor-pointer leading-none"
+        className="text-[7px] text-text-muted hover:text-accent-red cursor-pointer leading-none"
       >
         x
       </button>
