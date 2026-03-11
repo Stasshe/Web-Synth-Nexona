@@ -11,46 +11,93 @@ export enum WavetableType {
   TRIANGLE = 3,
 }
 
-export function generateSineTable(tableSize: number): Wavetable {
-  const table = new Float32Array(tableSize + 1);
-  for (let i = 0; i <= tableSize; i++) {
-    table[i] = Math.sin((2 * Math.PI * i) / tableSize);
+const NUM_FRAMES = 256;
+const MAX_HARMONICS = 256;
+
+function normalize(data: Float32Array, size: number): void {
+  let max = 0;
+  for (let i = 0; i < size; i++) {
+    const a = Math.abs(data[i]);
+    if (a > max) max = a;
   }
-  return { frames: [table], tableSize, numFrames: 1 };
+  if (max > 0) {
+    for (let i = 0; i <= size; i++) {
+      data[i] /= max;
+    }
+  }
+}
+
+export function generateSineTable(tableSize: number): Wavetable {
+  const frames: Float32Array[] = [];
+  for (let f = 0; f < NUM_FRAMES; f++) {
+    const table = new Float32Array(tableSize + 1);
+    const numH = 1 + Math.floor((f / (NUM_FRAMES - 1)) * (MAX_HARMONICS - 1));
+    for (let h = 1; h <= numH; h++) {
+      const amp = 1 / h;
+      for (let i = 0; i <= tableSize; i++) {
+        table[i] += amp * Math.sin((2 * Math.PI * h * i) / tableSize);
+      }
+    }
+    normalize(table, tableSize);
+    table[tableSize] = table[0];
+    frames.push(table);
+  }
+  return { frames, tableSize, numFrames: NUM_FRAMES };
 }
 
 export function generateSawTable(tableSize: number): Wavetable {
-  const table = new Float32Array(tableSize + 1);
-  for (let i = 0; i <= tableSize; i++) {
-    table[i] = 2 * (i / tableSize) - 1;
+  const frames: Float32Array[] = [];
+  for (let f = 0; f < NUM_FRAMES; f++) {
+    const table = new Float32Array(tableSize + 1);
+    const numH = 1 + Math.floor((f / (NUM_FRAMES - 1)) * (MAX_HARMONICS - 1));
+    for (let h = 1; h <= numH; h++) {
+      const amp = 1 / h;
+      for (let i = 0; i <= tableSize; i++) {
+        table[i] += amp * Math.sin((2 * Math.PI * h * i) / tableSize);
+      }
+    }
+    normalize(table, tableSize);
+    table[tableSize] = table[0];
+    frames.push(table);
   }
-  table[tableSize] = table[0];
-  return { frames: [table], tableSize, numFrames: 1 };
+  return { frames, tableSize, numFrames: NUM_FRAMES };
 }
 
 export function generateSquareTable(tableSize: number): Wavetable {
-  const table = new Float32Array(tableSize + 1);
-  for (let i = 0; i <= tableSize; i++) {
-    table[i] = i / tableSize < 0.5 ? 1 : -1;
+  const frames: Float32Array[] = [];
+  for (let f = 0; f < NUM_FRAMES; f++) {
+    const table = new Float32Array(tableSize + 1);
+    const numH = 1 + Math.floor((f / (NUM_FRAMES - 1)) * (MAX_HARMONICS - 1));
+    for (let h = 1; h <= numH; h += 2) {
+      const amp = 1 / h;
+      for (let i = 0; i <= tableSize; i++) {
+        table[i] += amp * Math.sin((2 * Math.PI * h * i) / tableSize);
+      }
+    }
+    normalize(table, tableSize);
+    table[tableSize] = table[0];
+    frames.push(table);
   }
-  table[tableSize] = table[0];
-  return { frames: [table], tableSize, numFrames: 1 };
+  return { frames, tableSize, numFrames: NUM_FRAMES };
 }
 
 export function generateTriangleTable(tableSize: number): Wavetable {
-  const table = new Float32Array(tableSize + 1);
-  for (let i = 0; i <= tableSize; i++) {
-    const phase = i / tableSize;
-    if (phase < 0.25) {
-      table[i] = phase * 4;
-    } else if (phase < 0.75) {
-      table[i] = 2 - phase * 4;
-    } else {
-      table[i] = phase * 4 - 4;
+  const frames: Float32Array[] = [];
+  for (let f = 0; f < NUM_FRAMES; f++) {
+    const table = new Float32Array(tableSize + 1);
+    const numH = 1 + Math.floor((f / (NUM_FRAMES - 1)) * (MAX_HARMONICS - 1));
+    for (let h = 1; h <= numH; h += 2) {
+      const sign = ((h - 1) / 2) % 2 === 0 ? 1 : -1;
+      const amp = sign / (h * h);
+      for (let i = 0; i <= tableSize; i++) {
+        table[i] += amp * Math.sin((2 * Math.PI * h * i) / tableSize);
+      }
     }
+    normalize(table, tableSize);
+    table[tableSize] = table[0];
+    frames.push(table);
   }
-  table[tableSize] = table[0];
-  return { frames: [table], tableSize, numFrames: 1 };
+  return { frames, tableSize, numFrames: NUM_FRAMES };
 }
 
 export function generateTable(type: WavetableType, tableSize: number): Wavetable {

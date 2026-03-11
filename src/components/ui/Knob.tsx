@@ -1,5 +1,7 @@
 "use client";
+import { DND_TYPES, type ModSourceDragItem } from "@/dnd/types";
 import { useCallback, useRef } from "react";
+import { useDrop } from "react-dnd";
 
 interface KnobProps {
   value: number;
@@ -12,6 +14,7 @@ interface KnobProps {
   color?: string;
   modAmount?: number;
   formatValue?: (v: number) => string;
+  onModDrop?: (item: ModSourceDragItem) => void;
 }
 
 export function Knob({
@@ -25,8 +28,24 @@ export function Knob({
   color = "var(--accent-blue)",
   modAmount = 0,
   formatValue,
+  onModDrop,
 }: KnobProps) {
   const dragRef = useRef<{ startY: number; startValue: number } | null>(null);
+
+  const [{ isOver, canDrop }, dropRef] = useDrop(
+    () => ({
+      accept: DND_TYPES.MOD_SOURCE,
+      drop: (item: ModSourceDragItem) => {
+        onModDrop?.(item);
+      },
+      canDrop: () => !!onModDrop,
+      collect: (monitor) => ({
+        isOver: monitor.isOver(),
+        canDrop: monitor.canDrop(),
+      }),
+    }),
+    [onModDrop],
+  );
 
   const normalize = (v: number) => (v - min) / (max - min);
 
@@ -47,7 +66,7 @@ export function Knob({
     const y1 = cy + r * Math.sin(s);
     const x2 = cx + r * Math.cos(e);
     const y2 = cy + r * Math.sin(e);
-    const largeArc = endDeg - startDeg > 180 ? 1 : 0;
+    const largeArc = Math.abs(endDeg - startDeg) > 180 ? 1 : 0;
     return `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`;
   };
 
@@ -88,12 +107,19 @@ export function Knob({
       ? `${(value / 1000).toFixed(1)}k`
       : value.toFixed(step >= 1 ? 0 : step >= 0.1 ? 1 : 2);
 
-  // Mod indicator ring
+  // Mod indicator ring — handle both positive and negative modAmount
   const modEnd = Math.min(1, Math.max(0, normalized + modAmount));
   const modAngle = startAngle + modEnd * range;
+  const modArcStart = modAmount >= 0 ? angle : modAngle;
+  const modArcEnd = modAmount >= 0 ? modAngle : angle;
+
+  const showDropHighlight = isOver && canDrop;
 
   return (
-    <div className="flex flex-col items-center gap-1 select-none">
+    <div
+      ref={dropRef as unknown as React.Ref<HTMLDivElement>}
+      className="flex flex-col items-center gap-1 select-none"
+    >
       <svg
         width={size}
         height={size}
@@ -104,6 +130,18 @@ export function Knob({
         onDoubleClick={handleDoubleClick}
         style={{ touchAction: "none" }}
       >
+        {/* Drop target highlight */}
+        {showDropHighlight && (
+          <circle
+            cx={cx}
+            cy={cy}
+            r={r + 2}
+            fill="none"
+            stroke="var(--lfo)"
+            strokeWidth={2}
+            opacity={0.6}
+          />
+        )}
         {/* Background track */}
         <path
           d={arcPath(startAngle, endAngle)}
@@ -123,14 +161,14 @@ export function Knob({
           />
         )}
         {/* Mod indicator */}
-        {modAmount !== 0 && (
+        {modAmount !== 0 && modArcEnd > modArcStart + 0.1 && (
           <path
-            d={arcPath(angle, modAngle)}
+            d={arcPath(modArcStart, modArcEnd)}
             fill="none"
-            stroke={color}
+            stroke="var(--lfo)"
             strokeWidth={3}
             strokeLinecap="round"
-            opacity={0.3}
+            opacity={0.4}
           />
         )}
         {/* Dot indicator */}
