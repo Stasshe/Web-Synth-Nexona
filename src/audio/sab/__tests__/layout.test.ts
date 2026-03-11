@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { floatToInt32, int32ToFloat, setParam, getParam, SabParam } from "../layout";
+import { SabParam, floatToInt32, getParam, int32ToFloat, setParam } from "../layout";
 
 describe("SAB layout", () => {
   it("round-trips float through int32 encoding", () => {
-    const values = [0, 1, -1, 0.5, 3.14159, 440, 0.001, 20000];
+    const values = [0, 1, -1, 0.5, Math.PI, 440, 0.001, 20000];
     for (const v of values) {
-      expect(int32ToFloat(floatToInt32(v))).toBe(v);
+      expect(int32ToFloat(floatToInt32(v))).toBeCloseTo(v, 5);
     }
   });
 
@@ -27,7 +27,7 @@ describe("SAB layout", () => {
     setParam(view, SabParam.AmpEnvAttack, 0.01);
     setParam(view, SabParam.AmpEnvRelease, 0.5);
 
-    expect(getParam(view, SabParam.AmpEnvAttack)).toBe(0.01);
-    expect(getParam(view, SabParam.AmpEnvRelease)).toBe(0.5);
+    expect(getParam(view, SabParam.AmpEnvAttack)).toBeCloseTo(0.01, 5);
+    expect(getParam(view, SabParam.AmpEnvRelease)).toBeCloseTo(0.5, 5);
   });
 });

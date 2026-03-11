@@ -1,11 +1,11 @@
 import { flushDenormal } from "../utils/denormal";
 
-export const enum EnvelopeState {
-  IDLE,
-  ATTACK,
-  DECAY,
-  SUSTAIN,
-  RELEASE,
+export enum EnvelopeState {
+  IDLE = 0,
+  ATTACK = 1,
+  DECAY = 2,
+  SUSTAIN = 3,
+  RELEASE = 4,
 }
 
 export class ADSREnvelope {

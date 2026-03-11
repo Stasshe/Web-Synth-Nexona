@@ -1,5 +1,5 @@
 import { proxy, subscribe } from "valtio";
-import { setParam, SabParam } from "../audio/sab/layout";
+import { SabParam, setParam } from "../audio/sab/layout";
 
 export const synthState = proxy({
   oscillator: {

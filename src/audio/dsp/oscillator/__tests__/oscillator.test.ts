@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { Oscillator } from "../oscillator";
 import { generateSineTable } from "../../wavetable/wavetableEngine";
+import { Oscillator } from "../oscillator";
 
 describe("Oscillator", () => {
   const SR = 48000;

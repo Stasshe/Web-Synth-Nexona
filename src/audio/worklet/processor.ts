@@ -3,7 +3,7 @@ import { SynthEngine } from "../engine/synthEngine";
 interface SynthProcessorMessage {
   type: "init" | "noteOn" | "noteOff";
   sab?: SharedArrayBuffer;
-  note?: number;
+  note: number;
   velocity?: number;
 }
 
@@ -25,10 +25,10 @@ class SynthProcessor extends AudioWorkletProcessor {
           }
           break;
         case "noteOn":
-          this.engine.noteOn(msg.note!, msg.velocity ?? 127);
+          this.engine.noteOn(msg.note, msg.velocity ?? 127);
           break;
         case "noteOff":
-          this.engine.noteOff(msg.note!);
+          this.engine.noteOff(msg.note);
           break;
       }
     };

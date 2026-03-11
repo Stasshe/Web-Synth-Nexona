@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SVFilter, FilterType } from "../svf";
+import { FilterType, SVFilter } from "../svf";
 
 describe("SVFilter", () => {
   const SR = 48000;
@@ -32,9 +32,7 @@ describe("SVFilter", () => {
       const input = Math.sin(2 * Math.PI * 10000 * (i / SR));
       highFreqSamples.push(f.process(input));
     }
-    const rms = Math.sqrt(
-      highFreqSamples.slice(-500).reduce((s, v) => s + v * v, 0) / 500,
-    );
+    const rms = Math.sqrt(highFreqSamples.slice(-500).reduce((s, v) => s + v * v, 0) / 500);
     expect(rms).toBeLessThan(0.1);
   });
 

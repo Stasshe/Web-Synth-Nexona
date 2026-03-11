@@ -24,6 +24,6 @@
     }
   },
   "files": {
-    "ignore": ["node_modules", ".next", "out", "public/worklet"]
+    "ignore": ["node_modules", ".next", "out", "public/worklet", ".vscode"]
   }
 }

@@ -1,6 +1,6 @@
-import { Oscillator } from "../dsp/oscillator/oscillator";
-import { SVFilter, FilterType } from "../dsp/filter/svf";
 import { ADSREnvelope } from "../dsp/envelope/adsr";
+import { FilterType, SVFilter } from "../dsp/filter/svf";
+import { Oscillator } from "../dsp/oscillator/oscillator";
 import { ParamSmoother } from "../dsp/utils/smoothing";
 import type { Wavetable } from "../dsp/wavetable/wavetableEngine";
 
@@ -20,15 +20,17 @@ export class Voice {
     this.oscillator = new Oscillator(sampleRate);
     this.filter = new SVFilter(sampleRate);
     this.ampEnvelope = new ADSREnvelope(sampleRate);
+    this.ampEnvelope.setParams(0.01, 0.1, 0.7, 0.3);
     this.levelSmoother = new ParamSmoother(0.8);
     this.cutoffSmoother = new ParamSmoother(8000);
+    this.filter.setParams(8000, 0, 1, FilterType.LOWPASS);
   }
 
   setWavetable(wt: Wavetable): void {
     this.oscillator.setWavetable(wt);
   }
 
-  noteOn(note: number, velocity: number): void {
+  noteOn(note: number, _velocity: number): void {
     this.note = note;
     this.oscillator.setFrequency(midiToFreq(note));
     this.oscillator.resetPhase();

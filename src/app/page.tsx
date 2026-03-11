@@ -1,13 +1,13 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
-import { createSynthNode, type SynthNode } from "../audio/worklet/node";
-import { bindStateToSAB } from "../state/synthState";
-import { OscillatorPanel } from "../components/OscillatorPanel";
-import { FilterPanel } from "../components/FilterPanel";
-import { EnvelopePanel } from "../components/EnvelopePanel";
-import { Keyboard } from "../components/Keyboard";
 import { Power } from "lucide-react";
+import { useCallback, useRef, useState } from "react";
+import { type SynthNode, createSynthNode } from "../audio/worklet/node";
+import { EnvelopePanel } from "../components/EnvelopePanel";
+import { FilterPanel } from "../components/FilterPanel";
+import { Keyboard } from "../components/Keyboard";
+import { OscillatorPanel } from "../components/OscillatorPanel";
+import { bindStateToSAB } from "../state/synthState";
 
 export default function Home() {
   const [started, setStarted] = useState(false);
@@ -59,7 +59,14 @@ export default function Home() {
 
       {started && (
         <>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 24 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr 1fr",
+              gap: 16,
+              marginBottom: 24,
+            }}
+          >
             <OscillatorPanel />
             <FilterPanel />
             <EnvelopePanel />

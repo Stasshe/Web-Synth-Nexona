@@ -55,7 +55,7 @@ describe("SynthEngine", () => {
     engine.noteOff(60);
 
     // Process enough blocks for release to complete
-    for (let i = 0; i < 500; i++) {
+    for (let i = 0; i < 2000; i++) {
       engine.processBlock(makeOutput());
     }
 

@@ -1,7 +1,7 @@
 export const SAB_SLOT_COUNT = 256;
 export const SAB_BYTE_SIZE = SAB_SLOT_COUNT * 4;
 
-export const enum SabParam {
+export enum SabParam {
   MasterVolume = 0,
 
   OscAOn = 10,

@@ -68,7 +68,7 @@ export function Keyboard({ onNoteOn, onNoteOff }: KeyboardProps) {
           {key.label}
         </div>
       ))}
-      {KEYS.filter((k) => k.black).map((key, i) => {
+      {KEYS.filter((k) => k.black).map((key) => {
         const whiteKeys = KEYS.filter((k) => !k.black);
         const whiteIndex = whiteKeys.findIndex((w) => w.note > key.note) - 1;
         const totalWhite = whiteKeys.length;

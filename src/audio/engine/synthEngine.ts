@@ -1,9 +1,9 @@
-import { Voice } from "./voice";
-import { getParam, SabParam } from "../sab/layout";
-import { FilterType } from "../dsp/filter/svf";
-import { generateSineTable } from "../dsp/wavetable/wavetableEngine";
+import type { FilterType } from "../dsp/filter/svf";
 import { ParamSmoother } from "../dsp/utils/smoothing";
+import { generateSineTable } from "../dsp/wavetable/wavetableEngine";
 import type { Wavetable } from "../dsp/wavetable/wavetableEngine";
+import { SabParam, getParam } from "../sab/layout";
+import { Voice } from "./voice";
 
 export class SynthEngine {
   private voice: Voice;
@@ -65,6 +65,16 @@ export class SynthEngine {
     const sustain = getParam(this.sab, SabParam.AmpEnvSustain);
     const release = getParam(this.sab, SabParam.AmpEnvRelease);
 
-    this.voice.setParams(level, cutoff, resonance, drive, filterType, attack, decay, sustain, release);
+    this.voice.setParams(
+      level,
+      cutoff,
+      resonance,
+      drive,
+      filterType,
+      attack,
+      decay,
+      sustain,
+      release,
+    );
   }
 }

@@ -1,9 +1,9 @@
 import { flushDenormal } from "../utils/denormal";
 
-export const enum FilterType {
-  LOWPASS,
-  HIGHPASS,
-  BANDPASS,
+export enum FilterType {
+  LOWPASS = 0,
+  HIGHPASS = 1,
+  BANDPASS = 2,
 }
 
 export class SVFilter {
