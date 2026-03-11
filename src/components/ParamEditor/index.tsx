@@ -2,7 +2,20 @@
 
 import { loadPatchIntoState } from "@/patch/loader";
 import { stateToPatch } from "@/patch/serializer";
-import { useCallback, useEffect, useRef, useState } from "react";
+import Prism from "prismjs";
+import "prismjs/components/prism-json";
+import { useCallback, useEffect, useState } from "react";
+import Editor from "react-simple-code-editor";
+
+// Extend JSON grammar with // line comments
+Prism.languages.jsonc = Prism.languages.extend("json", {});
+Prism.languages.insertBefore("jsonc", "string", {
+  comment: { pattern: /\/\/.*/, greedy: true },
+});
+
+function highlightJsonc(code: string): string {
+  return Prism.highlight(code, Prism.languages.jsonc, "jsonc");
+}
 
 interface ParamEditorProps {
   open: boolean;
@@ -129,7 +142,6 @@ function stripComments(text: string): string {
 export function ParamEditor({ open, onClose }: ParamEditorProps) {
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (open) {
@@ -200,14 +212,22 @@ export function ParamEditor({ open, onClose }: ParamEditorProps) {
         )}
 
         {/* Editor */}
-        <textarea
-          ref={textareaRef}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          spellCheck={false}
-          className="flex-1 p-4 bg-bg-darkest text-text-primary text-[12px] leading-[1.5]
-                     font-mono resize-none border-none outline-none overflow-auto min-h-[400px]"
-        />
+        <div className="flex-1 overflow-auto min-h-0">
+          <Editor
+            value={text}
+            onValueChange={setText}
+            highlight={highlightJsonc}
+            padding={16}
+            style={{
+              fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+              fontSize: 12,
+              lineHeight: 1.5,
+              backgroundColor: "var(--bg-darkest)",
+              color: "var(--text-primary)",
+              minHeight: 400,
+            }}
+          />
+        </div>
 
         {/* Footer hint */}
         <div className="px-4 py-1.5 text-[10px] text-text-muted border-t border-border-default">

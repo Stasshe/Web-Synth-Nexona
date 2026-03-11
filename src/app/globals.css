@@ -100,6 +100,14 @@ input[type="number"] {
   border-radius: 3px;
 }
 
+/* Prism JSONC token colors */
+.token.comment { color: var(--text-muted); font-style: italic; }
+.token.property { color: var(--accent-blue); }
+.token.string { color: var(--accent-green); }
+.token.number { color: var(--accent-orange); }
+.token.boolean, .token.null { color: var(--accent-cyan); }
+.token.punctuation, .token.operator { color: var(--text-secondary); }
+
 /* Range input styling */
 input[type="range"] {
   -webkit-appearance: none;
