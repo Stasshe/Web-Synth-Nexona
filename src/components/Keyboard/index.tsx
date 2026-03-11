@@ -114,7 +114,7 @@ export function Keyboard({ onNoteOn, onNoteOff }: KeyboardProps) {
   return (
     <div
       ref={containerRef}
-      className="relative h-[80px] bg-bg-panel rounded-lg border border-border-default flex select-none shrink-0 overflow-hidden mx-1.5 mb-1.5"
+      className="relative h-[80px] bg-bg-panel rounded-lg border border-border-default flex select-none shrink-0 overflow-hidden mx-1.5 mb-1.5 mt-0.5"
       style={{ touchAction: "none" }}
     >
       {WHITE_KEYS.map((key) => (

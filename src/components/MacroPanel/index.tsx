@@ -56,13 +56,15 @@ function MacroKnob({ index }: { index: number }) {
 export function MacroStrip() {
   const indices = useMemo(() => [0, 1, 2, 3], []);
   return (
-    <div className="flex flex-col bg-bg-panel border border-border-default rounded-lg px-1 py-2 gap-0">
-      <span className="text-[8px] font-bold tracking-widest text-text-muted text-center mb-1 uppercase">
+    <div className="flex flex-col bg-bg-panel border border-border-default rounded-lg px-1 py-2 gap-0 h-full">
+      <span className="text-[8px] font-bold tracking-widest text-text-muted text-center mb-1 uppercase shrink-0">
         Macro
       </span>
-      {indices.map((i) => (
-        <MacroKnob key={i} index={i} />
-      ))}
+      <div className="flex-1 flex flex-col justify-around min-h-0">
+        {indices.map((i) => (
+          <MacroKnob key={i} index={i} />
+        ))}
+      </div>
     </div>
   );
 }

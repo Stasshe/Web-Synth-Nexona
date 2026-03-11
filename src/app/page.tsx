@@ -227,12 +227,14 @@ export default function Home() {
             </div>
 
             {/* Page content */}
-            <div className="flex-1 min-h-0 overflow-y-auto">
-              {activePage === "voice" ? (
-                <VoicePage onOpenWaveEditor={setWaveEditorOsc} />
-              ) : (
-                <EffectsPage />
-              )}
+              <div className="flex-1 min-h-0">
+                {activePage === "voice" ? (
+                  <VoicePage onOpenWaveEditor={setWaveEditorOsc} />
+                ) : (
+                  <div className="overflow-y-auto h-full">
+                    <EffectsPage />
+                  </div>
+                )}
             </div>
           </div>
 
