@@ -72,8 +72,20 @@ export class EffectsChain {
   }
 
   setParams(p: EffectsParams): void {
-    this.distortion.setParams(p.distortionDrive, p.distortionTone, p.distortionMix, p.distortionMode);
-    this.compressor.setParams(p.compThreshold, p.compRatio, p.compAttack, p.compRelease, 10 ** (p.compMakeup / 20), p.compMix);
+    this.distortion.setParams(
+      p.distortionDrive,
+      p.distortionTone,
+      p.distortionMix,
+      p.distortionMode,
+    );
+    this.compressor.setParams(
+      p.compThreshold,
+      p.compRatio,
+      p.compAttack,
+      p.compRelease,
+      10 ** (p.compMakeup / 20),
+      p.compMix,
+    );
     this.chorus.setParams(p.chorusRate, p.chorusDepth, p.chorusMix);
     this.flanger.setParams(p.flangerRate, p.flangerDepth, p.flangerFeedback, p.flangerMix);
     this.phaser.setParams(p.phaserRate, p.phaserDepth, p.phaserFeedback, p.phaserMix);

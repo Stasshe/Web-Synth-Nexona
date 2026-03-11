@@ -24,12 +24,14 @@ export class Distortion {
         return Math.tanh(driven);
       case 1: // hard clip
         return Math.max(-1, Math.min(1, driven));
-      case 2: { // fold
+      case 2: {
+        // fold
         const folded = driven % 2;
         return folded > 1 ? 2 - folded : folded < -1 ? -2 - folded : folded;
       }
-      case 3: { // bitcrush
-        const step = 2 / (2 ** this.bits);
+      case 3: {
+        // bitcrush
+        const step = 2 / 2 ** this.bits;
         return Math.round(driven / step) * step;
       }
     }
@@ -40,7 +42,9 @@ export class Distortion {
     const dL = this.distort(inL);
     const dR = this.distort(inR);
     const m = this.mix;
-    return [inL * (1 - m) + (dL / Math.max(1, this.drive)) * m,
-            inR * (1 - m) + (dR / Math.max(1, this.drive)) * m];
+    return [
+      inL * (1 - m) + (dL / Math.max(1, this.drive)) * m,
+      inR * (1 - m) + (dR / Math.max(1, this.drive)) * m,
+    ];
   }
 }

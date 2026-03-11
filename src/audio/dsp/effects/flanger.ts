@@ -54,7 +54,6 @@ export class Flanger {
     this.writePos = (this.writePos + 1) % this.bufL.length;
 
     const m = this.mix;
-    return [inL * (1 - m) + (inL + delayedL) * 0.5 * m,
-            inR * (1 - m) + (inR + delayedR) * 0.5 * m];
+    return [inL * (1 - m) + (inL + delayedL) * 0.5 * m, inR * (1 - m) + (inR + delayedR) * 0.5 * m];
   }
 }

@@ -30,10 +30,28 @@ const OSC_COLORS: Record<string, string> = {
   c: "var(--osc-c)",
 };
 
-const OSC_MOD_TARGETS: Record<string, { level: ModTarget; frame: ModTarget; warp: ModTarget; pitch: ModTarget }> = {
-  a: { level: ModTarget.OSC_A_LEVEL, frame: ModTarget.OSC_A_FRAME, warp: ModTarget.OSC_A_WARP_AMOUNT, pitch: ModTarget.OSC_A_PITCH },
-  b: { level: ModTarget.OSC_B_LEVEL, frame: ModTarget.OSC_B_FRAME, warp: ModTarget.OSC_B_WARP_AMOUNT, pitch: ModTarget.OSC_B_PITCH },
-  c: { level: ModTarget.OSC_C_LEVEL, frame: ModTarget.OSC_C_FRAME, warp: ModTarget.OSC_C_WARP_AMOUNT, pitch: ModTarget.OSC_C_PITCH },
+const OSC_MOD_TARGETS: Record<
+  string,
+  { level: ModTarget; frame: ModTarget; warp: ModTarget; pitch: ModTarget }
+> = {
+  a: {
+    level: ModTarget.OSC_A_LEVEL,
+    frame: ModTarget.OSC_A_FRAME,
+    warp: ModTarget.OSC_A_WARP_AMOUNT,
+    pitch: ModTarget.OSC_A_PITCH,
+  },
+  b: {
+    level: ModTarget.OSC_B_LEVEL,
+    frame: ModTarget.OSC_B_FRAME,
+    warp: ModTarget.OSC_B_WARP_AMOUNT,
+    pitch: ModTarget.OSC_B_PITCH,
+  },
+  c: {
+    level: ModTarget.OSC_C_LEVEL,
+    frame: ModTarget.OSC_C_FRAME,
+    warp: ModTarget.OSC_C_WARP_AMOUNT,
+    pitch: ModTarget.OSC_C_PITCH,
+  },
 };
 
 function computePreviewSamples(
@@ -115,7 +133,7 @@ function WaveformPreview({
   const H = 32;
   const pts: string[] = [];
   for (let i = 0; i < samples.length; i++) {
-    pts.push(`${i},${((-(samples[i]) + 1) * H) / 2}`);
+    pts.push(`${i},${((-samples[i] + 1) * H) / 2}`);
   }
   const points = pts.join(" ");
 

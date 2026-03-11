@@ -25,7 +25,10 @@ export function Panel({
       <div className="flex items-center gap-2 px-2 py-1 border-b border-border-default shrink-0">
         <div
           className={`w-2 h-2 rounded-full transition-all ${onToggle ? "cursor-pointer hover:scale-125" : ""}`}
-          style={{ background: dotColor, boxShadow: enabled && onToggle ? `0 0 4px ${color}` : "none" }}
+          style={{
+            background: dotColor,
+            boxShadow: enabled && onToggle ? `0 0 4px ${color}` : "none",
+          }}
           onClick={onToggle}
           title={onToggle ? (enabled ? "Click to disable" : "Click to enable") : undefined}
         />
@@ -33,7 +36,9 @@ export function Panel({
           {title}
         </span>
       </div>
-      <div className={`p-2 flex-1 flex flex-col min-h-0 transition-opacity ${enabled ? "" : "opacity-30 pointer-events-none"}`}>
+      <div
+        className={`p-2 flex-1 flex flex-col min-h-0 transition-opacity ${enabled ? "" : "opacity-30 pointer-events-none"}`}
+      >
         {children}
       </div>
     </div>

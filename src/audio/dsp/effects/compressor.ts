@@ -17,7 +17,14 @@ export class Compressor {
     this.sampleRate = sampleRate;
   }
 
-  setParams(threshold: number, ratio: number, attack: number, release: number, makeupGain: number, mix: number): void {
+  setParams(
+    threshold: number,
+    ratio: number,
+    attack: number,
+    release: number,
+    makeupGain: number,
+    mix: number,
+  ): void {
     this.threshold = threshold;
     this.ratio = Math.max(1, ratio);
     this.attack = attack;
@@ -39,12 +46,15 @@ export class Compressor {
     const sq = input * input;
     const attackCoeff = Math.exp(-1 / (this.attack * sr));
     const releaseCoeff = Math.exp(-1 / (this.release * sr));
-    const newEnv = sq > env ? sq * (1 - attackCoeff) + env * attackCoeff : sq * (1 - releaseCoeff) + env * releaseCoeff;
+    const newEnv =
+      sq > env
+        ? sq * (1 - attackCoeff) + env * attackCoeff
+        : sq * (1 - releaseCoeff) + env * releaseCoeff;
     const rms = Math.sqrt(Math.max(newEnv, 1e-10));
     const rmsDb = 20 * Math.log10(rms);
     const targetGain = this.computeGain(rmsDb);
     // Smooth gain changes
-    const coeff = targetGain < gain ? (1 - attackCoeff) : (1 - releaseCoeff);
+    const coeff = targetGain < gain ? 1 - attackCoeff : 1 - releaseCoeff;
     const newGain = gain + (targetGain - gain) * coeff;
     return [input * newGain * this.makeupGain, newEnv, newGain];
   }
@@ -53,8 +63,10 @@ export class Compressor {
     if (this.mix === 0) return [inL, inR];
     const [outL, envL, gainL] = this.processChannel(inL, this.envL, this.gainL);
     const [outR, envR, gainR] = this.processChannel(inR, this.envR, this.gainR);
-    this.envL = envL; this.gainL = gainL;
-    this.envR = envR; this.gainR = gainR;
+    this.envL = envL;
+    this.gainL = gainL;
+    this.envR = envR;
+    this.gainR = gainR;
     const m = this.mix;
     return [inL * (1 - m) + outL * m, inR * (1 - m) + outR * m];
   }

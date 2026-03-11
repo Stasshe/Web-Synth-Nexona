@@ -37,7 +37,7 @@ export class Phaser {
 
   private processChain(stages: AllPassStage[], input: number, modFreq: number): number {
     // All-pass coefficient swept by LFO
-    const g = Math.tan(Math.PI * modFreq / this.sampleRate);
+    const g = Math.tan((Math.PI * modFreq) / this.sampleRate);
     const coeff = (g - 1) / (g + 1);
     let y = input;
     for (const stage of stages) {

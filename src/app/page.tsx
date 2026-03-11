@@ -136,7 +136,7 @@ export default function Home() {
 
   if (!started) {
     return (
-      <main className="flex items-center justify-center min-h-screen">
+      <main className="flex items-center justify-center min-h-[100dvh]">
         <button
           type="button"
           onClick={handleStart}
@@ -157,8 +157,7 @@ export default function Home() {
 
   return (
     <DndProvider>
-      <main className="h-screen bg-bg-darkest p-1.5 flex flex-col overflow-hidden gap-1">
-
+      <main className="h-[100dvh] bg-bg-darkest p-1.5 flex flex-col overflow-hidden gap-1">
         {/* Header */}
         <header className="flex items-center justify-between px-3 py-1 bg-bg-panel rounded-lg border border-border-default shrink-0">
           <div className="flex items-center gap-3">
@@ -170,40 +169,57 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1">
-              <button type="button" onClick={handleSave}
+              <button
+                type="button"
+                onClick={handleSave}
                 className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-text-muted hover:text-text-primary bg-bg-surface border border-border-default rounded transition-colors cursor-pointer"
-                title="Save patch to file">
+                title="Save patch to file"
+              >
                 <Download size={11} /> Save
               </button>
-              <button type="button" onClick={handleLoad}
+              <button
+                type="button"
+                onClick={handleLoad}
                 className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-text-muted hover:text-text-primary bg-bg-surface border border-border-default rounded transition-colors cursor-pointer"
-                title="Load patch from file">
+                title="Load patch from file"
+              >
                 <Upload size={11} /> Load
               </button>
-              <button type="button" onClick={handleShare}
+              <button
+                type="button"
+                onClick={handleShare}
                 className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-text-muted hover:text-accent-blue bg-bg-surface border border-border-default rounded transition-colors cursor-pointer"
-                title="Copy share URL to clipboard">
+                title="Copy share URL to clipboard"
+              >
                 <Share2 size={11} /> Share
               </button>
-              <button type="button" onClick={() => setParamEditorOpen(true)}
+              <button
+                type="button"
+                onClick={() => setParamEditorOpen(true)}
                 className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-text-muted hover:text-accent-purple bg-bg-surface border border-border-default rounded transition-colors cursor-pointer"
-                title="Edit all parameters as JSON">
+                title="Edit all parameters as JSON"
+              >
                 <Code size={11} /> Edit
               </button>
             </div>
             <div className="flex items-center gap-1.5">
               <Volume2 size={13} className="text-text-muted" />
-              <Knob label="" value={snap.master.volume} min={0} max={1}
+              <Knob
+                label=""
+                value={snap.master.volume}
+                min={0}
+                max={1}
                 onChange={(v) => (synthState.master.volume = v)}
-                size={28} color="var(--accent-green)"
-                formatValue={(v) => `${(v * 100).toFixed(0)}%`} />
+                size={28}
+                color="var(--accent-green)"
+                formatValue={(v) => `${(v * 100).toFixed(0)}%`}
+              />
             </div>
           </div>
         </header>
 
         {/* Body — flex-1 takes all remaining height */}
         <div className="flex-1 flex flex-row gap-1 min-h-0 overflow-hidden">
-
           {/* Left macro strip */}
           <MacroStrip />
 
@@ -216,10 +232,11 @@ export default function Home() {
                   key={page}
                   type="button"
                   onClick={() => (synthState.ui.activePage = page)}
-                  className={`px-5 py-0.5 text-[11px] font-semibold tracking-widest rounded transition-colors uppercase cursor-pointer border ${activePage === page
-                    ? "bg-bg-active border-border-accent text-text-primary"
-                    : "border-transparent text-text-muted hover:text-text-secondary"
-                    }`}
+                  className={`px-5 py-0.5 text-[11px] font-semibold tracking-widest rounded transition-colors uppercase cursor-pointer border ${
+                    activePage === page
+                      ? "bg-bg-active border-border-accent text-text-primary"
+                      : "border-transparent text-text-muted hover:text-text-secondary"
+                  }`}
                 >
                   {page}
                 </button>
@@ -227,14 +244,14 @@ export default function Home() {
             </div>
 
             {/* Page content */}
-              <div className="flex-1 min-h-0">
-                {activePage === "voice" ? (
-                  <VoicePage onOpenWaveEditor={setWaveEditorOsc} />
-                ) : (
-                  <div className="overflow-y-auto h-full">
-                    <EffectsPage />
-                  </div>
-                )}
+            <div className="flex-1 min-h-0">
+              {activePage === "voice" ? (
+                <VoicePage onOpenWaveEditor={setWaveEditorOsc} />
+              ) : (
+                <div className="overflow-y-auto h-full">
+                  <EffectsPage />
+                </div>
+              )}
             </div>
           </div>
 

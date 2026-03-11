@@ -77,7 +77,8 @@ export function generateSawTable(tableSize: number): Wavetable {
   const frames: Float32Array[] = [];
   for (let f = 0; f < NUM_FRAMES; f++) {
     const table = new Float32Array(tableSize + 1);
-    const numH = MIN_HARMONICS + Math.floor((f / (NUM_FRAMES - 1)) * (MAX_HARMONICS - MIN_HARMONICS));
+    const numH =
+      MIN_HARMONICS + Math.floor((f / (NUM_FRAMES - 1)) * (MAX_HARMONICS - MIN_HARMONICS));
     for (let h = 1; h <= numH; h++) {
       addHarmonic(table, sineLut, tableSize, h, 1 / h);
     }
@@ -93,7 +94,8 @@ export function generateSquareTable(tableSize: number): Wavetable {
   const frames: Float32Array[] = [];
   for (let f = 0; f < NUM_FRAMES; f++) {
     const table = new Float32Array(tableSize + 1);
-    const numH = MIN_HARMONICS + Math.floor((f / (NUM_FRAMES - 1)) * (MAX_HARMONICS - MIN_HARMONICS));
+    const numH =
+      MIN_HARMONICS + Math.floor((f / (NUM_FRAMES - 1)) * (MAX_HARMONICS - MIN_HARMONICS));
     for (let h = 1; h <= numH; h += 2) {
       addHarmonic(table, sineLut, tableSize, h, 1 / h);
     }
@@ -109,7 +111,8 @@ export function generateTriangleTable(tableSize: number): Wavetable {
   const frames: Float32Array[] = [];
   for (let f = 0; f < NUM_FRAMES; f++) {
     const table = new Float32Array(tableSize + 1);
-    const numH = MIN_HARMONICS + Math.floor((f / (NUM_FRAMES - 1)) * (MAX_HARMONICS - MIN_HARMONICS));
+    const numH =
+      MIN_HARMONICS + Math.floor((f / (NUM_FRAMES - 1)) * (MAX_HARMONICS - MIN_HARMONICS));
     for (let h = 1; h <= numH; h += 2) {
       const sign = ((h - 1) / 2) % 2 === 0 ? 1 : -1;
       addHarmonic(table, sineLut, tableSize, h, sign / (h * h));

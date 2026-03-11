@@ -14,14 +14,36 @@ const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", 
 // Upper row: Q 2 W 3 E R 5 T 6 Y 7 U I 9 O 0 P → C4..E5
 const QWERTY_MAP: Record<string, number> = {
   // Lower row — C3 (48) to B3 (59)
-  KeyZ: 48, KeyS: 49, KeyX: 50, KeyD: 51, KeyC: 52,
-  KeyV: 53, KeyG: 54, KeyB: 55, KeyH: 56, KeyN: 57,
-  KeyJ: 58, KeyM: 59,
+  KeyZ: 48,
+  KeyS: 49,
+  KeyX: 50,
+  KeyD: 51,
+  KeyC: 52,
+  KeyV: 53,
+  KeyG: 54,
+  KeyB: 55,
+  KeyH: 56,
+  KeyN: 57,
+  KeyJ: 58,
+  KeyM: 59,
   // Upper row — C4 (60) to E5 (76)
-  KeyQ: 60, Digit2: 61, KeyW: 62, Digit3: 63, KeyE: 64,
-  KeyR: 65, Digit5: 66, KeyT: 67, Digit6: 68, KeyY: 69,
-  Digit7: 70, KeyU: 71, KeyI: 72, Digit9: 73, KeyO: 74,
-  Digit0: 75, KeyP: 76,
+  KeyQ: 60,
+  Digit2: 61,
+  KeyW: 62,
+  Digit3: 63,
+  KeyE: 64,
+  KeyR: 65,
+  Digit5: 66,
+  KeyT: 67,
+  Digit6: 68,
+  KeyY: 69,
+  Digit7: 70,
+  KeyU: 71,
+  KeyI: 72,
+  Digit9: 73,
+  KeyO: 74,
+  Digit0: 75,
+  KeyP: 76,
 };
 const DEFAULT_VELOCITY = 100;
 
@@ -76,7 +98,8 @@ export function Keyboard({ onNoteOn, onNoteOff }: KeyboardProps) {
       if (e.repeat) return;
       // Ignore when typing in inputs / textareas / contentEditable
       const tag = (e.target as HTMLElement).tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement).isContentEditable) return;
+      if (tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement).isContentEditable)
+        return;
 
       const note = QWERTY_MAP[e.code];
       if (note === undefined) return;

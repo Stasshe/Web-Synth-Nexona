@@ -9,9 +9,9 @@ import type { FilterDefinition, FilterProcessor } from "./filterTypes";
  * The numeric index into this array is stored in the SAB as FilterType.
  */
 export const FILTER_REGISTRY: FilterDefinition[] = [
-  ...ANALOG_FILTER_DEFINITIONS,  // 0-6
-  ...LADDER_FILTER_DEFINITIONS,  // 7-8
-  ...COMB_FILTER_DEFINITIONS,    // 9-10
+  ...ANALOG_FILTER_DEFINITIONS, // 0-6
+  ...LADDER_FILTER_DEFINITIONS, // 7-8
+  ...COMB_FILTER_DEFINITIONS, // 9-10
   ...FORMANT_FILTER_DEFINITIONS, // 11
 ];
 

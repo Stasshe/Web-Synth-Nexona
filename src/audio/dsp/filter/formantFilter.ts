@@ -9,11 +9,11 @@ import { FilterType, SVFilter } from "./svf";
 
 // [F1, F2, F3, gain] for each vowel
 const VOWELS: [number, number, number, number][] = [
-  [800, 1200, 2500, 1.0],   // A
-  [400, 2200, 2600, 0.9],   // E
-  [300, 2300, 3000, 0.85],  // I
-  [500, 1000, 2800, 0.9],   // O
-  [300, 900, 2200, 0.85],   // U
+  [800, 1200, 2500, 1.0], // A
+  [400, 2200, 2600, 0.9], // E
+  [300, 2300, 3000, 0.85], // I
+  [500, 1000, 2800, 0.9], // O
+  [300, 900, 2200, 0.85], // U
 ];
 
 function lerp(a: number, b: number, t: number): number {
@@ -36,8 +36,9 @@ class FormantFilter implements FilterProcessor {
 
   setParams(cutoff: number, resonance: number, _sampleRate?: number): void {
     // Cutoff (20-20000) maps to a 0-4 vowel index
-    const t = ((Math.log2(Math.max(cutoff, 20)) - Math.log2(20)) /
-               (Math.log2(20000) - Math.log2(20))) * (VOWELS.length - 1);
+    const t =
+      ((Math.log2(Math.max(cutoff, 20)) - Math.log2(20)) / (Math.log2(20000) - Math.log2(20))) *
+      (VOWELS.length - 1);
     const i = Math.min(Math.floor(t), VOWELS.length - 2);
     const frac = t - i;
 
