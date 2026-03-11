@@ -7,9 +7,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   type ControlPoint,
   CurveType,
+  type PresetName,
   type WaveformModel,
   defaultModel,
   makePointId,
+  presetModel,
   sineModel,
 } from "./curveTypes";
 import { generateWaveformFromPoints } from "./generateFromPoints";
@@ -19,20 +21,15 @@ const CANVAS_W = 600;
 const CANVAS_H = 240;
 const POINT_RADIUS = 6;
 const HIT_RADIUS = 12;
-const MIN_GAP = 0.005; // minimum x gap between points
+const MIN_GAP = 0.005;
 
-const WAVEFORM_NAMES: Record<string, string> = {
-  sine: "Sine",
-  saw: "Saw",
-  square: "Square",
-  triangle: "Triangle",
-};
+const PRESET_NAMES = ["Sine", "Saw", "Square", "Triangle"] as const;
 
-const PRESET_MAP: Record<string, WavetableType> = {
-  sine: WavetableType.SINE,
-  saw: WavetableType.SAW,
-  square: WavetableType.SQUARE,
-  triangle: WavetableType.TRIANGLE,
+const PRESET_WAVEFORM_TYPE: Record<string, WavetableType> = {
+  Sine: WavetableType.SINE,
+  Saw: WavetableType.SAW,
+  Square: WavetableType.SQUARE,
+  Triangle: WavetableType.TRIANGLE,
 };
 
 const CURVE_LABELS: { type: CurveType; label: string }[] = [
@@ -58,12 +55,21 @@ function loadExistingModel(osc: "a" | "b" | "sub"): WaveformModel {
   if (controlPoints && controlPoints.length >= 2) {
     return { points: controlPoints.map((p) => ({ ...p })) };
   }
+  // If it's a built-in preset, generate matching control points
+  const name = ((oscState as Record<string, unknown>).waveformName as string) ?? "Sine";
+  if (name in PRESET_WAVEFORM_TYPE) {
+    return presetModel(name as PresetName);
+  }
   return sineModel();
 }
 
 function loadExistingName(osc: "a" | "b" | "sub"): string {
   const oscState = synthState.oscillators[osc];
   return ((oscState as Record<string, unknown>).waveformName as string) ?? "Sine";
+}
+
+function isPresetName(name: string): name is PresetName {
+  return name in PRESET_WAVEFORM_TYPE;
 }
 
 function modelToCanvas(x: number, y: number): { cx: number; cy: number } {
@@ -118,17 +124,12 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
   const [currentName, setCurrentName] = useState<string>(() => loadExistingName(osc));
   const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
   const [draggingPointId, setDraggingPointId] = useState<string | null>(null);
-  const pendingWavetableRef = useRef<Wavetable | null>(null);
 
-  // Derive waveform from model
-  const waveform = useMemo(
-    () => (pendingWavetableRef.current ? null : generateWaveformFromPoints(model, TABLE_SIZE)),
+  // Always derive display waveform from the model — single source of truth
+  const displayWaveform = useMemo(
+    () => generateWaveformFromPoints(model, TABLE_SIZE),
     [model],
   );
-
-  // When a preset is active, show its last frame
-  const [presetWaveform, setPresetWaveform] = useState<Float32Array | null>(null);
-  const displayWaveform = presetWaveform ?? waveform ?? new Float32Array(TABLE_SIZE + 1);
 
   // Reload when opening for a different osc
   useEffect(() => {
@@ -137,8 +138,6 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
       setCurrentName(loadExistingName(osc));
       setSelectedPointId(null);
       setDraggingPointId(null);
-      pendingWavetableRef.current = null;
-      setPresetWaveform(null);
     }
   }, [open, osc]);
 
@@ -201,43 +200,41 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
     ctx.fill();
     ctx.globalAlpha = 1;
 
-    // Control points (only when not showing a preset)
-    if (!presetWaveform) {
-      // Vertical guide lines at each point
-      ctx.strokeStyle = "rgba(255,255,255,0.08)";
-      ctx.lineWidth = 1;
-      ctx.setLineDash([4, 4]);
-      for (const pt of model.points) {
-        const { cx } = modelToCanvas(pt.x, pt.y);
-        ctx.beginPath();
-        ctx.moveTo(cx, 0);
-        ctx.lineTo(cx, h);
-        ctx.stroke();
-      }
-      ctx.setLineDash([]);
-
-      // Draw points
-      for (const pt of model.points) {
-        const { cx, cy } = modelToCanvas(pt.x, pt.y);
-        const isSelected = pt.id === selectedPointId;
-
-        // Outer ring
-        ctx.beginPath();
-        ctx.arc(cx, cy, POINT_RADIUS + (isSelected ? 2 : 0), 0, Math.PI * 2);
-        ctx.fillStyle = isSelected ? color : "rgba(255,255,255,0.15)";
-        ctx.fill();
-        ctx.strokeStyle = color;
-        ctx.lineWidth = isSelected ? 2 : 1;
-        ctx.stroke();
-
-        // Inner dot
-        ctx.beginPath();
-        ctx.arc(cx, cy, 2, 0, Math.PI * 2);
-        ctx.fillStyle = "#fff";
-        ctx.fill();
-      }
+    // Control points
+    // Vertical guide lines at each point
+    ctx.strokeStyle = "rgba(255,255,255,0.08)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    for (const pt of model.points) {
+      const { cx } = modelToCanvas(pt.x, pt.y);
+      ctx.beginPath();
+      ctx.moveTo(cx, 0);
+      ctx.lineTo(cx, h);
+      ctx.stroke();
     }
-  }, [displayWaveform, osc, model, selectedPointId, presetWaveform]);
+    ctx.setLineDash([]);
+
+    // Draw points
+    for (const pt of model.points) {
+      const { cx, cy } = modelToCanvas(pt.x, pt.y);
+      const isSelected = pt.id === selectedPointId;
+
+      // Outer ring
+      ctx.beginPath();
+      ctx.arc(cx, cy, POINT_RADIUS + (isSelected ? 2 : 0), 0, Math.PI * 2);
+      ctx.fillStyle = isSelected ? color : "rgba(255,255,255,0.15)";
+      ctx.fill();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = isSelected ? 2 : 1;
+      ctx.stroke();
+
+      // Inner dot
+      ctx.beginPath();
+      ctx.arc(cx, cy, 2, 0, Math.PI * 2);
+      ctx.fillStyle = "#fff";
+      ctx.fill();
+    }
+  }, [displayWaveform, osc, model, selectedPointId]);
 
   useEffect(() => {
     if (open) draw();
@@ -252,21 +249,13 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
       if (!canvas) return;
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
 
-      // If showing a preset, switch to custom editing on click
-      if (presetWaveform) {
-        setPresetWaveform(null);
-        pendingWavetableRef.current = null;
-        setCurrentName("Custom");
-      }
-
       const hitId = findHitPoint(e.clientX, e.clientY, canvas, model);
 
       if (hitId) {
-        // Start dragging existing point
         setSelectedPointId(hitId);
         setDraggingPointId(hitId);
       } else {
-        // Add new point
+        // Add new point — always becomes custom
         const { x, y } = canvasToModel(e.clientX, e.clientY, canvas);
         const newPt: ControlPoint = {
           id: makePointId(),
@@ -281,10 +270,9 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
         setSelectedPointId(newPt.id);
         setDraggingPointId(newPt.id);
         setCurrentName("Custom");
-        pendingWavetableRef.current = null;
       }
     },
-    [model, presetWaveform],
+    [model],
   );
 
   const handlePointerMove = useCallback(
@@ -304,15 +292,12 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
         const isLast = idx === pts.length - 1;
 
         if (isFirst) {
-          // Endpoint: only y, mirror to last
           pts[0].y = y;
           pts[pts.length - 1].y = y;
         } else if (isLast) {
-          // Endpoint: only y, mirror to first
           pts[pts.length - 1].y = y;
           pts[0].y = y;
         } else {
-          // Interior: clamp x between neighbors
           const minX = pts[idx - 1].x + MIN_GAP;
           const maxX = pts[idx + 1].x - MIN_GAP;
           pts[idx].x = Math.max(minX, Math.min(maxX, x));
@@ -321,6 +306,8 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
 
         return { points: pts };
       });
+      // Dragging a point means it's now custom
+      setCurrentName("Custom");
     },
     [draggingPointId],
   );
@@ -347,7 +334,6 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
       }));
       if (selectedPointId === hitId) setSelectedPointId(null);
       setCurrentName("Custom");
-      pendingWavetableRef.current = null;
     },
     [model, selectedPointId],
   );
@@ -355,33 +341,41 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
   // --- Actions ---
 
   const handleApply = useCallback(() => {
-    const finalWaveform = presetWaveform ?? generateWaveformFromPoints(model, TABLE_SIZE);
-    const wt = pendingWavetableRef.current ?? {
-      frames: [new Float32Array(finalWaveform)],
-      tableSize: TABLE_SIZE,
-      numFrames: 1,
-    };
-
     const oscState = synthState.oscillators[osc] as Record<string, unknown>;
     oscState.waveformName = currentName;
-    oscState.customWaveform = Array.from(finalWaveform);
     oscState.controlPoints = model.points.map((p) => ({ ...p }));
-    onApply(wt);
-    onClose();
-  }, [model, currentName, osc, onApply, onClose, presetWaveform]);
 
-  const handlePreset = useCallback((type: "sine" | "saw" | "square" | "triangle") => {
-    const wt = generateTable(PRESET_MAP[type], TABLE_SIZE);
-    pendingWavetableRef.current = wt;
-    setPresetWaveform(new Float32Array(wt.frames[wt.numFrames - 1]));
-    setCurrentName(WAVEFORM_NAMES[type]);
+    if (isPresetName(currentName)) {
+      // Preset: use multi-frame wavetable from engine, clear custom data
+      const wtType = PRESET_WAVEFORM_TYPE[currentName];
+      const wt = generateTable(wtType, TABLE_SIZE);
+      oscState.customWaveform = null;
+      if (osc !== "sub") {
+        (oscState as Record<string, unknown>).waveformType = wtType;
+      }
+      onApply(wt);
+    } else {
+      // Custom: single-frame wavetable from control points
+      const waveform = generateWaveformFromPoints(model, TABLE_SIZE);
+      const wt: Wavetable = {
+        frames: [new Float32Array(waveform)],
+        tableSize: TABLE_SIZE,
+        numFrames: 1,
+      };
+      oscState.customWaveform = Array.from(waveform);
+      onApply(wt);
+    }
+    onClose();
+  }, [model, currentName, osc, onApply, onClose]);
+
+  const handlePreset = useCallback((name: PresetName) => {
+    setModel(presetModel(name));
+    setCurrentName(name);
     setSelectedPointId(null);
   }, []);
 
   const handleClear = useCallback(() => {
     setModel(defaultModel());
-    pendingWavetableRef.current = null;
-    setPresetWaveform(null);
     setCurrentName("Custom");
     setSelectedPointId(null);
   }, []);
@@ -392,8 +386,6 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
       setModel((prev) => ({
         points: prev.points.map((p) => (p.id === selectedPointId ? { ...p, curveType: ct } : p)),
       }));
-      pendingWavetableRef.current = null;
-      setPresetWaveform(null);
       setCurrentName("Custom");
     },
     [selectedPointId],
@@ -475,14 +467,18 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
         {/* Tools */}
         <div className="px-4 pb-3 flex flex-wrap items-center gap-1.5">
           <span className="text-[9px] text-text-muted uppercase mr-1">Preset:</span>
-          {(["sine", "saw", "square", "triangle"] as const).map((t) => (
+          {PRESET_NAMES.map((name) => (
             <button
-              key={t}
+              key={name}
               type="button"
-              onClick={() => handlePreset(t)}
-              className="px-2 py-0.5 text-[10px] text-text-muted hover:text-text-primary bg-bg-surface border border-border-default rounded cursor-pointer transition-colors"
+              onClick={() => handlePreset(name)}
+              className={`px-2 py-0.5 text-[10px] border rounded cursor-pointer transition-colors ${
+                currentName === name
+                  ? "text-text-primary bg-bg-darkest border-accent-blue"
+                  : "text-text-muted hover:text-text-primary bg-bg-surface border-border-default"
+              }`}
             >
-              {t.charAt(0).toUpperCase() + t.slice(1)}
+              {name}
             </button>
           ))}
 

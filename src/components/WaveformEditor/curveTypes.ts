@@ -41,3 +41,48 @@ export function sineModel(): WaveformModel {
     ],
   };
 }
+
+export function sawModel(): WaveformModel {
+  return {
+    points: [
+      { id: makePointId(), x: 0, y: 1, curveType: CurveType.LINEAR },
+      { id: makePointId(), x: 1, y: -1, curveType: CurveType.LINEAR },
+    ],
+  };
+}
+
+export function squareModel(): WaveformModel {
+  return {
+    points: [
+      { id: makePointId(), x: 0, y: 1, curveType: CurveType.STEP },
+      { id: makePointId(), x: 0.5, y: -1, curveType: CurveType.STEP },
+      { id: makePointId(), x: 1, y: 1, curveType: CurveType.STEP },
+    ],
+  };
+}
+
+export function triangleModel(): WaveformModel {
+  return {
+    points: [
+      { id: makePointId(), x: 0, y: 0, curveType: CurveType.LINEAR },
+      { id: makePointId(), x: 0.25, y: 1, curveType: CurveType.LINEAR },
+      { id: makePointId(), x: 0.75, y: -1, curveType: CurveType.LINEAR },
+      { id: makePointId(), x: 1, y: 0, curveType: CurveType.LINEAR },
+    ],
+  };
+}
+
+export type PresetName = "Sine" | "Saw" | "Square" | "Triangle";
+
+export function presetModel(name: PresetName): WaveformModel {
+  switch (name) {
+    case "Sine":
+      return sineModel();
+    case "Saw":
+      return sawModel();
+    case "Square":
+      return squareModel();
+    case "Triangle":
+      return triangleModel();
+  }
+}

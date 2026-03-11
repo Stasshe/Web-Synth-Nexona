@@ -64,7 +64,6 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
             title="Edit waveform"
           >
             {data.waveformName}
-            {data.customWaveform ? "*" : ""}
           </button>
           <Select
             value={String(data.warpType)}

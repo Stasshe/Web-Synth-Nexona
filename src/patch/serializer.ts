@@ -1,31 +1,67 @@
 import { synthState } from "@/state/synthState";
 import type { PatchData } from "./schema";
 
+function serializeControlPoints(
+  points: unknown[] | null,
+): { id: string; x: number; y: number; curveType: number }[] | null {
+  if (!points) return null;
+  return points.map((p) => ({
+    ...(p as { id: string; x: number; y: number; curveType: number }),
+  }));
+}
+
 export function stateToPatch(name = "Init"): PatchData {
   const s = synthState;
-  const oscA = { ...s.oscillators.a };
-  const oscB = { ...s.oscillators.b };
-  // Ensure customWaveform is plain array (not Valtio proxy)
-  oscA.customWaveform = oscA.customWaveform ? [...oscA.customWaveform] : null;
-  oscB.customWaveform = oscB.customWaveform ? [...oscB.customWaveform] : null;
+  const a = s.oscillators.a;
+  const b = s.oscillators.b;
   const sub = s.oscillators.sub;
   return {
     version: 1,
     name,
     oscillators: {
-      a: oscA,
-      b: oscB,
+      a: {
+        on: a.on,
+        waveformType: a.waveformType,
+        waveformName: a.waveformName,
+        customWaveform: a.customWaveform ? [...a.customWaveform] : null,
+        controlPoints: serializeControlPoints(a.controlPoints),
+        level: a.level,
+        framePosition: a.framePosition,
+        detune: a.detune,
+        unisonVoices: a.unisonVoices,
+        unisonDetune: a.unisonDetune,
+        unisonSpread: a.unisonSpread,
+        pan: a.pan,
+        warpType: a.warpType,
+        warpAmount: a.warpAmount,
+        warp2Type: a.warp2Type,
+        warp2Amount: a.warp2Amount,
+      },
+      b: {
+        on: b.on,
+        waveformType: b.waveformType,
+        waveformName: b.waveformName,
+        customWaveform: b.customWaveform ? [...b.customWaveform] : null,
+        controlPoints: serializeControlPoints(b.controlPoints),
+        level: b.level,
+        framePosition: b.framePosition,
+        detune: b.detune,
+        unisonVoices: b.unisonVoices,
+        unisonDetune: b.unisonDetune,
+        unisonSpread: b.unisonSpread,
+        pan: b.pan,
+        warpType: b.warpType,
+        warpAmount: b.warpAmount,
+        warp2Type: b.warp2Type,
+        warp2Amount: b.warp2Amount,
+      },
       sub: {
         on: sub.on,
         octave: sub.octave,
         level: sub.level,
         waveformName: sub.waveformName,
         customWaveform: sub.customWaveform ? [...sub.customWaveform] : null,
-        controlPoints: sub.controlPoints
-          ? sub.controlPoints.map((p) => ({
-              ...(p as { id: string; x: number; y: number; curveType: number }),
-            }))
-          : null,
+        controlPoints: serializeControlPoints(sub.controlPoints),
       },
     },
     noise: { ...s.noise },

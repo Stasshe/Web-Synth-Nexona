@@ -51,16 +51,13 @@ function addHarmonic(
 
 export function generateSineTable(tableSize: number): Wavetable {
   const sineLut = buildSineLookup(tableSize);
+  // Pure sine — every frame is identical (single harmonic)
+  const table = new Float32Array(tableSize + 1);
+  addHarmonic(table, sineLut, tableSize, 1, 1);
+  table[tableSize] = table[0];
   const frames: Float32Array[] = [];
   for (let f = 0; f < NUM_FRAMES; f++) {
-    const table = new Float32Array(tableSize + 1);
-    const numH = 1 + Math.floor((f / (NUM_FRAMES - 1)) * (MAX_HARMONICS - 1));
-    for (let h = 1; h <= numH; h++) {
-      addHarmonic(table, sineLut, tableSize, h, 1 / h);
-    }
-    normalize(table, tableSize);
-    table[tableSize] = table[0];
-    frames.push(table);
+    frames.push(new Float32Array(table));
   }
   return { frames, tableSize, numFrames: NUM_FRAMES };
 }

@@ -192,9 +192,10 @@ export class SynthEngine {
     const newWtTypeA = Math.round(getParam(this.sab, SabParam.OscAWavetableIndex)) as WavetableType;
     if (newWtTypeA !== this.wtTypeA) {
       this.wtTypeA = newWtTypeA;
-      this.customWtA = false;
-      this.wavetableA = generateTable(newWtTypeA, 2048);
-      this.voiceManager.setWavetableA(this.wavetableA);
+      if (!this.customWtA) {
+        this.wavetableA = generateTable(newWtTypeA, 2048);
+        this.voiceManager.setWavetableA(this.wavetableA);
+      }
     }
 
     // Osc B
@@ -214,9 +215,10 @@ export class SynthEngine {
     const newWtTypeB = Math.round(getParam(this.sab, SabParam.OscBWavetableIndex)) as WavetableType;
     if (newWtTypeB !== this.wtTypeB) {
       this.wtTypeB = newWtTypeB;
-      this.customWtB = false;
-      this.wavetableB = generateTable(newWtTypeB, 2048);
-      this.voiceManager.setWavetableB(this.wavetableB);
+      if (!this.customWtB) {
+        this.wavetableB = generateTable(newWtTypeB, 2048);
+        this.voiceManager.setWavetableB(this.wavetableB);
+      }
     }
 
     // Sub + Noise
