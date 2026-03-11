@@ -1,0 +1,64 @@
+import type { ModRoute } from "@/audio/dsp/modulation/modMatrix";
+
+export interface PatchData {
+  version: 1;
+  name: string;
+  oscillators: {
+    a: OscPatch;
+    b: OscPatch;
+    sub: { on: boolean; octave: number; shape: number; level: number };
+  };
+  noise: { type: number; level: number };
+  filter: {
+    cutoff: number;
+    resonance: number;
+    drive: number;
+    type: number;
+    envAmount: number;
+  };
+  envelopes: {
+    amp: EnvPatch;
+    filter: EnvPatch;
+  };
+  lfos: {
+    lfo1: { rate: number; shape: number };
+    lfo2: { rate: number; shape: number };
+  };
+  modulations: ModRoute[];
+  effects: {
+    chorus: { rate: number; depth: number; mix: number };
+    delay: { time: number; feedback: number; mix: number };
+    reverb: { decay: number; mix: number };
+  };
+  master: { volume: number };
+  drift: number;
+  macros: number[];
+}
+
+interface OscPatch {
+  on: boolean;
+  level: number;
+  framePosition: number;
+  detune: number;
+  unisonVoices: number;
+  unisonDetune: number;
+  unisonSpread: number;
+  pan: number;
+  warpType: number;
+  warpAmount: number;
+  warp2Type: number;
+  warp2Amount: number;
+}
+
+interface EnvPatch {
+  attack: number;
+  decay: number;
+  sustain: number;
+  release: number;
+}
+
+export function validatePatch(data: unknown): data is PatchData {
+  if (typeof data !== "object" || data === null) return false;
+  const d = data as Record<string, unknown>;
+  return d.version === 1 && typeof d.name === "string" && typeof d.oscillators === "object";
+}

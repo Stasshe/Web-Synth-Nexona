@@ -52,7 +52,10 @@ export function ModulationPanel({ onModRoutesChange }: ModPanelProps) {
   };
 
   const updateRoute = (idx: number, field: keyof ModRoute, value: number) => {
-    (synthState.modulations[idx] as Record<string, number>)[field] = value;
+    const route = synthState.modulations[idx];
+    if (route) {
+      (route as unknown as Record<string, number>)[field] = value;
+    }
     onModRoutesChange?.(synthState.modulations as ModRoute[]);
   };
 
