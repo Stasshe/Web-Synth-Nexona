@@ -35,7 +35,14 @@ describe("warpTypes", () => {
     }
   });
 
-  it("FM with zero signal is identity", () => {
-    expect(applyWarp(0.3, WarpType.FM, 0.5, 0)).toBeCloseTo(0.3, 5);
+  it("FM with zero amount is identity", () => {
+    expect(applyWarp(0.3, WarpType.FM, 0, 0)).toBeCloseTo(0.3, 5);
+  });
+
+  it("FM with nonzero amount changes phase", () => {
+    const out = applyWarp(0.3, WarpType.FM, 0.5, 0);
+    expect(out).not.toBeCloseTo(0.3, 2);
+    expect(out).toBeGreaterThanOrEqual(0);
+    expect(out).toBeLessThan(1);
   });
 });

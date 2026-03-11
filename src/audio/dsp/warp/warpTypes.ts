@@ -47,7 +47,10 @@ export function applyWarp(phase: number, type: WarpType, amount: number, fmSigna
     }
 
     case WarpType.FM: {
-      let p = phase + fmSignal * amount;
+      // Self-FM: 2:1 ratio modulator for classic FM bell/metallic timbres.
+      // Distinct from PD which uses 1:1 ratio.
+      const modIndex = amount * 4;
+      let p = phase + modIndex * Math.sin(2 * Math.PI * phase * 2) + fmSignal * amount;
       p = p - Math.floor(p);
       if (p < 0) p += 1;
       return p;
