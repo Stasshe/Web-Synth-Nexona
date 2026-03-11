@@ -1,7 +1,9 @@
 "use client";
 
 import type { ModRoute } from "@/audio/dsp/modulation/modMatrix";
+import type { Wavetable } from "@/audio/dsp/wavetable/wavetableEngine";
 import { type SynthNode, createSynthNode } from "@/audio/worklet/node";
+import { DndProvider } from "@/components/DndProvider";
 import { EffectsPanel } from "@/components/EffectsPanel";
 import { EnvelopePanel } from "@/components/EnvelopePanel";
 import { FilterPanel } from "@/components/FilterPanel";
@@ -17,9 +19,9 @@ import { Knob } from "@/components/ui/Knob";
 import { loadPatchIntoState, urlToPatch } from "@/patch/loader";
 import { patchToUrl, stateToPatch } from "@/patch/serializer";
 import { bindStateToSAB, synthState } from "@/state/synthState";
-import type { Wavetable } from "@/audio/dsp/wavetable/wavetableEngine";
 import { Code, Download, Power, Share2, Upload, Volume2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { subscribe } from "valtio";
 import { useSnapshot } from "valtio";
 
 export default function Home() {
@@ -39,6 +41,21 @@ export default function Home() {
         if (patch) loadPatchIntoState(patch);
       });
     }
+  }, []);
+
+  // Auto-sync mod routes to worklet whenever they change
+  useEffect(() => {
+    const unsub = subscribe(synthState.modulations, () => {
+      if (synthRef.current) {
+        const plain = synthState.modulations.map((r) => ({
+          source: r.source,
+          target: r.target,
+          amount: r.amount,
+        }));
+        synthRef.current.setModRoutes(plain as ModRoute[]);
+      }
+    });
+    return unsub;
   }, []);
 
   const applyCustomWavetables = useCallback((synth: SynthNode) => {
@@ -71,10 +88,6 @@ export default function Home() {
 
   const handleNoteOff = useCallback((note: number) => {
     synthRef.current?.noteOff(note);
-  }, []);
-
-  const handleModRoutesChange = useCallback((routes: ModRoute[]) => {
-    synthRef.current?.setModRoutes(routes);
   }, []);
 
   const handleShare = useCallback(async () => {
@@ -139,137 +152,141 @@ export default function Home() {
   }
 
   return (
-    <main className="h-screen bg-bg-darkest p-1.5 flex flex-col overflow-hidden">
-      {/* Header */}
-      <header className="flex items-center justify-between px-3 py-1 mb-1 bg-bg-panel rounded-lg border border-border-default shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-accent-green animate-pulse" />
-            <span className="text-xs font-medium tracking-wider">WEB WAVETABLE SYNTH</span>
+    <DndProvider>
+      <main className="h-screen bg-bg-darkest p-1.5 flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="flex items-center justify-between px-3 py-1 mb-1 bg-bg-panel rounded-lg border border-border-default shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-accent-green animate-pulse" />
+              <span className="text-xs font-medium tracking-wider">WEB WAVETABLE SYNTH</span>
+            </div>
+            <Visualizer waveformData={waveformData} />
           </div>
-          <Visualizer waveformData={waveformData} />
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={handleSave}
-              className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-text-muted hover:text-text-primary
-                         bg-bg-surface border border-border-default rounded transition-colors cursor-pointer"
-              title="Save patch to file"
-            >
-              <Download size={11} />
-              Save
-            </button>
-            <button
-              type="button"
-              onClick={handleLoad}
-              className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-text-muted hover:text-text-primary
-                         bg-bg-surface border border-border-default rounded transition-colors cursor-pointer"
-              title="Load patch from file"
-            >
-              <Upload size={11} />
-              Load
-            </button>
-            <button
-              type="button"
-              onClick={handleShare}
-              className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-text-muted hover:text-accent-blue
-                         bg-bg-surface border border-border-default rounded transition-colors cursor-pointer"
-              title="Copy share URL to clipboard"
-            >
-              <Share2 size={11} />
-              Share
-            </button>
-            <button
-              type="button"
-              onClick={() => setParamEditorOpen(true)}
-              className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-text-muted hover:text-accent-purple
-                         bg-bg-surface border border-border-default rounded transition-colors cursor-pointer"
-              title="Edit all parameters as JSON"
-            >
-              <Code size={11} />
-              Edit
-            </button>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Volume2 size={13} className="text-text-muted" />
-            <Knob
-              label=""
-              value={snap.master.volume}
-              min={0}
-              max={1}
-              onChange={(v) => (synthState.master.volume = v)}
-              size={28}
-              color="var(--accent-green)"
-              formatValue={(v) => `${(v * 100).toFixed(0)}%`}
-            />
-          </div>
-        </div>
-      </header>
-
-      {/* Main content — fills remaining space */}
-      <div className="flex-1 flex flex-col gap-1 min-h-0">
-        {/* Row 1: Oscillators + Filter */}
-        <div className="grid grid-cols-[1fr_1fr_auto_1fr] gap-1 min-h-0">
-          <OscillatorPanel osc="a" onOpenWaveEditor={() => setWaveEditorOsc("a")} />
-          <OscillatorPanel osc="b" onOpenWaveEditor={() => setWaveEditorOsc("b")} />
-          <SubNoisePanel />
-          <FilterPanel />
-        </div>
-
-        {/* Row 2: Envelope + LFOs + Effects + Mod */}
-        <div className="grid grid-cols-5 gap-1 min-h-0">
-          <EnvelopePanel />
-          <LfoPanel index="lfo1" />
-          <LfoPanel index="lfo2" />
-          <EffectsPanel />
-          <ModulationPanel onModRoutesChange={handleModRoutesChange} />
-        </div>
-
-        {/* Row 3: Macros */}
-        <div className="bg-bg-panel rounded border border-border-default px-3 py-1 shrink-0">
-          <div className="flex items-center gap-4">
-            <span className="text-[9px] uppercase tracking-wider text-text-secondary">Macros</span>
-            <div className="flex gap-3">
-              {[0, 1, 2, 3].map((i) => (
-                <Knob
-                  key={i}
-                  label={`M${i + 1}`}
-                  value={snap.macros[i]}
-                  min={0}
-                  max={1}
-                  onChange={(v) => (synthState.macros[i] = v)}
-                  size={28}
-                  color="var(--accent-orange)"
-                />
-              ))}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={handleSave}
+                className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-text-muted hover:text-text-primary
+                           bg-bg-surface border border-border-default rounded transition-colors cursor-pointer"
+                title="Save patch to file"
+              >
+                <Download size={11} />
+                Save
+              </button>
+              <button
+                type="button"
+                onClick={handleLoad}
+                className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-text-muted hover:text-text-primary
+                           bg-bg-surface border border-border-default rounded transition-colors cursor-pointer"
+                title="Load patch from file"
+              >
+                <Upload size={11} />
+                Load
+              </button>
+              <button
+                type="button"
+                onClick={handleShare}
+                className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-text-muted hover:text-accent-blue
+                           bg-bg-surface border border-border-default rounded transition-colors cursor-pointer"
+                title="Copy share URL to clipboard"
+              >
+                <Share2 size={11} />
+                Share
+              </button>
+              <button
+                type="button"
+                onClick={() => setParamEditorOpen(true)}
+                className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-text-muted hover:text-accent-purple
+                           bg-bg-surface border border-border-default rounded transition-colors cursor-pointer"
+                title="Edit all parameters as JSON"
+              >
+                <Code size={11} />
+                Edit
+              </button>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Volume2 size={13} className="text-text-muted" />
+              <Knob
+                label=""
+                value={snap.master.volume}
+                min={0}
+                max={1}
+                onChange={(v) => (synthState.master.volume = v)}
+                size={28}
+                color="var(--accent-green)"
+                formatValue={(v) => `${(v * 100).toFixed(0)}%`}
+              />
             </div>
           </div>
+        </header>
+
+        {/* Main content — fills remaining space */}
+        <div className="flex-1 flex flex-col gap-1 min-h-0">
+          {/* Row 1: Oscillators + Filter */}
+          <div className="grid grid-cols-[1fr_1fr_auto_1fr] gap-1 min-h-0">
+            <OscillatorPanel osc="a" onOpenWaveEditor={() => setWaveEditorOsc("a")} />
+            <OscillatorPanel osc="b" onOpenWaveEditor={() => setWaveEditorOsc("b")} />
+            <SubNoisePanel />
+            <FilterPanel />
+          </div>
+
+          {/* Row 2: Envelope + LFOs + Effects + Mod */}
+          <div className="grid grid-cols-5 gap-1 min-h-0">
+            <EnvelopePanel />
+            <LfoPanel index="lfo1" />
+            <LfoPanel index="lfo2" />
+            <EffectsPanel />
+            <ModulationPanel />
+          </div>
+
+          {/* Row 3: Macros */}
+          <div className="bg-bg-panel rounded border border-border-default px-3 py-1 shrink-0">
+            <div className="flex items-center gap-4">
+              <span className="text-[9px] uppercase tracking-wider text-text-secondary">
+                Macros
+              </span>
+              <div className="flex gap-3">
+                {[0, 1, 2, 3].map((i) => (
+                  <Knob
+                    key={i}
+                    label={`M${i + 1}`}
+                    value={snap.macros[i]}
+                    min={0}
+                    max={1}
+                    onChange={(v) => (synthState.macros[i] = v)}
+                    size={28}
+                    color="var(--accent-orange)"
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Keyboard */}
+          <Keyboard onNoteOn={handleNoteOn} onNoteOff={handleNoteOff} />
         </div>
 
-        {/* Keyboard */}
-        <Keyboard onNoteOn={handleNoteOn} onNoteOff={handleNoteOff} />
-      </div>
+        {/* Param Editor Modal */}
+        <ParamEditor open={paramEditorOpen} onClose={() => setParamEditorOpen(false)} />
 
-      {/* Param Editor Modal */}
-      <ParamEditor open={paramEditorOpen} onClose={() => setParamEditorOpen(false)} />
-
-      {/* Waveform Editor Modal */}
-      {waveEditorOsc && (
-        <WaveformEditor
-          open={true}
-          onClose={() => setWaveEditorOsc(null)}
-          osc={waveEditorOsc}
-          onApply={(wt) => {
-            if (waveEditorOsc === "a") {
-              synthRef.current?.loadWavetableA(wt);
-            } else {
-              synthRef.current?.loadWavetableB(wt);
-            }
-          }}
-        />
-      )}
-    </main>
+        {/* Waveform Editor Modal */}
+        {waveEditorOsc && (
+          <WaveformEditor
+            open={true}
+            onClose={() => setWaveEditorOsc(null)}
+            osc={waveEditorOsc}
+            onApply={(wt) => {
+              if (waveEditorOsc === "a") {
+                synthRef.current?.loadWavetableA(wt);
+              } else {
+                synthRef.current?.loadWavetableB(wt);
+              }
+            }}
+          />
+        )}
+      </main>
+    </DndProvider>
   );
 }

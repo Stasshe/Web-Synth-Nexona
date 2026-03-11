@@ -1,8 +1,12 @@
 "use client";
+import { ModSource } from "@/audio/dsp/modulation/modMatrix";
 import { Knob } from "@/components/ui/Knob";
 import { Panel } from "@/components/ui/Panel";
+import { DND_TYPES, type ModSourceDragItem } from "@/dnd/types";
 import { synthState } from "@/state/synthState";
+import { GripHorizontal } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
+import { useDrag } from "react-dnd";
 import { useSnapshot } from "valtio";
 
 const LFO_SHAPES = [
@@ -21,6 +25,18 @@ export function LfoPanel({ index }: LfoPanelProps) {
   const lfo = snap.lfos[index];
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const label = index === "lfo1" ? "LFO 1" : "LFO 2";
+  const modSource = index === "lfo1" ? ModSource.LFO1 : ModSource.LFO2;
+
+  const [{ isDragging }, dragRef] = useDrag(
+    () => ({
+      type: DND_TYPES.MOD_SOURCE,
+      item: { source: modSource, label } as ModSourceDragItem,
+      collect: (monitor) => ({
+        isDragging: monitor.isDragging(),
+      }),
+    }),
+    [modSource, label],
+  );
 
   const drawWaveform = useCallback(() => {
     const canvas = canvasRef.current;
@@ -106,7 +122,7 @@ export function LfoPanel({ index }: LfoPanelProps) {
         ))}
       </div>
 
-      <div className="flex justify-center">
+      <div className="flex items-center justify-center gap-2">
         <Knob
           label="Rate"
           value={lfo.rate}
@@ -117,6 +133,15 @@ export function LfoPanel({ index }: LfoPanelProps) {
           color="var(--lfo)"
           formatValue={(v) => `${v.toFixed(2)}Hz`}
         />
+        <div
+          ref={dragRef as unknown as React.Ref<HTMLDivElement>}
+          className="flex flex-col items-center gap-0.5 cursor-grab active:cursor-grabbing select-none transition-opacity"
+          style={{ opacity: isDragging ? 0.4 : 1 }}
+          title={`Drag to assign ${label} modulation`}
+        >
+          <GripHorizontal size={16} className="text-lfo" />
+          <span className="text-[8px] text-lfo uppercase tracking-wider">MOD</span>
+        </div>
       </div>
     </Panel>
   );

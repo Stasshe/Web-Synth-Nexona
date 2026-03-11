@@ -1,9 +1,13 @@
 "use client";
+import { ModTarget } from "@/audio/dsp/modulation/modMatrix";
 import { Knob } from "@/components/ui/Knob";
 import { Panel } from "@/components/ui/Panel";
 import { Select } from "@/components/ui/Select";
 import { Toggle } from "@/components/ui/Toggle";
+import type { ModSourceDragItem } from "@/dnd/types";
+import { useModAmount } from "@/hooks/useModAmount";
 import { synthState } from "@/state/synthState";
+import { useCallback } from "react";
 import { useSnapshot } from "valtio";
 
 const WARP_OPTIONS = [
@@ -27,6 +31,27 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
   const state = synthState.oscillators[osc];
   const color = osc === "a" ? "var(--osc-a)" : "var(--osc-b)";
 
+  const levelTarget = osc === "a" ? ModTarget.OSC_A_LEVEL : ModTarget.OSC_B_LEVEL;
+  const frameTarget = osc === "a" ? ModTarget.OSC_A_FRAME : ModTarget.OSC_B_FRAME;
+  const warpTarget = osc === "a" ? ModTarget.OSC_A_WARP_AMOUNT : ModTarget.OSC_B_WARP_AMOUNT;
+  const pitchTarget = osc === "a" ? ModTarget.OSC_A_PITCH : ModTarget.OSC_B_PITCH;
+
+  const modLevel = useModAmount(levelTarget);
+  const modFrame = useModAmount(frameTarget);
+  const modWarp = useModAmount(warpTarget);
+  const modPitch = useModAmount(pitchTarget);
+
+  const handleModDrop = useCallback(
+    (target: ModTarget) => (item: ModSourceDragItem) => {
+      synthState.modulations.push({
+        source: item.source,
+        target,
+        amount: 0.5,
+      });
+    },
+    [],
+  );
+
   return (
     <Panel title={`OSC ${osc.toUpperCase()}`} color={color}>
       <div className="flex items-center justify-between mb-3">
@@ -38,7 +63,8 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
             className="px-2 py-0.5 text-[10px] text-text-secondary hover:text-text-primary bg-bg-surface border border-border-default rounded cursor-pointer transition-colors"
             title="Edit waveform"
           >
-            {data.waveformName}{data.customWaveform ? "*" : ""}
+            {data.waveformName}
+            {data.customWaveform ? "*" : ""}
           </button>
           <Select
             value={String(data.warpType)}
@@ -56,6 +82,8 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
           max={1}
           onChange={(v) => (state.level = v)}
           color={color}
+          modAmount={modLevel}
+          onModDrop={handleModDrop(levelTarget)}
         />
         <Knob
           label="Frame"
@@ -64,6 +92,8 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
           max={1}
           onChange={(v) => (state.framePosition = v)}
           color={color}
+          modAmount={modFrame}
+          onModDrop={handleModDrop(frameTarget)}
         />
         <Knob
           label="Detune"
@@ -73,6 +103,8 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
           step={1}
           onChange={(v) => (state.detune = v)}
           color={color}
+          modAmount={modPitch}
+          onModDrop={handleModDrop(pitchTarget)}
           formatValue={(v) => `${v > 0 ? "+" : ""}${v.toFixed(0)}ct`}
         />
         <Knob
@@ -82,6 +114,8 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
           max={1}
           onChange={(v) => (state.warpAmount = v)}
           color={color}
+          modAmount={modWarp}
+          onModDrop={handleModDrop(warpTarget)}
         />
       </div>
 

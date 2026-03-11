@@ -1,9 +1,9 @@
 "use client";
 
+import { type ReactNode, useEffect, useState } from "react";
 import { DndProvider as ReactDndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { TouchBackend } from "react-dnd-touch-backend";
-import { useEffect, useState, type ReactNode } from "react";
 
 function isTouchDevice(): boolean {
   if (typeof window === "undefined") return false;

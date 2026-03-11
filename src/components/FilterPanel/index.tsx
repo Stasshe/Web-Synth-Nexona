@@ -1,7 +1,11 @@
 "use client";
+import { ModTarget } from "@/audio/dsp/modulation/modMatrix";
 import { Knob } from "@/components/ui/Knob";
 import { Panel } from "@/components/ui/Panel";
+import type { ModSourceDragItem } from "@/dnd/types";
+import { useModAmount } from "@/hooks/useModAmount";
 import { synthState } from "@/state/synthState";
+import { useCallback } from "react";
 import { useSnapshot } from "valtio";
 
 const FILTER_TYPES = [
@@ -14,6 +18,20 @@ const FILTER_TYPES = [
 export function FilterPanel() {
   const snap = useSnapshot(synthState);
   const f = snap.filter;
+
+  const modCutoff = useModAmount(ModTarget.FILTER_CUTOFF);
+  const modReso = useModAmount(ModTarget.FILTER_RESONANCE);
+
+  const handleModDrop = useCallback(
+    (target: ModTarget) => (item: ModSourceDragItem) => {
+      synthState.modulations.push({
+        source: item.source,
+        target,
+        amount: 0.5,
+      });
+    },
+    [],
+  );
 
   return (
     <Panel title="FILTER" color="var(--filter)">
@@ -45,6 +63,8 @@ export function FilterPanel() {
           size={56}
           color="var(--filter)"
           formatValue={(v) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${v.toFixed(0)}`)}
+          modAmount={modCutoff}
+          onModDrop={handleModDrop(ModTarget.FILTER_CUTOFF)}
         />
       </div>
 
@@ -56,6 +76,8 @@ export function FilterPanel() {
           max={0.99}
           onChange={(v) => (synthState.filter.resonance = v)}
           color="var(--filter)"
+          modAmount={modReso}
+          onModDrop={handleModDrop(ModTarget.FILTER_RESONANCE)}
         />
         <Knob
           label="Drive"
