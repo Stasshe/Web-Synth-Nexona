@@ -202,7 +202,7 @@ export default function Home() {
         </header>
 
         {/* Body: [macro strip] [center tabs] [right sidebar] */}
-        <div className="flex-1 flex flex-row gap-1 min-h-0">
+        <div className="flex-1 flex flex-row gap-1 min-h-0 overflow-hidden">
 
           {/* Left macro strip */}
           <MacroStrip />
@@ -228,13 +228,11 @@ export default function Home() {
             </div>
 
             {/* Page content */}
-            <div className="flex-1 min-h-0">
+            <div className="flex-1 min-h-0 overflow-y-auto">
               {activePage === "voice" ? (
                 <VoicePage onOpenWaveEditor={setWaveEditorOsc} />
               ) : (
-                <div className="h-full overflow-y-auto">
-                  <EffectsPage />
-                </div>
+                <EffectsPage />
               )}
             </div>
           </div>

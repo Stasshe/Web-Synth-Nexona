@@ -9,16 +9,16 @@ interface VoicePageProps {
 
 export function VoicePage({ onOpenWaveEditor }: VoicePageProps) {
   return (
-    <div className="flex flex-col gap-1 min-h-0 h-full">
+    <div className="flex flex-col gap-1">
       {/* Row 1: Three oscillators */}
-      <div className="grid grid-cols-3 gap-1 flex-1 min-h-0 overflow-hidden">
+      <div className="grid grid-cols-3 gap-1">
         <OscillatorPanel osc="a" onOpenWaveEditor={() => onOpenWaveEditor("a")} />
         <OscillatorPanel osc="b" onOpenWaveEditor={() => onOpenWaveEditor("b")} />
         <OscillatorPanel osc="c" onOpenWaveEditor={() => onOpenWaveEditor("c")} />
       </div>
 
       {/* Row 2: Noise + two filters */}
-      <div className="grid grid-cols-3 gap-1 shrink-0">
+      <div className="grid grid-cols-3 gap-1">
         <NoisePanel />
         <FilterPanel filter={1} />
         <FilterPanel filter={2} />

@@ -219,7 +219,7 @@ function EQSlot() {
 
 export function EffectsPage() {
   return (
-    <div className="grid grid-cols-3 gap-1 h-full min-h-0 content-start overflow-y-auto">
+    <div className="grid grid-cols-3 gap-1 content-start">
       <DistortionSlot />
       <CompressorSlot />
       <ChorusSlot />
