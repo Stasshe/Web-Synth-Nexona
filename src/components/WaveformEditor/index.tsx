@@ -43,6 +43,7 @@ interface WaveformEditorProps {
   open: boolean;
   onClose: () => void;
   onApply: (wt: Wavetable) => void;
+  onResetPreset?: () => void;
   osc: "a" | "b" | "sub";
 }
 
@@ -118,7 +119,7 @@ function findHitPoint(
   return best;
 }
 
-export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorProps) {
+export function WaveformEditor({ open, onClose, onApply, onResetPreset, osc }: WaveformEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [model, setModel] = useState<WaveformModel>(() => loadExistingModel(osc));
   const [currentName, setCurrentName] = useState<string>(() => loadExistingName(osc));
@@ -346,27 +347,70 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
     oscState.controlPoints = model.points.map((p) => ({ ...p }));
 
     if (isPresetName(currentName)) {
-      // Preset: use multi-frame wavetable from engine, clear custom data
-      const wtType = PRESET_WAVEFORM_TYPE[currentName];
-      const wt = generateTable(wtType, TABLE_SIZE);
+      // Preset: just set the waveform type on state — the SAB/worklet will handle
+      // regeneration automatically. Clear custom flag via reset message.
       oscState.customWaveform = null;
       if (osc !== "sub") {
-        (oscState as Record<string, unknown>).waveformType = wtType;
+        (oscState as Record<string, unknown>).waveformType = PRESET_WAVEFORM_TYPE[currentName];
+        onResetPreset?.();
+      } else {
+        // Sub osc doesn't use SAB wavetable index, so send directly
+        const wt = generateTable(PRESET_WAVEFORM_TYPE[currentName], TABLE_SIZE);
+        onApply(wt);
       }
-      onApply(wt);
     } else {
-      // Custom: single-frame wavetable from control points
+      // Custom: multi-frame wavetable via spectral morph.
+      // Frame 0 = fundamental only, frame 63 = full waveform.
       const waveform = generateWaveformFromPoints(model, TABLE_SIZE);
-      const wt: Wavetable = {
-        frames: [new Float32Array(waveform)],
-        tableSize: TABLE_SIZE,
-        numFrames: 1,
-      };
+      const NUM_FRAMES = 64;
+      const MAX_HARMONICS = 128;
+
+      // Compute harmonic magnitudes + phases via DFT of the base waveform
+      const mags = new Float64Array(MAX_HARMONICS + 1);
+      const phases = new Float64Array(MAX_HARMONICS + 1);
+      for (let h = 1; h <= MAX_HARMONICS; h++) {
+        let re = 0;
+        let im = 0;
+        for (let i = 0; i < TABLE_SIZE; i++) {
+          const angle = (2 * Math.PI * h * i) / TABLE_SIZE;
+          re += waveform[i] * Math.cos(angle);
+          im -= waveform[i] * Math.sin(angle);
+        }
+        re /= TABLE_SIZE / 2;
+        im /= TABLE_SIZE / 2;
+        mags[h] = Math.sqrt(re * re + im * im);
+        phases[h] = Math.atan2(im, re);
+      }
+
+      const frames: Float32Array[] = [];
+      for (let f = 0; f < NUM_FRAMES; f++) {
+        const table = new Float32Array(TABLE_SIZE + 1);
+        const numH = 1 + Math.floor((f / (NUM_FRAMES - 1)) * (MAX_HARMONICS - 1));
+        for (let h = 1; h <= numH; h++) {
+          if (mags[h] < 1e-6) continue;
+          for (let i = 0; i <= TABLE_SIZE; i++) {
+            table[i] += mags[h] * Math.cos((2 * Math.PI * h * i) / TABLE_SIZE + phases[h]);
+          }
+        }
+        // Normalize
+        let max = 0;
+        for (let i = 0; i < TABLE_SIZE; i++) {
+          const a = Math.abs(table[i]);
+          if (a > max) max = a;
+        }
+        if (max > 0) {
+          for (let i = 0; i <= TABLE_SIZE; i++) table[i] /= max;
+        }
+        table[TABLE_SIZE] = table[0];
+        frames.push(table);
+      }
+
+      const wt: Wavetable = { frames, tableSize: TABLE_SIZE, numFrames: NUM_FRAMES };
       oscState.customWaveform = Array.from(waveform);
       onApply(wt);
     }
     onClose();
-  }, [model, currentName, osc, onApply, onClose]);
+  }, [model, currentName, osc, onApply, onResetPreset, onClose]);
 
   const handlePreset = useCallback((name: PresetName) => {
     setModel(presetModel(name));

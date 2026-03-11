@@ -297,6 +297,13 @@ export default function Home() {
                 synthRef.current?.loadWavetableSub(wt);
               }
             }}
+            onResetPreset={() => {
+              if (waveEditorOsc === "a") {
+                synthRef.current?.resetWavetableA();
+              } else if (waveEditorOsc === "b") {
+                synthRef.current?.resetWavetableB();
+              }
+            }}
           />
         )}
       </main>

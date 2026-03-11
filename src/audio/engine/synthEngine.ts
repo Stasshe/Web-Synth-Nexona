@@ -131,6 +131,18 @@ export class SynthEngine {
     this.voiceManager.setWavetableSub(wt);
   }
 
+  resetWavetableA(): void {
+    this.customWtA = false;
+    this.wavetableA = generateTable(this.wtTypeA, 2048);
+    this.voiceManager.setWavetableA(this.wavetableA);
+  }
+
+  resetWavetableB(): void {
+    this.customWtB = false;
+    this.wavetableB = generateTable(this.wtTypeB, 2048);
+    this.voiceManager.setWavetableB(this.wavetableB);
+  }
+
   setModRoutes(routes: ModRoute[]): void {
     this.voiceManager.setModRoutes(routes);
   }
@@ -188,14 +200,13 @@ export class SynthEngine {
     this.voiceParams.oscAWarp2Type = getParam(this.sab, SabParam.OscAWarp2Type) as WarpType;
     this.voiceParams.oscAWarp2Amount = getParam(this.sab, SabParam.OscAWarp2Amount);
 
-    // Regenerate wavetable A if type changed (and not custom)
+    // Regenerate wavetable A if type changed — always regenerate and clear custom flag
     const newWtTypeA = Math.round(getParam(this.sab, SabParam.OscAWavetableIndex)) as WavetableType;
     if (newWtTypeA !== this.wtTypeA) {
       this.wtTypeA = newWtTypeA;
-      if (!this.customWtA) {
-        this.wavetableA = generateTable(newWtTypeA, 2048);
-        this.voiceManager.setWavetableA(this.wavetableA);
-      }
+      this.customWtA = false;
+      this.wavetableA = generateTable(newWtTypeA, 2048);
+      this.voiceManager.setWavetableA(this.wavetableA);
     }
 
     // Osc B
@@ -211,14 +222,13 @@ export class SynthEngine {
     this.voiceParams.oscBWarp2Type = getParam(this.sab, SabParam.OscBWarp2Type) as WarpType;
     this.voiceParams.oscBWarp2Amount = getParam(this.sab, SabParam.OscBWarp2Amount);
 
-    // Regenerate wavetable B if type changed (and not custom)
+    // Regenerate wavetable B if type changed — always regenerate and clear custom flag
     const newWtTypeB = Math.round(getParam(this.sab, SabParam.OscBWavetableIndex)) as WavetableType;
     if (newWtTypeB !== this.wtTypeB) {
       this.wtTypeB = newWtTypeB;
-      if (!this.customWtB) {
-        this.wavetableB = generateTable(newWtTypeB, 2048);
-        this.voiceManager.setWavetableB(this.wavetableB);
-      }
+      this.customWtB = false;
+      this.wavetableB = generateTable(newWtTypeB, 2048);
+      this.voiceManager.setWavetableB(this.wavetableB);
     }
 
     // Sub + Noise
