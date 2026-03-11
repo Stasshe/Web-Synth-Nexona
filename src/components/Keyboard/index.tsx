@@ -114,7 +114,7 @@ export function Keyboard({ onNoteOn, onNoteOff }: KeyboardProps) {
   return (
     <div
       ref={containerRef}
-      className="relative h-[72px] flex select-none shrink-0"
+      className="relative h-[80px] bg-bg-panel rounded-lg border border-border-default flex select-none shrink-0 overflow-hidden mx-1.5 mb-1.5"
       style={{ touchAction: "none" }}
     >
       {WHITE_KEYS.map((key) => (
@@ -123,10 +123,10 @@ export function Keyboard({ onNoteOn, onNoteOff }: KeyboardProps) {
           onPointerDown={(e) => handleDown(key.note, e)}
           onPointerUp={() => handleUp(key.note)}
           onPointerLeave={() => handleUp(key.note)}
-          className="flex-1 flex items-end justify-center pb-1 text-[9px] cursor-pointer rounded-b border border-border-default transition-colors"
+          className="flex-1 flex items-end justify-center pb-1 text-[9px] cursor-pointer border-r border-border-default last:border-r-0 transition-colors"
           style={{
-            backgroundColor: activeNotes.has(key.note) ? "var(--accent-blue)" : "#d8d8e0",
-            color: activeNotes.has(key.note) ? "#fff" : "#666",
+            backgroundColor: activeNotes.has(key.note) ? "var(--accent-blue)" : "#eee",
+            color: activeNotes.has(key.note) ? "#fff" : "#999",
             userSelect: "none",
             touchAction: "none",
           }}
@@ -144,13 +144,13 @@ export function Keyboard({ onNoteOn, onNoteOff }: KeyboardProps) {
             onPointerDown={(e) => handleDown(key.note, e)}
             onPointerUp={() => handleUp(key.note)}
             onPointerLeave={() => handleUp(key.note)}
-            className="absolute rounded-b cursor-pointer z-10 transition-colors"
+            className="absolute cursor-pointer z-10 transition-colors rounded-b-sm shadow-md"
             style={{
               left: `${leftPercent}%`,
-              width: `${(0.55 / totalWhite) * 100}%`,
+              width: `${(0.6 / totalWhite) * 100}%`,
               height: "60%",
-              backgroundColor: activeNotes.has(key.note) ? "var(--accent-blue)" : "#222",
-              border: "1px solid #111",
+              backgroundColor: activeNotes.has(key.note) ? "var(--accent-blue)" : "#1a1a1a",
+              border: "1px solid #000",
               userSelect: "none",
               touchAction: "none",
             }}

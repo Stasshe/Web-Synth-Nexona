@@ -201,52 +201,47 @@ export default function Home() {
           </div>
         </header>
 
-        {/* Body + Keyboard wrapper — flex-1 takes all remaining height */}
-        <div className="flex-1 flex flex-col gap-1 min-h-0">
+        {/* Body — flex-1 takes all remaining height */}
+        <div className="flex-1 flex flex-row gap-1 min-h-0 overflow-hidden">
 
-          {/* Body: [macro strip] [center tabs] [right sidebar] */}
-          <div className="flex-1 flex flex-row gap-1 min-h-0 overflow-hidden">
+          {/* Left macro strip */}
+          <MacroStrip />
 
-            {/* Left macro strip */}
-            <MacroStrip />
-
-            {/* Center: Voice / Effects */}
-            <div className="flex-1 flex flex-col gap-1 min-h-0">
-              {/* Tab bar */}
-              <div className="flex gap-1 bg-bg-panel rounded-lg border border-border-default px-2 py-1 shrink-0">
-                {(["voice", "effects"] as const).map((page) => (
-                  <button
-                    key={page}
-                    type="button"
-                    onClick={() => (synthState.ui.activePage = page)}
-                    className={`px-5 py-0.5 text-[11px] font-semibold tracking-widest rounded transition-colors uppercase cursor-pointer border ${
-                      activePage === page
-                        ? "bg-bg-active border-border-accent text-text-primary"
-                        : "border-transparent text-text-muted hover:text-text-secondary"
+          {/* Center: Voice / Effects */}
+          <div className="flex-1 flex flex-col gap-1 min-h-0">
+            {/* Tab bar */}
+            <div className="flex gap-1 bg-bg-panel rounded-lg border border-border-default px-2 py-1 shrink-0">
+              {(["voice", "effects"] as const).map((page) => (
+                <button
+                  key={page}
+                  type="button"
+                  onClick={() => (synthState.ui.activePage = page)}
+                  className={`px-5 py-0.5 text-[11px] font-semibold tracking-widest rounded transition-colors uppercase cursor-pointer border ${activePage === page
+                    ? "bg-bg-active border-border-accent text-text-primary"
+                    : "border-transparent text-text-muted hover:text-text-secondary"
                     }`}
-                  >
-                    {page}
-                  </button>
-                ))}
-              </div>
-
-              {/* Page content */}
-              <div className="flex-1 min-h-0 overflow-y-auto">
-                {activePage === "voice" ? (
-                  <VoicePage onOpenWaveEditor={setWaveEditorOsc} />
-                ) : (
-                  <EffectsPage />
-                )}
-              </div>
+                >
+                  {page}
+                </button>
+              ))}
             </div>
 
-            {/* Right sidebar: Envelope + LFOs + Mod routes */}
-            <ModulatorSidebar />
+            {/* Page content */}
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              {activePage === "voice" ? (
+                <VoicePage onOpenWaveEditor={setWaveEditorOsc} />
+              ) : (
+                <EffectsPage />
+              )}
+            </div>
           </div>
 
-          {/* Keyboard — always pinned to bottom */}
-          <Keyboard onNoteOn={handleNoteOn} onNoteOff={handleNoteOff} />
+          {/* Right sidebar: Envelope + LFOs + Mod routes */}
+          <ModulatorSidebar />
         </div>
+
+        {/* Keyboard — fixed at bottom */}
+        <Keyboard onNoteOn={handleNoteOn} onNoteOff={handleNoteOff} />
 
         {/* Modals */}
         <ParamEditor open={paramEditorOpen} onClose={() => setParamEditorOpen(false)} />
