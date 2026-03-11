@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface KeyboardProps {
   onNoteOn: (note: number, velocity: number) => void;
@@ -8,6 +8,22 @@ interface KeyboardProps {
 
 // C2 (36) to C6 (84) = 4 octaves + 1
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+
+// QWERTY keyboard → MIDI note mapping (two rows, starting at C3=48)
+// Lower row: Z S X D C V G B H N J M  → C3..B3
+// Upper row: Q 2 W 3 E R 5 T 6 Y 7 U I 9 O 0 P → C4..E5
+const QWERTY_MAP: Record<string, number> = {
+  // Lower row — C3 (48) to B3 (59)
+  KeyZ: 48, KeyS: 49, KeyX: 50, KeyD: 51, KeyC: 52,
+  KeyV: 53, KeyG: 54, KeyB: 55, KeyH: 56, KeyN: 57,
+  KeyJ: 58, KeyM: 59,
+  // Upper row — C4 (60) to E5 (76)
+  KeyQ: 60, Digit2: 61, KeyW: 62, Digit3: 63, KeyE: 64,
+  KeyR: 65, Digit5: 66, KeyT: 67, Digit6: 68, KeyY: 69,
+  Digit7: 70, KeyU: 71, KeyI: 72, Digit9: 73, KeyO: 74,
+  Digit0: 75, KeyP: 76,
+};
+const DEFAULT_VELOCITY = 100;
 
 function buildKeys() {
   const keys: { note: number; label: string; black: boolean }[] = [];
@@ -51,6 +67,47 @@ export function Keyboard({ onNoteOn, onNoteOff }: KeyboardProps) {
     },
     [onNoteOff],
   );
+
+  // QWERTY keyboard support
+  const qwertyHeld = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.repeat) return;
+      // Ignore when typing in inputs / textareas / contentEditable
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement).isContentEditable) return;
+
+      const note = QWERTY_MAP[e.code];
+      if (note === undefined) return;
+      if (qwertyHeld.current.has(e.code)) return;
+      qwertyHeld.current.add(e.code);
+      e.preventDefault();
+      onNoteOn(note, DEFAULT_VELOCITY);
+      setActiveNotes((s) => new Set(s).add(note));
+    };
+
+    const onKeyUp = (e: KeyboardEvent) => {
+      const note = QWERTY_MAP[e.code];
+      if (note === undefined) return;
+      if (!qwertyHeld.current.has(e.code)) return;
+      qwertyHeld.current.delete(e.code);
+      e.preventDefault();
+      onNoteOff(note);
+      setActiveNotes((s) => {
+        const next = new Set(s);
+        next.delete(note);
+        return next;
+      });
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+    };
+  }, [onNoteOn, onNoteOff]);
 
   const totalWhite = WHITE_KEYS.length;
 
