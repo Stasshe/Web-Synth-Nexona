@@ -42,7 +42,13 @@ export function Keyboard({ onNoteOn, onNoteOff }: KeyboardProps) {
   );
 
   return (
-    <div style={{ position: "relative", height: 140, display: "flex" }}>
+    <div 
+      style={{ 
+        position: "relative", 
+        height: 140, 
+        display: "flex",
+        userSelect: "none",
+      }}>
       {KEYS.filter((k) => !k.black).map((key) => (
         <div
           key={key.note}
