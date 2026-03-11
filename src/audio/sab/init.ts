@@ -80,6 +80,60 @@ export function createSAB(): SharedArrayBuffer {
   setParam(view, SabParam.ReverbDecay, 0.7);
   setParam(view, SabParam.ReverbMix, 0);
 
+  // Osc C defaults (off)
+  setParam(view, SabParam.OscCOn, 0);
+  setParam(view, SabParam.OscCWavetableIndex, 0);
+  setParam(view, SabParam.OscCLevel, 0.8);
+  setParam(view, SabParam.OscCFramePosition, 0);
+  setParam(view, SabParam.OscCDetune, 0);
+  setParam(view, SabParam.OscCUnisonVoices, 1);
+  setParam(view, SabParam.OscCUnisonDetune, 20);
+  setParam(view, SabParam.OscCUnisonSpread, 0.5);
+  setParam(view, SabParam.OscCPan, 0);
+  setParam(view, SabParam.OscCWarpType, 0);
+  setParam(view, SabParam.OscCWarpAmount, 0);
+  setParam(view, SabParam.OscCWarp2Type, 0);
+  setParam(view, SabParam.OscCWarp2Amount, 0);
+
+  // Filter 2 defaults (passthrough)
+  setParam(view, SabParam.Filter2Cutoff, 20000);
+  setParam(view, SabParam.Filter2Resonance, 0);
+  setParam(view, SabParam.Filter2Drive, 1);
+  setParam(view, SabParam.Filter2Type, 0);
+  setParam(view, SabParam.Filter2EnvAmount, 0);
+
+  // Distortion (off by default)
+  setParam(view, SabParam.DistortionDrive, 1);
+  setParam(view, SabParam.DistortionTone, 0.5);
+  setParam(view, SabParam.DistortionMix, 0);
+  setParam(view, SabParam.DistortionMode, 0);
+
+  // Compressor (off by default)
+  setParam(view, SabParam.CompThreshold, -12);
+  setParam(view, SabParam.CompRatio, 4);
+  setParam(view, SabParam.CompAttack, 0.01);
+  setParam(view, SabParam.CompRelease, 0.1);
+  setParam(view, SabParam.CompMakeup, 0);
+  setParam(view, SabParam.CompMix, 0);
+
+  // Flanger (off by default)
+  setParam(view, SabParam.FlangerRate, 0.5);
+  setParam(view, SabParam.FlangerDepth, 0.5);
+  setParam(view, SabParam.FlangerFeedback, 0.5);
+  setParam(view, SabParam.FlangerMix, 0);
+
+  // Phaser (off by default)
+  setParam(view, SabParam.PhaserRate, 0.5);
+  setParam(view, SabParam.PhaserDepth, 0.5);
+  setParam(view, SabParam.PhaserFeedback, 0.5);
+  setParam(view, SabParam.PhaserMix, 0);
+
+  // EQ (off by default)
+  setParam(view, SabParam.EqLowGain, 0);
+  setParam(view, SabParam.EqMidGain, 0);
+  setParam(view, SabParam.EqHighGain, 0);
+  setParam(view, SabParam.EqMix, 0);
+
   // Misc
   setParam(view, SabParam.DriftAmount, 0);
   setParam(view, SabParam.Macro1, 0);

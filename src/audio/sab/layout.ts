@@ -85,6 +85,61 @@ export enum SabParam {
   Macro2 = 122,
   Macro3 = 123,
   Macro4 = 124,
+
+  // Oscillator C: 130-143
+  OscCOn = 130,
+  OscCWavetableIndex = 131,
+  OscCFramePosition = 132,
+  OscCPitch = 133,
+  OscCDetune = 134,
+  OscCUnisonVoices = 135,
+  OscCUnisonDetune = 136,
+  OscCUnisonSpread = 137,
+  OscCLevel = 138,
+  OscCPan = 139,
+  OscCWarpType = 140,
+  OscCWarpAmount = 141,
+  OscCWarp2Type = 142,
+  OscCWarp2Amount = 143,
+
+  // Filter 2: 150-154
+  Filter2Cutoff = 150,
+  Filter2Resonance = 151,
+  Filter2Drive = 152,
+  Filter2Type = 153,
+  Filter2EnvAmount = 154,
+
+  // Distortion: 160-163
+  DistortionDrive = 160,
+  DistortionTone = 161,
+  DistortionMix = 162,
+  DistortionMode = 163,
+
+  // Compressor: 164-169
+  CompThreshold = 164,
+  CompRatio = 165,
+  CompAttack = 166,
+  CompRelease = 167,
+  CompMakeup = 168,
+  CompMix = 169,
+
+  // Flanger: 170-173
+  FlangerRate = 170,
+  FlangerDepth = 171,
+  FlangerFeedback = 172,
+  FlangerMix = 173,
+
+  // Phaser: 174-177
+  PhaserRate = 174,
+  PhaserDepth = 175,
+  PhaserFeedback = 176,
+  PhaserMix = 177,
+
+  // EQ: 178-181
+  EqLowGain = 178,
+  EqMidGain = 179,
+  EqHighGain = 180,
+  EqMix = 181,
 }
 
 const f32Buf = new ArrayBuffer(4);

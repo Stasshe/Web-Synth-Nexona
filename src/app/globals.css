@@ -28,6 +28,7 @@
 
   --osc-a: #4488ff;
   --osc-b: #ff8844;
+  --osc-c: #44ff88;
   --filter: #44cccc;
   --env-amp: #44ff88;
   --env-filter: #ff4466;
@@ -55,6 +56,7 @@
   --color-accent-red: var(--accent-red);
   --color-osc-a: var(--osc-a);
   --color-osc-b: var(--osc-b);
+  --color-osc-c: var(--osc-c);
   --color-filter: var(--filter);
   --color-env-amp: var(--env-amp);
   --color-env-filter: var(--env-filter);

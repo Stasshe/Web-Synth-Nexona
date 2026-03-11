@@ -29,6 +29,12 @@ const MOD_TARGET_NAMES: Record<number, string> = {
   9: "Reso",
   10: "Amp",
   11: "Pan",
+  12: "C Pitch",
+  13: "C Frame",
+  14: "C Warp",
+  15: "C Level",
+  16: "F2 Cutoff",
+  17: "F2 Reso",
 };
 
 export function ModulationPanel() {

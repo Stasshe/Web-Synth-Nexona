@@ -21,25 +21,33 @@ const WARP_OPTIONS = [
 ];
 
 interface OscillatorPanelProps {
-  osc: "a" | "b";
+  osc: "a" | "b" | "c";
   onOpenWaveEditor?: () => void;
 }
+
+const OSC_COLORS: Record<string, string> = {
+  a: "var(--osc-a)",
+  b: "var(--osc-b)",
+  c: "var(--osc-c)",
+};
+
+const OSC_MOD_TARGETS: Record<string, { level: ModTarget; frame: ModTarget; warp: ModTarget; pitch: ModTarget }> = {
+  a: { level: ModTarget.OSC_A_LEVEL, frame: ModTarget.OSC_A_FRAME, warp: ModTarget.OSC_A_WARP_AMOUNT, pitch: ModTarget.OSC_A_PITCH },
+  b: { level: ModTarget.OSC_B_LEVEL, frame: ModTarget.OSC_B_FRAME, warp: ModTarget.OSC_B_WARP_AMOUNT, pitch: ModTarget.OSC_B_PITCH },
+  c: { level: ModTarget.OSC_C_LEVEL, frame: ModTarget.OSC_C_FRAME, warp: ModTarget.OSC_C_WARP_AMOUNT, pitch: ModTarget.OSC_C_PITCH },
+};
 
 export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps) {
   const snap = useSnapshot(synthState);
   const data = snap.oscillators[osc];
   const state = synthState.oscillators[osc];
-  const color = osc === "a" ? "var(--osc-a)" : "var(--osc-b)";
+  const color = OSC_COLORS[osc];
+  const targets = OSC_MOD_TARGETS[osc];
 
-  const levelTarget = osc === "a" ? ModTarget.OSC_A_LEVEL : ModTarget.OSC_B_LEVEL;
-  const frameTarget = osc === "a" ? ModTarget.OSC_A_FRAME : ModTarget.OSC_B_FRAME;
-  const warpTarget = osc === "a" ? ModTarget.OSC_A_WARP_AMOUNT : ModTarget.OSC_B_WARP_AMOUNT;
-  const pitchTarget = osc === "a" ? ModTarget.OSC_A_PITCH : ModTarget.OSC_B_PITCH;
-
-  const modLevel = useModRoutes(levelTarget);
-  const modFrame = useModRoutes(frameTarget);
-  const modWarp = useModRoutes(warpTarget);
-  const modPitch = useModRoutes(pitchTarget);
+  const modLevel = useModRoutes(targets.level);
+  const modFrame = useModRoutes(targets.frame);
+  const modWarp = useModRoutes(targets.warp);
+  const modPitch = useModRoutes(targets.pitch);
 
   const handleModDrop = useCallback(
     (target: ModTarget) => (item: ModSourceDragItem) => {
@@ -82,7 +90,7 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
           onChange={(v) => (state.level = v)}
           color={color}
           modRoutes={modLevel}
-          onModDrop={handleModDrop(levelTarget)}
+          onModDrop={handleModDrop(targets.level)}
         />
         <Knob
           label="Frame"
@@ -92,7 +100,7 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
           onChange={(v) => (state.framePosition = v)}
           color={color}
           modRoutes={modFrame}
-          onModDrop={handleModDrop(frameTarget)}
+          onModDrop={handleModDrop(targets.frame)}
         />
         <Knob
           label="Detune"
@@ -103,7 +111,7 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
           onChange={(v) => (state.detune = v)}
           color={color}
           modRoutes={modPitch}
-          onModDrop={handleModDrop(pitchTarget)}
+          onModDrop={handleModDrop(targets.pitch)}
           formatValue={(v) => `${v > 0 ? "+" : ""}${v.toFixed(0)}ct`}
         />
         <Knob
@@ -114,7 +122,7 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
           onChange={(v) => (state.warpAmount = v)}
           color={color}
           modRoutes={modWarp}
-          onModDrop={handleModDrop(warpTarget)}
+          onModDrop={handleModDrop(targets.warp)}
         />
       </div>
 

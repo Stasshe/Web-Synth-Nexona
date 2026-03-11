@@ -43,10 +43,10 @@ interface WaveformEditorProps {
   open: boolean;
   onClose: () => void;
   onApply: (wt: Wavetable) => void;
-  osc: "a" | "b" | "sub";
+  osc: "a" | "b" | "c" | "sub";
 }
 
-function loadExistingModel(osc: "a" | "b" | "sub"): WaveformModel {
+function loadExistingModel(osc: "a" | "b" | "c" | "sub"): WaveformModel {
   const oscState = synthState.oscillators[osc];
   const controlPoints = (oscState as Record<string, unknown>).controlPoints as
     | ControlPoint[]
@@ -63,7 +63,7 @@ function loadExistingModel(osc: "a" | "b" | "sub"): WaveformModel {
   return sineModel();
 }
 
-function loadExistingName(osc: "a" | "b" | "sub"): string {
+function loadExistingName(osc: "a" | "b" | "c" | "sub"): string {
   const oscState = synthState.oscillators[osc];
   return ((oscState as Record<string, unknown>).waveformName as string) ?? "Sine";
 }

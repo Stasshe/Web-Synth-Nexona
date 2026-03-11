@@ -10,6 +10,7 @@ interface SynthProcessorMessage {
     | "setModRoutes"
     | "loadWavetableA"
     | "loadWavetableB"
+    | "loadWavetableC"
     | "loadWavetableSub";
   sab?: SharedArrayBuffer;
   note: number;
@@ -56,6 +57,11 @@ class SynthProcessor extends AudioWorkletProcessor {
         case "loadWavetableB":
           if (msg.wavetable) {
             this.engine.setWavetableB(msg.wavetable);
+          }
+          break;
+        case "loadWavetableC":
+          if (msg.wavetable) {
+            this.engine.setWavetableC(msg.wavetable);
           }
           break;
         case "loadWavetableSub":

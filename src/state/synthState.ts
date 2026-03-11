@@ -40,6 +40,24 @@ export const synthState = proxy({
       warp2Type: 0,
       warp2Amount: 0,
     },
+    c: {
+      on: false,
+      waveformType: 0,
+      waveformName: "Sine",
+      customWaveform: null as number[] | null,
+      controlPoints: null as unknown[] | null,
+      level: 0.8,
+      framePosition: 0,
+      detune: 0,
+      unisonVoices: 1,
+      unisonDetune: 20,
+      unisonSpread: 0.5,
+      pan: 0,
+      warpType: 0,
+      warpAmount: 0,
+      warp2Type: 0,
+      warp2Amount: 0,
+    },
     sub: {
       on: false,
       octave: -1,
@@ -60,6 +78,13 @@ export const synthState = proxy({
     type: 0,
     envAmount: 0,
   },
+  filter2: {
+    cutoff: 20000,
+    resonance: 0,
+    drive: 1,
+    type: 0,
+    envAmount: 0,
+  },
   envelopes: {
     amp: { attack: 0.01, decay: 0.1, sustain: 0.7, release: 0.3 },
     filter: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.3 },
@@ -70,9 +95,14 @@ export const synthState = proxy({
   },
   modulations: [] as ModRoute[],
   effects: {
+    distortion: { drive: 1, tone: 0.5, mix: 0, mode: 0 },
+    compressor: { threshold: -12, ratio: 4, attack: 0.01, release: 0.1, makeup: 0, mix: 0 },
     chorus: { rate: 0.5, depth: 0.3, mix: 0 },
+    flanger: { rate: 0.5, depth: 0.5, feedback: 0.5, mix: 0 },
+    phaser: { rate: 0.5, depth: 0.5, feedback: 0.5, mix: 0 },
     delay: { time: 0.375, feedback: 0.3, mix: 0 },
     reverb: { decay: 0.7, mix: 0 },
+    eq: { lowGain: 0, midGain: 0, highGain: 0, mix: 0 },
   },
   master: {
     volume: 0.8,
@@ -80,7 +110,8 @@ export const synthState = proxy({
   drift: 0,
   macros: [0, 0, 0, 0] as number[],
   ui: {
-    selectedOsc: "a" as "a" | "b",
+    activePage: "voice" as "voice" | "effects",
+    selectedOsc: "a" as "a" | "b" | "c",
     selectedEffectTab: "chorus" as "chorus" | "delay" | "reverb",
   },
 });
@@ -126,6 +157,23 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
     setParam(sabView, SabParam.OscBWarp2Amount, b.warp2Amount);
   };
 
+  const syncOscC = () => {
+    const c = synthState.oscillators.c;
+    setParam(sabView, SabParam.OscCOn, c.on ? 1 : 0);
+    setParam(sabView, SabParam.OscCWavetableIndex, c.waveformType);
+    setParam(sabView, SabParam.OscCLevel, c.level);
+    setParam(sabView, SabParam.OscCFramePosition, c.framePosition);
+    setParam(sabView, SabParam.OscCDetune, c.detune);
+    setParam(sabView, SabParam.OscCUnisonVoices, c.unisonVoices);
+    setParam(sabView, SabParam.OscCUnisonDetune, c.unisonDetune);
+    setParam(sabView, SabParam.OscCUnisonSpread, c.unisonSpread);
+    setParam(sabView, SabParam.OscCPan, c.pan);
+    setParam(sabView, SabParam.OscCWarpType, c.warpType);
+    setParam(sabView, SabParam.OscCWarpAmount, c.warpAmount);
+    setParam(sabView, SabParam.OscCWarp2Type, c.warp2Type);
+    setParam(sabView, SabParam.OscCWarp2Amount, c.warp2Amount);
+  };
+
   const syncSub = () => {
     const sub = synthState.oscillators.sub;
     setParam(sabView, SabParam.SubOn, sub.on ? 1 : 0);
@@ -145,6 +193,15 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
     setParam(sabView, SabParam.FilterDrive, f.drive);
     setParam(sabView, SabParam.FilterType, f.type);
     setParam(sabView, SabParam.FilterEnvAmount, f.envAmount);
+  };
+
+  const syncFilter2 = () => {
+    const f = synthState.filter2;
+    setParam(sabView, SabParam.Filter2Cutoff, f.cutoff);
+    setParam(sabView, SabParam.Filter2Resonance, f.resonance);
+    setParam(sabView, SabParam.Filter2Drive, f.drive);
+    setParam(sabView, SabParam.Filter2Type, f.type);
+    setParam(sabView, SabParam.Filter2EnvAmount, f.envAmount);
   };
 
   const syncAmpEnv = () => {
@@ -172,14 +229,36 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
 
   const syncEffects = () => {
     const fx = synthState.effects;
+    setParam(sabView, SabParam.DistortionDrive, fx.distortion.drive);
+    setParam(sabView, SabParam.DistortionTone, fx.distortion.tone);
+    setParam(sabView, SabParam.DistortionMix, fx.distortion.mix);
+    setParam(sabView, SabParam.DistortionMode, fx.distortion.mode);
+    setParam(sabView, SabParam.CompThreshold, fx.compressor.threshold);
+    setParam(sabView, SabParam.CompRatio, fx.compressor.ratio);
+    setParam(sabView, SabParam.CompAttack, fx.compressor.attack);
+    setParam(sabView, SabParam.CompRelease, fx.compressor.release);
+    setParam(sabView, SabParam.CompMakeup, fx.compressor.makeup);
+    setParam(sabView, SabParam.CompMix, fx.compressor.mix);
     setParam(sabView, SabParam.ChorusRate, fx.chorus.rate);
     setParam(sabView, SabParam.ChorusDepth, fx.chorus.depth);
     setParam(sabView, SabParam.ChorusMix, fx.chorus.mix);
+    setParam(sabView, SabParam.FlangerRate, fx.flanger.rate);
+    setParam(sabView, SabParam.FlangerDepth, fx.flanger.depth);
+    setParam(sabView, SabParam.FlangerFeedback, fx.flanger.feedback);
+    setParam(sabView, SabParam.FlangerMix, fx.flanger.mix);
+    setParam(sabView, SabParam.PhaserRate, fx.phaser.rate);
+    setParam(sabView, SabParam.PhaserDepth, fx.phaser.depth);
+    setParam(sabView, SabParam.PhaserFeedback, fx.phaser.feedback);
+    setParam(sabView, SabParam.PhaserMix, fx.phaser.mix);
     setParam(sabView, SabParam.DelayTime, fx.delay.time);
     setParam(sabView, SabParam.DelayFeedback, fx.delay.feedback);
     setParam(sabView, SabParam.DelayMix, fx.delay.mix);
     setParam(sabView, SabParam.ReverbDecay, fx.reverb.decay);
     setParam(sabView, SabParam.ReverbMix, fx.reverb.mix);
+    setParam(sabView, SabParam.EqLowGain, fx.eq.lowGain);
+    setParam(sabView, SabParam.EqMidGain, fx.eq.midGain);
+    setParam(sabView, SabParam.EqHighGain, fx.eq.highGain);
+    setParam(sabView, SabParam.EqMix, fx.eq.mix);
   };
 
   const syncMisc = () => {
@@ -194,9 +273,11 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
   unsubs.push(subscribe(synthState.master, syncMaster));
   unsubs.push(subscribe(synthState.oscillators.a, syncOscA));
   unsubs.push(subscribe(synthState.oscillators.b, syncOscB));
+  unsubs.push(subscribe(synthState.oscillators.c, syncOscC));
   unsubs.push(subscribe(synthState.oscillators.sub, syncSub));
   unsubs.push(subscribe(synthState.noise, syncNoise));
   unsubs.push(subscribe(synthState.filter, syncFilter));
+  unsubs.push(subscribe(synthState.filter2, syncFilter2));
   unsubs.push(subscribe(synthState.envelopes.amp, syncAmpEnv));
   unsubs.push(subscribe(synthState.envelopes.filter, syncFilterEnv));
   unsubs.push(subscribe(synthState.lfos, syncLfos));
@@ -208,9 +289,11 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
   syncMaster();
   syncOscA();
   syncOscB();
+  syncOscC();
   syncSub();
   syncNoise();
   syncFilter();
+  syncFilter2();
   syncAmpEnv();
   syncFilterEnv();
   syncLfos();

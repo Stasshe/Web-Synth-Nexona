@@ -14,6 +14,7 @@ export function stateToPatch(name = "Init"): PatchData {
   const s = synthState;
   const a = s.oscillators.a;
   const b = s.oscillators.b;
+  const c = s.oscillators.c;
   const sub = s.oscillators.sub;
   return {
     version: 1,
@@ -55,6 +56,24 @@ export function stateToPatch(name = "Init"): PatchData {
         warp2Type: b.warp2Type,
         warp2Amount: b.warp2Amount,
       },
+      c: {
+        on: c.on,
+        waveformType: c.waveformType,
+        waveformName: c.waveformName,
+        customWaveform: c.customWaveform ? [...c.customWaveform] : null,
+        controlPoints: serializeControlPoints(c.controlPoints),
+        level: c.level,
+        framePosition: c.framePosition,
+        detune: c.detune,
+        unisonVoices: c.unisonVoices,
+        unisonDetune: c.unisonDetune,
+        unisonSpread: c.unisonSpread,
+        pan: c.pan,
+        warpType: c.warpType,
+        warpAmount: c.warpAmount,
+        warp2Type: c.warp2Type,
+        warp2Amount: c.warp2Amount,
+      },
       sub: {
         on: sub.on,
         octave: sub.octave,
@@ -66,6 +85,7 @@ export function stateToPatch(name = "Init"): PatchData {
     },
     noise: { ...s.noise },
     filter: { ...s.filter },
+    filter2: { ...s.filter2 },
     envelopes: {
       amp: { ...s.envelopes.amp },
       filter: { ...s.envelopes.filter },

@@ -1,5 +1,4 @@
 import { EffectsChain, type EffectsParams } from "../dsp/effects/effectsChain";
-import { FilterType } from "../dsp/filter/svf";
 import { LFO, type LfoShape } from "../dsp/lfo/lfo";
 import type { ModRoute } from "../dsp/modulation/modMatrix";
 import { NoiseType } from "../dsp/utils/noise";
@@ -20,8 +19,10 @@ export class SynthEngine {
   private masterVolume: ParamSmoother;
   private wavetableA: Wavetable;
   private wavetableB: Wavetable;
+  private wavetableC: Wavetable;
   private wtTypeA = 0;
   private wtTypeB = 0;
+  private wtTypeC = 0;
   private wavetableSub: Wavetable;
   private lfo1: LFO;
   private lfo2: LFO;
@@ -52,6 +53,18 @@ export class SynthEngine {
     oscBWarp2Type: WarpType.NONE,
     oscBWarp2Amount: 0,
 
+    oscCOn: false,
+    oscCLevel: 0.8,
+    oscCFramePosition: 0,
+    oscCDetune: 0,
+    oscCUnisonVoices: 1,
+    oscCUnisonDetune: 20,
+    oscCUnisonSpread: 0.5,
+    oscCWarpType: WarpType.NONE,
+    oscCWarpAmount: 0,
+    oscCWarp2Type: WarpType.NONE,
+    oscCWarp2Amount: 0,
+
     subOn: false,
     subOctave: -1,
     subLevel: 0.5,
@@ -62,8 +75,14 @@ export class SynthEngine {
     filterCutoff: 8000,
     filterResonance: 0,
     filterDrive: 1,
-    filterType: FilterType.LOWPASS,
+    filterType: 0,
     filterEnvAmount: 0,
+
+    filter2Cutoff: 20000,
+    filter2Resonance: 0,
+    filter2Drive: 1,
+    filter2Type: 0,
+    filter2EnvAmount: 0,
 
     ampAttack: 0.01,
     ampDecay: 0.1,
@@ -79,14 +98,43 @@ export class SynthEngine {
   };
 
   private effectsParams: EffectsParams = {
+    distortionDrive: 1,
+    distortionTone: 0.5,
+    distortionMix: 0,
+    distortionMode: 0,
+
+    compThreshold: -12,
+    compRatio: 4,
+    compAttack: 0.01,
+    compRelease: 0.1,
+    compMakeup: 0,
+    compMix: 0,
+
     chorusRate: 0.5,
     chorusDepth: 0.3,
     chorusMix: 0,
+
+    flangerRate: 0.5,
+    flangerDepth: 0.5,
+    flangerFeedback: 0.5,
+    flangerMix: 0,
+
+    phaserRate: 0.5,
+    phaserDepth: 0.5,
+    phaserFeedback: 0.5,
+    phaserMix: 0,
+
     delayTime: 0.375,
     delayFeedback: 0.3,
     delayMix: 0,
+
     reverbDecay: 0.7,
     reverbMix: 0,
+
+    eqLowGain: 0,
+    eqMidGain: 0,
+    eqHighGain: 0,
+    eqMix: 0,
   };
 
   constructor(sampleRate: number) {
@@ -96,6 +144,7 @@ export class SynthEngine {
     this.masterVolume = new ParamSmoother(0.8);
     this.wavetableA = generateTable(0, 2048);
     this.wavetableB = generateTable(0, 2048);
+    this.wavetableC = generateTable(0, 2048);
     // Default sub wavetable: single-frame sine (pure sine from frame 0)
     const subFullTable = generateTable(WavetableType.SINE, 2048);
     this.wavetableSub = { frames: [subFullTable.frames[0]], tableSize: 2048, numFrames: 1 };
@@ -104,6 +153,7 @@ export class SynthEngine {
 
     this.voiceManager.setWavetableA(this.wavetableA);
     this.voiceManager.setWavetableB(this.wavetableB);
+    this.voiceManager.setWavetableC(this.wavetableC);
     this.voiceManager.setWavetableSub(this.wavetableSub);
   }
 
@@ -119,6 +169,11 @@ export class SynthEngine {
   setWavetableB(wt: Wavetable): void {
     this.wavetableB = wt;
     this.voiceManager.setWavetableB(wt);
+  }
+
+  setWavetableC(wt: Wavetable): void {
+    this.wavetableC = wt;
+    this.voiceManager.setWavetableC(wt);
   }
 
   setWavetableSub(wt: Wavetable): void {
@@ -217,6 +272,29 @@ export class SynthEngine {
       }
     }
 
+    // Osc C
+    this.voiceParams.oscCOn = getParam(this.sab, SabParam.OscCOn) > 0.5;
+    this.voiceParams.oscCLevel = getParam(this.sab, SabParam.OscCLevel);
+    this.voiceParams.oscCFramePosition = getParam(this.sab, SabParam.OscCFramePosition);
+    this.voiceParams.oscCDetune = getParam(this.sab, SabParam.OscCDetune);
+    this.voiceParams.oscCUnisonVoices = getParam(this.sab, SabParam.OscCUnisonVoices);
+    this.voiceParams.oscCUnisonDetune = getParam(this.sab, SabParam.OscCUnisonDetune);
+    this.voiceParams.oscCUnisonSpread = getParam(this.sab, SabParam.OscCUnisonSpread);
+    this.voiceParams.oscCWarpType = getParam(this.sab, SabParam.OscCWarpType) as WarpType;
+    this.voiceParams.oscCWarpAmount = getParam(this.sab, SabParam.OscCWarpAmount);
+    this.voiceParams.oscCWarp2Type = getParam(this.sab, SabParam.OscCWarp2Type) as WarpType;
+    this.voiceParams.oscCWarp2Amount = getParam(this.sab, SabParam.OscCWarp2Amount);
+
+    // Regenerate wavetable C when SAB type changes to a valid preset (0-3).
+    const newWtTypeC = Math.round(getParam(this.sab, SabParam.OscCWavetableIndex));
+    if (newWtTypeC !== this.wtTypeC) {
+      this.wtTypeC = newWtTypeC;
+      if (newWtTypeC >= 0 && newWtTypeC <= 3) {
+        this.wavetableC = generateTable(newWtTypeC as WavetableType, 2048);
+        this.voiceManager.setWavetableC(this.wavetableC);
+      }
+    }
+
     // Sub + Noise
     this.voiceParams.subOn = getParam(this.sab, SabParam.SubOn) > 0.5;
     this.voiceParams.subOctave = getParam(this.sab, SabParam.SubOctave);
@@ -228,8 +306,15 @@ export class SynthEngine {
     this.voiceParams.filterCutoff = getParam(this.sab, SabParam.FilterCutoff);
     this.voiceParams.filterResonance = getParam(this.sab, SabParam.FilterResonance);
     this.voiceParams.filterDrive = getParam(this.sab, SabParam.FilterDrive);
-    this.voiceParams.filterType = getParam(this.sab, SabParam.FilterType) as FilterType;
+    this.voiceParams.filterType = Math.round(getParam(this.sab, SabParam.FilterType));
     this.voiceParams.filterEnvAmount = getParam(this.sab, SabParam.FilterEnvAmount);
+
+    // Filter 2
+    this.voiceParams.filter2Cutoff = getParam(this.sab, SabParam.Filter2Cutoff);
+    this.voiceParams.filter2Resonance = getParam(this.sab, SabParam.Filter2Resonance);
+    this.voiceParams.filter2Drive = getParam(this.sab, SabParam.Filter2Drive);
+    this.voiceParams.filter2Type = Math.round(getParam(this.sab, SabParam.Filter2Type));
+    this.voiceParams.filter2EnvAmount = getParam(this.sab, SabParam.Filter2EnvAmount);
 
     // Amp Envelope
     this.voiceParams.ampAttack = getParam(this.sab, SabParam.AmpEnvAttack);
@@ -254,14 +339,36 @@ export class SynthEngine {
     );
 
     // Effects
+    this.effectsParams.distortionDrive = getParam(this.sab, SabParam.DistortionDrive);
+    this.effectsParams.distortionTone = getParam(this.sab, SabParam.DistortionTone);
+    this.effectsParams.distortionMix = getParam(this.sab, SabParam.DistortionMix);
+    this.effectsParams.distortionMode = getParam(this.sab, SabParam.DistortionMode);
+    this.effectsParams.compThreshold = getParam(this.sab, SabParam.CompThreshold);
+    this.effectsParams.compRatio = getParam(this.sab, SabParam.CompRatio);
+    this.effectsParams.compAttack = getParam(this.sab, SabParam.CompAttack);
+    this.effectsParams.compRelease = getParam(this.sab, SabParam.CompRelease);
+    this.effectsParams.compMakeup = getParam(this.sab, SabParam.CompMakeup);
+    this.effectsParams.compMix = getParam(this.sab, SabParam.CompMix);
     this.effectsParams.chorusRate = getParam(this.sab, SabParam.ChorusRate);
     this.effectsParams.chorusDepth = getParam(this.sab, SabParam.ChorusDepth);
     this.effectsParams.chorusMix = getParam(this.sab, SabParam.ChorusMix);
+    this.effectsParams.flangerRate = getParam(this.sab, SabParam.FlangerRate);
+    this.effectsParams.flangerDepth = getParam(this.sab, SabParam.FlangerDepth);
+    this.effectsParams.flangerFeedback = getParam(this.sab, SabParam.FlangerFeedback);
+    this.effectsParams.flangerMix = getParam(this.sab, SabParam.FlangerMix);
+    this.effectsParams.phaserRate = getParam(this.sab, SabParam.PhaserRate);
+    this.effectsParams.phaserDepth = getParam(this.sab, SabParam.PhaserDepth);
+    this.effectsParams.phaserFeedback = getParam(this.sab, SabParam.PhaserFeedback);
+    this.effectsParams.phaserMix = getParam(this.sab, SabParam.PhaserMix);
     this.effectsParams.delayTime = getParam(this.sab, SabParam.DelayTime);
     this.effectsParams.delayFeedback = getParam(this.sab, SabParam.DelayFeedback);
     this.effectsParams.delayMix = getParam(this.sab, SabParam.DelayMix);
     this.effectsParams.reverbDecay = getParam(this.sab, SabParam.ReverbDecay);
     this.effectsParams.reverbMix = getParam(this.sab, SabParam.ReverbMix);
+    this.effectsParams.eqLowGain = getParam(this.sab, SabParam.EqLowGain);
+    this.effectsParams.eqMidGain = getParam(this.sab, SabParam.EqMidGain);
+    this.effectsParams.eqHighGain = getParam(this.sab, SabParam.EqHighGain);
+    this.effectsParams.eqMix = getParam(this.sab, SabParam.EqMix);
 
     // Misc
     this.voiceParams.driftAmount = getParam(this.sab, SabParam.DriftAmount);

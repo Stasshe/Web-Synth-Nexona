@@ -4,15 +4,12 @@ import type { ModRoute } from "@/audio/dsp/modulation/modMatrix";
 import type { Wavetable } from "@/audio/dsp/wavetable/wavetableEngine";
 import { type SynthNode, createSynthNode } from "@/audio/worklet/node";
 import { DndProvider } from "@/components/DndProvider";
-import { EffectsPanel } from "@/components/EffectsPanel";
-import { EnvelopePanel } from "@/components/EnvelopePanel";
-import { FilterPanel } from "@/components/FilterPanel";
+import { EffectsPage } from "@/components/EffectsPage";
 import { Keyboard } from "@/components/Keyboard";
-import { LfoPanel } from "@/components/LfoPanel";
-import { MacroPanel } from "@/components/MacroPanel";
-import { OscillatorPanel } from "@/components/OscillatorPanel";
+import { MacroStrip } from "@/components/MacroPanel";
+import { ModulatorSidebar } from "@/components/ModulatorSidebar";
 import { ParamEditor } from "@/components/ParamEditor";
-import { SubNoisePanel } from "@/components/SubNoisePanel";
+import { VoicePage } from "@/components/VoicePage";
 import { Visualizer } from "@/components/Visualizer";
 import { WaveformEditor } from "@/components/WaveformEditor";
 import { Knob } from "@/components/ui/Knob";
@@ -28,14 +25,12 @@ import { useSnapshot } from "valtio";
 export default function Home() {
   const [started, setStarted] = useState(false);
   const synthRef = useRef<SynthNode | null>(null);
-  const unbindRef = useRef<(() => void) | null>(null);
   const [waveformData, setWaveformData] = useState<Float32Array | null>(null);
   const [paramEditorOpen, setParamEditorOpen] = useState(false);
-  const [waveEditorOsc, setWaveEditorOsc] = useState<"a" | "b" | "sub" | null>(null);
+  const [waveEditorOsc, setWaveEditorOsc] = useState<"a" | "b" | "c" | "sub" | null>(null);
   const snap = useSnapshot(synthState);
   useGlobalScrollLock();
 
-  // Load patch from URL hash on mount
   useEffect(() => {
     const hash = window.location.hash.slice(1);
     if (hash) {
@@ -45,7 +40,6 @@ export default function Home() {
     }
   }, []);
 
-  // Auto-sync mod routes to worklet whenever they change
   useEffect(() => {
     const unsub = subscribe(synthState.modulations, () => {
       if (synthRef.current) {
@@ -60,15 +54,15 @@ export default function Home() {
     return unsub;
   }, []);
 
-  // Send custom wavetables to the worklet (presets are handled via SAB)
   const applyCustomWavetables = useCallback((synth: SynthNode) => {
-    for (const oscKey of ["a", "b"] as const) {
+    for (const oscKey of ["a", "b", "c"] as const) {
       const oscState = synthState.oscillators[oscKey];
       if (oscState.customWaveform && oscState.customWaveform.length > 0) {
         const table = new Float32Array(oscState.customWaveform);
         const wt: Wavetable = { frames: [table], tableSize: table.length - 1, numFrames: 1 };
         if (oscKey === "a") synth.loadWavetableA(wt);
-        else synth.loadWavetableB(wt);
+        else if (oscKey === "b") synth.loadWavetableB(wt);
+        else synth.loadWavetableC(wt);
       }
     }
     const subState = synthState.oscillators.sub;
@@ -84,9 +78,8 @@ export default function Home() {
     const ctx = new AudioContext({ sampleRate: 48000 });
     const synth = await createSynthNode(ctx);
     synthRef.current = synth;
-    unbindRef.current = bindStateToSAB(synth.sabView);
+    bindStateToSAB(synth.sabView);
     synth.onWaveformData(setWaveformData);
-    // Apply any custom wavetables loaded from URL hash before start
     applyCustomWavetables(synth);
     setStarted(true);
   }, [started, applyCustomWavetables]);
@@ -160,11 +153,14 @@ export default function Home() {
     );
   }
 
+  const activePage = snap.ui.activePage;
+
   return (
     <DndProvider>
-      <main className="h-screen bg-bg-darkest p-1.5 flex flex-col overflow-hidden">
+      <main className="h-screen bg-bg-darkest p-1.5 flex flex-col overflow-hidden gap-1">
+
         {/* Header */}
-        <header className="flex items-center justify-between px-3 py-1 mb-1 bg-bg-panel rounded-lg border border-border-default shrink-0">
+        <header className="flex items-center justify-between px-3 py-1 bg-bg-panel rounded-lg border border-border-default shrink-0">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-accent-green animate-pulse" />
@@ -174,105 +170,95 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={handleSave}
-                className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-text-muted hover:text-text-primary
-                           bg-bg-surface border border-border-default rounded transition-colors cursor-pointer"
-                title="Save patch to file"
-              >
-                <Download size={11} />
-                Save
+              <button type="button" onClick={handleSave}
+                className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-text-muted hover:text-text-primary bg-bg-surface border border-border-default rounded transition-colors cursor-pointer"
+                title="Save patch to file">
+                <Download size={11} /> Save
               </button>
-              <button
-                type="button"
-                onClick={handleLoad}
-                className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-text-muted hover:text-text-primary
-                           bg-bg-surface border border-border-default rounded transition-colors cursor-pointer"
-                title="Load patch from file"
-              >
-                <Upload size={11} />
-                Load
+              <button type="button" onClick={handleLoad}
+                className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-text-muted hover:text-text-primary bg-bg-surface border border-border-default rounded transition-colors cursor-pointer"
+                title="Load patch from file">
+                <Upload size={11} /> Load
               </button>
-              <button
-                type="button"
-                onClick={handleShare}
-                className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-text-muted hover:text-accent-blue
-                           bg-bg-surface border border-border-default rounded transition-colors cursor-pointer"
-                title="Copy share URL to clipboard"
-              >
-                <Share2 size={11} />
-                Share
+              <button type="button" onClick={handleShare}
+                className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-text-muted hover:text-accent-blue bg-bg-surface border border-border-default rounded transition-colors cursor-pointer"
+                title="Copy share URL to clipboard">
+                <Share2 size={11} /> Share
               </button>
-              <button
-                type="button"
-                onClick={() => setParamEditorOpen(true)}
-                className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-text-muted hover:text-accent-purple
-                           bg-bg-surface border border-border-default rounded transition-colors cursor-pointer"
-                title="Edit all parameters as JSON"
-              >
-                <Code size={11} />
-                Edit
+              <button type="button" onClick={() => setParamEditorOpen(true)}
+                className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-text-muted hover:text-accent-purple bg-bg-surface border border-border-default rounded transition-colors cursor-pointer"
+                title="Edit all parameters as JSON">
+                <Code size={11} /> Edit
               </button>
             </div>
             <div className="flex items-center gap-1.5">
               <Volume2 size={13} className="text-text-muted" />
-              <Knob
-                label=""
-                value={snap.master.volume}
-                min={0}
-                max={1}
+              <Knob label="" value={snap.master.volume} min={0} max={1}
                 onChange={(v) => (synthState.master.volume = v)}
-                size={28}
-                color="var(--accent-green)"
-                formatValue={(v) => `${(v * 100).toFixed(0)}%`}
-              />
+                size={28} color="var(--accent-green)"
+                formatValue={(v) => `${(v * 100).toFixed(0)}%`} />
             </div>
           </div>
         </header>
 
-        {/* Main content — fills remaining space */}
-        <div className="flex-1 flex flex-col gap-1 min-h-0">
-          {/* Row 1: Oscillators + Filter */}
-          <div className="grid grid-cols-[1fr_1fr_auto_1fr] gap-1 min-h-0">
-            <OscillatorPanel osc="a" onOpenWaveEditor={() => setWaveEditorOsc("a")} />
-            <OscillatorPanel osc="b" onOpenWaveEditor={() => setWaveEditorOsc("b")} />
-            <SubNoisePanel onOpenSubWaveEditor={() => setWaveEditorOsc("sub")} />
-            <FilterPanel />
+        {/* Body: [macro strip] [center tabs] [right sidebar] */}
+        <div className="flex-1 flex flex-row gap-1 min-h-0">
+
+          {/* Left macro strip */}
+          <MacroStrip />
+
+          {/* Center: Voice / Effects */}
+          <div className="flex-1 flex flex-col gap-1 min-h-0">
+            {/* Tab bar */}
+            <div className="flex gap-1 bg-bg-panel rounded-lg border border-border-default px-2 py-1 shrink-0">
+              {(["voice", "effects"] as const).map((page) => (
+                <button
+                  key={page}
+                  type="button"
+                  onClick={() => (synthState.ui.activePage = page)}
+                  className={`px-5 py-0.5 text-[11px] font-semibold tracking-widest rounded transition-colors uppercase cursor-pointer border ${
+                    activePage === page
+                      ? "bg-bg-active border-border-accent text-text-primary"
+                      : "border-transparent text-text-muted hover:text-text-secondary"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+
+            {/* Page content */}
+            <div className="flex-1 min-h-0">
+              {activePage === "voice" ? (
+                <VoicePage onOpenWaveEditor={setWaveEditorOsc} />
+              ) : (
+                <div className="h-full overflow-y-auto">
+                  <EffectsPage />
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Row 2: Envelope + LFOs + Effects */}
-          <div className="grid grid-cols-4 gap-1 min-h-0">
-            <EnvelopePanel />
-            <LfoPanel index="lfo1" />
-            <LfoPanel index="lfo2" />
-            <EffectsPanel />
-          </div>
-
-          {/* Row 3: Macros */}
-          <MacroPanel />
-
-          {/* Keyboard */}
-          <Keyboard onNoteOn={handleNoteOn} onNoteOff={handleNoteOff} />
+          {/* Right sidebar: Envelope + LFOs + Mod routes */}
+          <ModulatorSidebar />
         </div>
 
-        {/* Param Editor Modal */}
+        {/* Keyboard */}
+        <Keyboard onNoteOn={handleNoteOn} onNoteOff={handleNoteOff} />
+
+        {/* Modals */}
         <ParamEditor open={paramEditorOpen} onClose={() => setParamEditorOpen(false)} />
 
-        {/* Waveform Editor Modal */}
         {waveEditorOsc && (
           <WaveformEditor
             open={true}
             onClose={() => setWaveEditorOsc(null)}
             osc={waveEditorOsc}
             onApply={(wt) => {
-              if (waveEditorOsc === "a") {
-                synthRef.current?.loadWavetableA(wt);
-              } else if (waveEditorOsc === "b") {
-                synthRef.current?.loadWavetableB(wt);
-              } else if (waveEditorOsc === "sub") {
-                synthRef.current?.loadWavetableSub(wt);
-              }
+              if (waveEditorOsc === "a") synthRef.current?.loadWavetableA(wt);
+              else if (waveEditorOsc === "b") synthRef.current?.loadWavetableB(wt);
+              else if (waveEditorOsc === "c") synthRef.current?.loadWavetableC(wt);
+              else if (waveEditorOsc === "sub") synthRef.current?.loadWavetableSub(wt);
             }}
           />
         )}

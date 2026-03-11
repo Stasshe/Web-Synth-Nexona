@@ -10,6 +10,7 @@ export class VoiceManager {
   private sampleRate: number;
   private wavetableA: Wavetable | null = null;
   private wavetableB: Wavetable | null = null;
+  private wavetableC: Wavetable | null = null;
   private wavetableSub: Wavetable | null = null;
 
   constructor(sampleRate: number) {
@@ -27,6 +28,11 @@ export class VoiceManager {
   setWavetableB(wt: Wavetable): void {
     this.wavetableB = wt;
     for (const v of this.voices) v.setWavetableB(wt);
+  }
+
+  setWavetableC(wt: Wavetable): void {
+    this.wavetableC = wt;
+    for (const v of this.voices) v.setWavetableC(wt);
   }
 
   setWavetableSub(wt: Wavetable): void {
@@ -74,6 +80,7 @@ export class VoiceManager {
 
     if (this.wavetableA) voice.setWavetableA(this.wavetableA);
     if (this.wavetableB) voice.setWavetableB(this.wavetableB);
+    if (this.wavetableC) voice.setWavetableC(this.wavetableC);
     if (this.wavetableSub) voice.setWavetableSub(this.wavetableSub);
     voice.noteOn(note, velocity);
   }

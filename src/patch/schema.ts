@@ -6,6 +6,7 @@ export interface PatchData {
   oscillators: {
     a: OscPatch;
     b: OscPatch;
+    c?: OscPatch;
     sub: {
       on: boolean;
       octave: number;
@@ -18,6 +19,13 @@ export interface PatchData {
   };
   noise: { type: number; level: number };
   filter: {
+    cutoff: number;
+    resonance: number;
+    drive: number;
+    type: number;
+    envAmount: number;
+  };
+  filter2?: {
     cutoff: number;
     resonance: number;
     drive: number;

@@ -24,6 +24,12 @@ export enum ModTarget {
   FILTER_RESONANCE = 9,
   AMP_LEVEL = 10,
   PAN = 11,
+  OSC_C_PITCH = 12,
+  OSC_C_FRAME = 13,
+  OSC_C_WARP_AMOUNT = 14,
+  OSC_C_LEVEL = 15,
+  FILTER2_CUTOFF = 16,
+  FILTER2_RESONANCE = 17,
 }
 
 export interface ModRoute {
