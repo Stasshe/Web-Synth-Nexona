@@ -35,6 +35,10 @@ export class SVFilter {
     this.bp = flushDenormal(this.bp + this.g * hp);
     this.lp = flushDenormal(this.lp + this.g * this.bp);
 
+    // Guard against NaN corruption
+    if (!Number.isFinite(this.bp)) this.bp = 0;
+    if (!Number.isFinite(this.lp)) this.lp = 0;
+
     switch (this.filterType) {
       case FilterType.LOWPASS:
         return this.lp;

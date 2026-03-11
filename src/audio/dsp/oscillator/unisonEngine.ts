@@ -17,6 +17,7 @@ export class UnisonEngine {
   private baseFrequency = 440;
   private sampleRate: number;
   private framePosition = 0;
+  private cachedWarpAmounts: [number, number] = [0, 0];
 
   constructor(sampleRate: number) {
     this.sampleRate = sampleRate;
@@ -42,22 +43,31 @@ export class UnisonEngine {
 
   setUnisonCount(count: number, detuneCents: number, spread: number): void {
     const n = Math.max(1, Math.min(16, Math.round(count)));
-    this.voices = [];
-    for (let i = 0; i < n; i++) {
-      let detuneOffset: number;
-      let pan: number;
-      if (n === 1) {
-        detuneOffset = 0;
-        pan = 0;
-      } else {
-        detuneOffset = (i / (n - 1) - 0.5) * 2 * detuneCents;
-        pan = ((i / (n - 1)) * 2 - 1) * spread;
+
+    // Only rebuild voices array when count changes
+    if (n !== this.voices.length) {
+      const oldPhases = this.voices.map((v) => v.phase);
+      this.voices = [];
+      for (let i = 0; i < n; i++) {
+        this.voices.push({
+          phase: i < oldPhases.length ? oldPhases[i] : Math.random(),
+          detuneRatio: 1,
+          pan: 0,
+        });
       }
-      this.voices.push({
-        phase: Math.random(),
-        detuneRatio: centsToRatio(detuneOffset),
-        pan,
-      });
+    }
+
+    // Update detune + pan in-place (no phase reset)
+    for (let i = 0; i < n; i++) {
+      const voice = this.voices[i];
+      if (n === 1) {
+        voice.detuneRatio = 1;
+        voice.pan = 0;
+      } else {
+        const detuneOffset = (i / (n - 1) - 0.5) * 2 * detuneCents;
+        voice.detuneRatio = centsToRatio(detuneOffset);
+        voice.pan = ((i / (n - 1)) * 2 - 1) * spread;
+      }
     }
   }
 
@@ -76,9 +86,16 @@ export class UnisonEngine {
     let sumR = 0;
     const gain = 1 / Math.sqrt(this.voices.length);
 
+    // Tick warp smoothers once per sample (not per unison voice)
+    this.cachedWarpAmounts = this.warp.tickSmooth();
+
     for (const voice of this.voices) {
       const freq = this.baseFrequency * voice.detuneRatio;
-      const warpedPhase = this.warp.process(voice.phase, fmSignal);
+      const warpedPhase = this.warp.processWithCached(
+        voice.phase,
+        this.cachedWarpAmounts,
+        fmSignal,
+      );
       const sample = this.lookupWavetable(warpedPhase);
 
       // Pan law (equal power approximation)
@@ -99,11 +116,18 @@ export class UnisonEngine {
     const wt = this.wavetable!;
     const size = wt.tableSize;
 
+    // Clamp phase to [0, 1) to prevent out-of-bounds access
+    let p = phase;
+    if (p < 0) p = 0;
+    else if (p >= 1) p -= Math.floor(p);
+
     if (wt.numFrames === 1) {
-      const index = phase * size;
+      const index = p * size;
       const i = Math.floor(index);
       const frac = index - i;
-      return lerp(wt.frames[0][i], wt.frames[0][i + 1], frac);
+      const i1 = i < size ? i : size - 1;
+      const i2 = i1 + 1 <= size ? i1 + 1 : 0;
+      return lerp(wt.frames[0][i1], wt.frames[0][i2], frac);
     }
 
     // Frame interpolation (morph)
@@ -113,12 +137,14 @@ export class UnisonEngine {
     const f1 = Math.min(f, wt.numFrames - 1);
     const f2 = Math.min(f + 1, wt.numFrames - 1);
 
-    const index = phase * size;
+    const index = p * size;
     const i = Math.floor(index);
     const frac = index - i;
+    const i1 = i < size ? i : size - 1;
+    const i2 = i1 + 1 <= size ? i1 + 1 : 0;
 
-    const s1 = lerp(wt.frames[f1][i], wt.frames[f1][i + 1], frac);
-    const s2 = lerp(wt.frames[f2][i], wt.frames[f2][i + 1], frac);
+    const s1 = lerp(wt.frames[f1][i1], wt.frames[f1][i2], frac);
+    const s2 = lerp(wt.frames[f2][i1], wt.frames[f2][i2], frac);
     return lerp(s1, s2, frameFrac);
   }
 }

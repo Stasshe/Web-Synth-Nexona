@@ -19,14 +19,23 @@ export class WarpProcessor {
     this.amount2.setTarget(amount2);
   }
 
-  process(phase: number, fmSignal = 0): number {
-    const a1 = this.amount1.tick();
-    let p = applyWarp(phase, this.type1, a1, fmSignal);
+  /** Tick smoothers once per sample. Returns [amount1, amount2]. */
+  tickSmooth(): [number, number] {
+    return [this.amount1.tick(), this.amount2.tick()];
+  }
+
+  /** Apply warp using pre-ticked amounts (safe to call per unison voice). */
+  processWithCached(phase: number, amounts: [number, number], fmSignal = 0): number {
+    let p = applyWarp(phase, this.type1, amounts[0], fmSignal);
     if (this.type2 !== WarpType.NONE) {
-      const a2 = this.amount2.tick();
-      p = applyWarp(p, this.type2, a2, fmSignal);
+      p = applyWarp(p, this.type2, amounts[1], fmSignal);
     }
     return p;
+  }
+
+  process(phase: number, fmSignal = 0): number {
+    const amounts = this.tickSmooth();
+    return this.processWithCached(phase, amounts, fmSignal);
   }
 
   reset(): void {
