@@ -5,7 +5,7 @@ import { Panel } from "@/components/ui/Panel";
 import { Select } from "@/components/ui/Select";
 import { Toggle } from "@/components/ui/Toggle";
 import type { ModSourceDragItem } from "@/dnd/types";
-import { useModAmount } from "@/hooks/useModAmount";
+import { useModRoutes } from "@/hooks/useModAmount";
 import { synthState } from "@/state/synthState";
 import { useCallback } from "react";
 import { useSnapshot } from "valtio";
@@ -36,10 +36,10 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
   const warpTarget = osc === "a" ? ModTarget.OSC_A_WARP_AMOUNT : ModTarget.OSC_B_WARP_AMOUNT;
   const pitchTarget = osc === "a" ? ModTarget.OSC_A_PITCH : ModTarget.OSC_B_PITCH;
 
-  const modLevel = useModAmount(levelTarget);
-  const modFrame = useModAmount(frameTarget);
-  const modWarp = useModAmount(warpTarget);
-  const modPitch = useModAmount(pitchTarget);
+  const modLevel = useModRoutes(levelTarget);
+  const modFrame = useModRoutes(frameTarget);
+  const modWarp = useModRoutes(warpTarget);
+  const modPitch = useModRoutes(pitchTarget);
 
   const handleModDrop = useCallback(
     (target: ModTarget) => (item: ModSourceDragItem) => {
@@ -82,7 +82,7 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
           max={1}
           onChange={(v) => (state.level = v)}
           color={color}
-          modAmount={modLevel}
+          modRoutes={modLevel}
           onModDrop={handleModDrop(levelTarget)}
         />
         <Knob
@@ -92,7 +92,7 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
           max={1}
           onChange={(v) => (state.framePosition = v)}
           color={color}
-          modAmount={modFrame}
+          modRoutes={modFrame}
           onModDrop={handleModDrop(frameTarget)}
         />
         <Knob
@@ -103,7 +103,7 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
           step={1}
           onChange={(v) => (state.detune = v)}
           color={color}
-          modAmount={modPitch}
+          modRoutes={modPitch}
           onModDrop={handleModDrop(pitchTarget)}
           formatValue={(v) => `${v > 0 ? "+" : ""}${v.toFixed(0)}ct`}
         />
@@ -114,7 +114,7 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
           max={1}
           onChange={(v) => (state.warpAmount = v)}
           color={color}
-          modAmount={modWarp}
+          modRoutes={modWarp}
           onModDrop={handleModDrop(warpTarget)}
         />
       </div>

@@ -9,7 +9,6 @@ import { EnvelopePanel } from "@/components/EnvelopePanel";
 import { FilterPanel } from "@/components/FilterPanel";
 import { Keyboard } from "@/components/Keyboard";
 import { LfoPanel } from "@/components/LfoPanel";
-import { ModulationPanel } from "@/components/ModulationPanel";
 import { OscillatorPanel } from "@/components/OscillatorPanel";
 import { ParamEditor } from "@/components/ParamEditor";
 import { SubNoisePanel } from "@/components/SubNoisePanel";
@@ -232,13 +231,12 @@ export default function Home() {
             <FilterPanel />
           </div>
 
-          {/* Row 2: Envelope + LFOs + Effects + Mod */}
-          <div className="grid grid-cols-5 gap-1 min-h-0">
+          {/* Row 2: Envelope + LFOs + Effects */}
+          <div className="grid grid-cols-4 gap-1 min-h-0">
             <EnvelopePanel />
             <LfoPanel index="lfo1" />
             <LfoPanel index="lfo2" />
             <EffectsPanel />
-            <ModulationPanel />
           </div>
 
           {/* Row 3: Macros */}

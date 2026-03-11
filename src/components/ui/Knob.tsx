@@ -1,7 +1,22 @@
 "use client";
 import { DND_TYPES, type ModSourceDragItem } from "@/dnd/types";
+import type { ModRouteInfo } from "@/hooks/useModAmount";
+import { synthState } from "@/state/synthState";
 import { useCallback, useRef } from "react";
 import { useDrop } from "react-dnd";
+
+const SOURCE_LABELS: Record<number, string> = {
+  0: "L1",
+  1: "L2",
+  2: "AE",
+  3: "FE",
+  4: "Vl",
+  5: "Ky",
+  6: "M1",
+  7: "M2",
+  8: "M3",
+  9: "M4",
+};
 
 interface KnobProps {
   value: number;
@@ -12,7 +27,7 @@ interface KnobProps {
   onChange: (value: number) => void;
   size?: number;
   color?: string;
-  modAmount?: number;
+  modRoutes?: ModRouteInfo[];
   formatValue?: (v: number) => string;
   onModDrop?: (item: ModSourceDragItem) => void;
 }
@@ -26,11 +41,12 @@ export function Knob({
   onChange,
   size = 48,
   color = "var(--accent-blue)",
-  modAmount = 0,
+  modRoutes,
   formatValue,
   onModDrop,
 }: KnobProps) {
   const dragRef = useRef<{ startY: number; startValue: number } | null>(null);
+  const modAmount = modRoutes ? modRoutes.reduce((sum, r) => sum + r.amount, 0) : 0;
 
   const [{ isOver, canDrop }, dropRef] = useDrop(
     () => ({
@@ -107,7 +123,7 @@ export function Knob({
       ? `${(value / 1000).toFixed(1)}k`
       : value.toFixed(step >= 1 ? 0 : step >= 0.1 ? 1 : 2);
 
-  // Mod indicator ring — handle both positive and negative modAmount
+  // Mod indicator ring
   const modEnd = Math.min(1, Math.max(0, normalized + modAmount));
   const modAngle = startAngle + modEnd * range;
   const modArcStart = modAmount >= 0 ? angle : modAngle;
@@ -118,7 +134,7 @@ export function Knob({
   return (
     <div
       ref={dropRef as unknown as React.Ref<HTMLDivElement>}
-      className="flex flex-col items-center gap-1 select-none"
+      className="flex flex-col items-center gap-0.5 select-none"
     >
       <svg
         width={size}
@@ -130,7 +146,6 @@ export function Knob({
         onDoubleClick={handleDoubleClick}
         style={{ touchAction: "none" }}
       >
-        {/* Drop target highlight */}
         {showDropHighlight && (
           <circle
             cx={cx}
@@ -142,7 +157,6 @@ export function Knob({
             opacity={0.6}
           />
         )}
-        {/* Background track */}
         <path
           d={arcPath(startAngle, endAngle)}
           fill="none"
@@ -150,7 +164,6 @@ export function Knob({
           strokeWidth={3}
           strokeLinecap="round"
         />
-        {/* Value arc */}
         {normalized > 0.001 && (
           <path
             d={arcPath(startAngle, angle)}
@@ -160,7 +173,6 @@ export function Knob({
             strokeLinecap="round"
           />
         )}
-        {/* Mod indicator */}
         {modAmount !== 0 && modArcEnd > modArcStart + 0.1 && (
           <path
             d={arcPath(modArcStart, modArcEnd)}
@@ -171,14 +183,12 @@ export function Knob({
             opacity={0.4}
           />
         )}
-        {/* Dot indicator */}
         <circle
           cx={cx + (r - 6) * Math.cos(((angle - 90) * Math.PI) / 180)}
           cy={cy + (r - 6) * Math.sin(((angle - 90) * Math.PI) / 180)}
           r={2.5}
           fill={color}
         />
-        {/* Center circle */}
         <circle
           cx={cx}
           cy={cy}
@@ -190,6 +200,53 @@ export function Knob({
       </svg>
       <span className="text-[10px] text-text-secondary">{displayValue}</span>
       <span className="text-[9px] text-text-muted uppercase tracking-wider">{label}</span>
+      {/* Mini mod route indicators */}
+      {modRoutes && modRoutes.length > 0 && (
+        <div className="flex flex-col gap-0.5 w-full">
+          {modRoutes.map((route) => (
+            <ModRouteTag key={route.index} route={route} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ModRouteTag({ route }: { route: ModRouteInfo }) {
+  const handleAmountChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const r = synthState.modulations[route.index];
+      if (r) r.amount = Number(e.target.value);
+    },
+    [route.index],
+  );
+
+  const handleRemove = useCallback(() => {
+    synthState.modulations.splice(route.index, 1);
+  }, [route.index]);
+
+  return (
+    <div className="flex items-center gap-0.5">
+      <span className="text-[7px] text-lfo font-bold w-4 shrink-0">
+        {SOURCE_LABELS[route.source] ?? "?"}
+      </span>
+      <input
+        type="range"
+        min={-1}
+        max={1}
+        step={0.05}
+        value={route.amount}
+        onChange={handleAmountChange}
+        className="flex-1 h-2"
+        style={{ accentColor: "#8844ff" }}
+      />
+      <button
+        type="button"
+        onClick={handleRemove}
+        className="text-[8px] text-text-muted hover:text-accent-red cursor-pointer leading-none"
+      >
+        x
+      </button>
     </div>
   );
 }
