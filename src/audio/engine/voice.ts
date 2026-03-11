@@ -151,12 +151,8 @@ export class Voice {
   }
 
   setParams(p: VoiceParams): void {
-    this.oscA.setFramePosition(p.oscAFramePosition);
-    this.oscA.setWarp(p.oscAWarpType, p.oscAWarpAmount, p.oscAWarp2Type, p.oscAWarp2Amount);
+    // Unison config (count/detune/spread not modulated per-sample)
     this.oscA.setUnisonCount(p.oscAUnisonVoices, p.oscAUnisonDetune, p.oscAUnisonSpread);
-
-    this.oscB.setFramePosition(p.oscBFramePosition);
-    this.oscB.setWarp(p.oscBWarpType, p.oscBWarpAmount, p.oscBWarp2Type, p.oscBWarp2Amount);
     this.oscB.setUnisonCount(p.oscBUnisonVoices, p.oscBUnisonDetune, p.oscBUnisonSpread);
 
     if (this.note >= 0) {
@@ -182,28 +178,64 @@ export class Voice {
     const ampLevel = this.ampEnvelope.process();
     const filterEnvLevel = this.filterEnvelope.process();
 
+    // Set mod sources
     this.modMatrix.setSourceValue(ModSource.AMP_ENV, ampLevel);
     this.modMatrix.setSourceValue(ModSource.FILTER_ENV, filterEnvLevel);
     this.modMatrix.setSourceValue(ModSource.VELOCITY, this.velocity);
     this.modMatrix.setSourceValue(ModSource.KEY_TRACK, (this.note - 60) / 60);
 
+    // Read modulation for all targets
+    const modOscAPitch = this.modMatrix.getModulation(ModTarget.OSC_A_PITCH);
+    const modOscAFrame = this.modMatrix.getModulation(ModTarget.OSC_A_FRAME);
+    const modOscAWarp = this.modMatrix.getModulation(ModTarget.OSC_A_WARP_AMOUNT);
+    const modOscALevel = this.modMatrix.getModulation(ModTarget.OSC_A_LEVEL);
+    const modOscBPitch = this.modMatrix.getModulation(ModTarget.OSC_B_PITCH);
+    const modOscBFrame = this.modMatrix.getModulation(ModTarget.OSC_B_FRAME);
+    const modOscBWarp = this.modMatrix.getModulation(ModTarget.OSC_B_WARP_AMOUNT);
+    const modOscBLevel = this.modMatrix.getModulation(ModTarget.OSC_B_LEVEL);
+    const modFilterCutoff = this.modMatrix.getModulation(ModTarget.FILTER_CUTOFF);
+    const modFilterReso = this.modMatrix.getModulation(ModTarget.FILTER_RESONANCE);
+    const modAmpLevel = this.modMatrix.getModulation(ModTarget.AMP_LEVEL);
+    const modPan = this.modMatrix.getModulation(ModTarget.PAN);
+
     let mixL = 0;
     let mixR = 0;
 
     if (p.oscAOn) {
-      const freq = midiToFreq(this.note + p.oscADetune / 100);
+      // Pitch: modulation in semitones (range: ±24)
+      const detuneTotal = p.oscADetune / 100 + modOscAPitch * 24;
+      const freq = midiToFreq(this.note + detuneTotal);
       this.oscA.setFrequency(freq * (p.driftAmount > 0 ? this.drift.getFreqMultiplier() : 1));
+      // Frame position modulation
+      this.oscA.setFramePosition(clamp(p.oscAFramePosition + modOscAFrame, 0, 1));
+      // Warp amount modulation
+      this.oscA.setWarp(
+        p.oscAWarpType,
+        clamp(p.oscAWarpAmount + modOscAWarp, 0, 1),
+        p.oscAWarp2Type,
+        p.oscAWarp2Amount,
+      );
       const [al, ar] = this.oscA.process();
-      mixL += al * p.oscALevel;
-      mixR += ar * p.oscALevel;
+      const aLevel = clamp(p.oscALevel + modOscALevel, 0, 1);
+      mixL += al * aLevel;
+      mixR += ar * aLevel;
     }
 
     if (p.oscBOn) {
-      const freq = midiToFreq(this.note + p.oscBDetune / 100);
+      const detuneTotal = p.oscBDetune / 100 + modOscBPitch * 24;
+      const freq = midiToFreq(this.note + detuneTotal);
       this.oscB.setFrequency(freq * (p.driftAmount > 0 ? this.drift.getFreqMultiplier() : 1));
+      this.oscB.setFramePosition(clamp(p.oscBFramePosition + modOscBFrame, 0, 1));
+      this.oscB.setWarp(
+        p.oscBWarpType,
+        clamp(p.oscBWarpAmount + modOscBWarp, 0, 1),
+        p.oscBWarp2Type,
+        p.oscBWarp2Amount,
+      );
       const [bl, br] = this.oscB.process();
-      mixL += bl * p.oscBLevel;
-      mixR += br * p.oscBLevel;
+      const bLevel = clamp(p.oscBLevel + modOscBLevel, 0, 1);
+      mixL += bl * bLevel;
+      mixR += br * bLevel;
     }
 
     if (p.subOn) {
@@ -224,23 +256,34 @@ export class Voice {
       mixR = Math.tanh(mixR * p.filterDrive) / p.filterDrive;
     }
 
-    // Filter
+    // Filter with modulation
     const baseCutoff = this.cutoffSmoother.tick();
-    const modCutoff = this.modMatrix.getModulation(ModTarget.FILTER_CUTOFF);
     const cutoff = clamp(
-      baseCutoff + filterEnvLevel * p.filterEnvAmount * 10000 + modCutoff * 5000,
+      baseCutoff + filterEnvLevel * p.filterEnvAmount * 10000 + modFilterCutoff * 5000,
       20,
       this.sampleRate * 0.49,
     );
-    this.filterL.setParams(cutoff, p.filterResonance, 1, p.filterType);
-    this.filterR.setParams(cutoff, p.filterResonance, 1, p.filterType);
+    const resonance = clamp(p.filterResonance + modFilterReso * 0.5, 0, 0.99);
+    this.filterL.setParams(cutoff, resonance, 1, p.filterType);
+    this.filterR.setParams(cutoff, resonance, 1, p.filterType);
     mixL = this.filterL.process(mixL);
     mixR = this.filterR.process(mixR);
 
-    // Amp
+    // Amp with modulation
     const level = this.levelSmoother.tick();
-    mixL *= ampLevel * level * this.velocity;
-    mixR *= ampLevel * level * this.velocity;
+    const ampMod = clamp(1 + modAmpLevel, 0, 2);
+    mixL *= ampLevel * level * this.velocity * ampMod;
+    mixR *= ampLevel * level * this.velocity * ampMod;
+
+    // Pan modulation
+    if (modPan !== 0) {
+      const panR = clamp(0.5 + modPan * 0.5, 0, 1);
+      const panL = 1 - panR;
+      // Apply pan as cross-fade from center
+      const mono = (mixL + mixR) * 0.5;
+      mixL = mono * panL * 2;
+      mixR = mono * panR * 2;
+    }
 
     // Fade out (voice stealing)
     if (this.fadeOut > 0) {
