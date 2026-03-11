@@ -1,81 +1,254 @@
-import { ADSREnvelope } from "../dsp/envelope/adsr";
+import { UnisonEngine } from "../dsp/oscillator/unisonEngine";
+import { SubOscillator, SubShape } from "../dsp/oscillator/subOscillator";
 import { FilterType, SVFilter } from "../dsp/filter/svf";
-import { Oscillator } from "../dsp/oscillator/oscillator";
+import { ADSREnvelope } from "../dsp/envelope/adsr";
+import { NoiseGenerator, NoiseType } from "../dsp/utils/noise";
+import { AnalogDrift } from "../dsp/utils/drift";
 import { ParamSmoother } from "../dsp/utils/smoothing";
+import { ModulationMatrix, ModSource, ModTarget } from "../dsp/modulation/modMatrix";
+import { clamp, midiToFreq } from "../dsp/utils/math";
+import { WarpType } from "../dsp/warp/warpTypes";
 import type { Wavetable } from "../dsp/wavetable/wavetableEngine";
 
+export interface VoiceParams {
+  oscAOn: boolean;
+  oscALevel: number;
+  oscAFramePosition: number;
+  oscADetune: number;
+  oscAUnisonVoices: number;
+  oscAUnisonDetune: number;
+  oscAUnisonSpread: number;
+  oscAWarpType: WarpType;
+  oscAWarpAmount: number;
+  oscAWarp2Type: WarpType;
+  oscAWarp2Amount: number;
+
+  oscBOn: boolean;
+  oscBLevel: number;
+  oscBFramePosition: number;
+  oscBDetune: number;
+  oscBUnisonVoices: number;
+  oscBUnisonDetune: number;
+  oscBUnisonSpread: number;
+  oscBWarpType: WarpType;
+  oscBWarpAmount: number;
+  oscBWarp2Type: WarpType;
+  oscBWarp2Amount: number;
+
+  subOn: boolean;
+  subOctave: number;
+  subShape: SubShape;
+  subLevel: number;
+
+  noiseType: NoiseType;
+  noiseLevel: number;
+
+  filterCutoff: number;
+  filterResonance: number;
+  filterDrive: number;
+  filterType: FilterType;
+  filterEnvAmount: number;
+
+  ampAttack: number;
+  ampDecay: number;
+  ampSustain: number;
+  ampRelease: number;
+
+  filterEnvAttack: number;
+  filterEnvDecay: number;
+  filterEnvSustain: number;
+  filterEnvRelease: number;
+
+  driftAmount: number;
+}
+
 export class Voice {
-  readonly oscillator: Oscillator;
-  readonly filter: SVFilter;
+  readonly oscA: UnisonEngine;
+  readonly oscB: UnisonEngine;
+  readonly sub: SubOscillator;
+  readonly noise: NoiseGenerator;
+  readonly filterL: SVFilter;
+  readonly filterR: SVFilter;
   readonly ampEnvelope: ADSREnvelope;
+  readonly filterEnvelope: ADSREnvelope;
+  readonly modMatrix: ModulationMatrix;
+  readonly drift: AnalogDrift;
 
   private levelSmoother: ParamSmoother;
   private cutoffSmoother: ParamSmoother;
 
   private note = -1;
+  private velocity = 0;
   private sampleRate: number;
+  private fadeOut = 0;
+  private readonly FADE_SAMPLES = 32;
+  private _params: VoiceParams | null = null;
 
   constructor(sampleRate: number) {
     this.sampleRate = sampleRate;
-    this.oscillator = new Oscillator(sampleRate);
-    this.filter = new SVFilter(sampleRate);
+    this.oscA = new UnisonEngine(sampleRate);
+    this.oscB = new UnisonEngine(sampleRate);
+    this.sub = new SubOscillator(sampleRate);
+    this.noise = new NoiseGenerator();
+    this.filterL = new SVFilter(sampleRate);
+    this.filterR = new SVFilter(sampleRate);
     this.ampEnvelope = new ADSREnvelope(sampleRate);
-    this.ampEnvelope.setParams(0.01, 0.1, 0.7, 0.3);
+    this.filterEnvelope = new ADSREnvelope(sampleRate);
+    this.modMatrix = new ModulationMatrix();
+    this.drift = new AnalogDrift(sampleRate);
     this.levelSmoother = new ParamSmoother(0.8);
     this.cutoffSmoother = new ParamSmoother(8000);
-    this.filter.setParams(8000, 0, 1, FilterType.LOWPASS);
+
+    this.ampEnvelope.setParams(0.01, 0.1, 0.7, 0.3);
+    this.filterEnvelope.setParams(0.01, 0.1, 0, 0.3);
+    this.filterL.setParams(8000, 0, 1, FilterType.LOWPASS);
+    this.filterR.setParams(8000, 0, 1, FilterType.LOWPASS);
   }
 
-  setWavetable(wt: Wavetable): void {
-    this.oscillator.setWavetable(wt);
+  setWavetableA(wt: Wavetable): void {
+    this.oscA.setWavetable(wt);
   }
 
-  noteOn(note: number, _velocity: number): void {
+  setWavetableB(wt: Wavetable): void {
+    this.oscB.setWavetable(wt);
+  }
+
+  noteOn(note: number, vel: number): void {
     this.note = note;
-    this.oscillator.setFrequency(midiToFreq(note));
-    this.oscillator.resetPhase();
-    this.filter.reset();
+    this.velocity = vel / 127;
+    this.fadeOut = 0;
+
+    const freq = midiToFreq(note);
+    this.oscA.setFrequency(freq);
+    this.oscB.setFrequency(freq);
+    this.sub.setNote(note, -1);
+
+    this.oscA.resetPhases();
+    this.oscB.resetPhases();
+    this.sub.resetPhase();
+    this.filterL.reset();
+    this.filterR.reset();
+
     this.ampEnvelope.gate();
+    this.filterEnvelope.gate();
   }
 
   noteOff(): void {
     this.ampEnvelope.release();
+    this.filterEnvelope.release();
+  }
+
+  startFadeOut(): void {
+    this.fadeOut = this.FADE_SAMPLES;
   }
 
   isIdle(): boolean {
-    return this.ampEnvelope.isIdle();
+    return this.ampEnvelope.isIdle() && this.fadeOut === 0;
   }
 
   getNote(): number {
     return this.note;
   }
 
-  setParams(
-    level: number,
-    cutoff: number,
-    resonance: number,
-    drive: number,
-    filterType: FilterType,
-    attack: number,
-    decay: number,
-    sustain: number,
-    release: number,
-  ): void {
-    this.levelSmoother.setTarget(level);
-    this.cutoffSmoother.setTarget(cutoff);
-    this.filter.setParams(cutoff, resonance, drive, filterType);
-    this.ampEnvelope.setParams(attack, decay, sustain, release);
+  setParams(p: VoiceParams): void {
+    this.oscA.setFramePosition(p.oscAFramePosition);
+    this.oscA.setWarp(p.oscAWarpType, p.oscAWarpAmount, p.oscAWarp2Type, p.oscAWarp2Amount);
+    this.oscA.setUnisonCount(p.oscAUnisonVoices, p.oscAUnisonDetune, p.oscAUnisonSpread);
+
+    this.oscB.setFramePosition(p.oscBFramePosition);
+    this.oscB.setWarp(p.oscBWarpType, p.oscBWarpAmount, p.oscBWarp2Type, p.oscBWarp2Amount);
+    this.oscB.setUnisonCount(p.oscBUnisonVoices, p.oscBUnisonDetune, p.oscBUnisonSpread);
+
+    if (this.note >= 0) {
+      this.sub.setNote(this.note, p.subOctave);
+    }
+
+    this.cutoffSmoother.setTarget(p.filterCutoff);
+    this.ampEnvelope.setParams(p.ampAttack, p.ampDecay, p.ampSustain, p.ampRelease);
+    this.filterEnvelope.setParams(p.filterEnvAttack, p.filterEnvDecay, p.filterEnvSustain, p.filterEnvRelease);
+
+    this._params = p;
   }
 
-  processSample(): number {
-    const oscOut = this.oscillator.process();
-    const filterOut = this.filter.process(oscOut);
-    const envLevel = this.ampEnvelope.process();
+  processSample(): [number, number] {
+    const p = this._params;
+    if (!p) return [0, 0];
+
+    const ampLevel = this.ampEnvelope.process();
+    const filterEnvLevel = this.filterEnvelope.process();
+
+    this.modMatrix.setSourceValue(ModSource.AMP_ENV, ampLevel);
+    this.modMatrix.setSourceValue(ModSource.FILTER_ENV, filterEnvLevel);
+    this.modMatrix.setSourceValue(ModSource.VELOCITY, this.velocity);
+    this.modMatrix.setSourceValue(ModSource.KEY_TRACK, (this.note - 60) / 60);
+
+    let mixL = 0;
+    let mixR = 0;
+
+    if (p.oscAOn) {
+      const freq = midiToFreq(this.note + p.oscADetune / 100);
+      this.oscA.setFrequency(freq * (p.driftAmount > 0 ? this.drift.getFreqMultiplier() : 1));
+      const [al, ar] = this.oscA.process();
+      mixL += al * p.oscALevel;
+      mixR += ar * p.oscALevel;
+    }
+
+    if (p.oscBOn) {
+      const freq = midiToFreq(this.note + p.oscBDetune / 100);
+      this.oscB.setFrequency(freq * (p.driftAmount > 0 ? this.drift.getFreqMultiplier() : 1));
+      const [bl, br] = this.oscB.process();
+      mixL += bl * p.oscBLevel;
+      mixR += br * p.oscBLevel;
+    }
+
+    if (p.subOn) {
+      const subSample = this.sub.process(p.subShape) * p.subLevel;
+      mixL += subSample;
+      mixR += subSample;
+    }
+
+    if (p.noiseLevel > 0) {
+      const noiseSample = this.noise.process(p.noiseType) * p.noiseLevel;
+      mixL += noiseSample;
+      mixR += noiseSample;
+    }
+
+    // Drive (pre-filter saturation)
+    if (p.filterDrive > 1) {
+      mixL = Math.tanh(mixL * p.filterDrive) / p.filterDrive;
+      mixR = Math.tanh(mixR * p.filterDrive) / p.filterDrive;
+    }
+
+    // Filter
+    const baseCutoff = this.cutoffSmoother.tick();
+    const modCutoff = this.modMatrix.getModulation(ModTarget.FILTER_CUTOFF);
+    const cutoff = clamp(
+      baseCutoff + filterEnvLevel * p.filterEnvAmount * 10000 + modCutoff * 5000,
+      20,
+      this.sampleRate * 0.49,
+    );
+    this.filterL.setParams(cutoff, p.filterResonance, 1, p.filterType);
+    this.filterR.setParams(cutoff, p.filterResonance, 1, p.filterType);
+    mixL = this.filterL.process(mixL);
+    mixR = this.filterR.process(mixR);
+
+    // Amp
     const level = this.levelSmoother.tick();
-    return filterOut * envLevel * level;
-  }
-}
+    mixL *= ampLevel * level * this.velocity;
+    mixR *= ampLevel * level * this.velocity;
 
-function midiToFreq(note: number): number {
-  return 440 * 2 ** ((note - 69) / 12);
+    // Fade out (voice stealing)
+    if (this.fadeOut > 0) {
+      const fade = this.fadeOut / this.FADE_SAMPLES;
+      mixL *= fade;
+      mixR *= fade;
+      this.fadeOut--;
+    }
+
+    if (p.driftAmount > 0) {
+      this.drift.process();
+    }
+
+    return [mixL, mixR];
+  }
 }

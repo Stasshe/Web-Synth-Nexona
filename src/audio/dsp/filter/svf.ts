@@ -4,6 +4,7 @@ export enum FilterType {
   LOWPASS = 0,
   HIGHPASS = 1,
   BANDPASS = 2,
+  NOTCH = 3,
 }
 
 export class SVFilter {
@@ -41,6 +42,8 @@ export class SVFilter {
         return hp;
       case FilterType.BANDPASS:
         return this.bp;
+      case FilterType.NOTCH:
+        return this.lp + hp;
     }
   }
 

@@ -64,4 +64,36 @@ describe("SynthEngine", () => {
     const maxAbs = Math.max(...out[0].map(Math.abs));
     expect(maxAbs).toBeLessThan(0.001);
   });
+
+  it("supports polyphony", () => {
+    const engine = new SynthEngine(SR);
+    engine.noteOn(60, 100);
+    engine.noteOn(64, 100);
+    engine.noteOn(67, 100);
+
+    const out = makeOutput();
+    engine.processBlock(out);
+
+    const hasSound = out[0].some((v) => Math.abs(v) > 0.0001);
+    expect(hasSound).toBe(true);
+  });
+
+  it("stops note independently with noteOff", () => {
+    const engine = new SynthEngine(SR);
+    engine.noteOn(60, 100);
+    engine.noteOn(64, 100);
+
+    for (let i = 0; i < 5; i++) engine.processBlock(makeOutput());
+
+    engine.noteOff(60);
+
+    // Let note 60 release
+    for (let i = 0; i < 2000; i++) engine.processBlock(makeOutput());
+
+    // Note 64 should still have sound
+    const out = makeOutput();
+    engine.processBlock(out);
+    const hasSound = out[0].some((v) => Math.abs(v) > 0.0001);
+    expect(hasSound).toBe(true);
+  });
 });
