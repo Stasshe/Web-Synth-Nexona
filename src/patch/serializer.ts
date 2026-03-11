@@ -8,13 +8,25 @@ export function stateToPatch(name = "Init"): PatchData {
   // Ensure customWaveform is plain array (not Valtio proxy)
   oscA.customWaveform = oscA.customWaveform ? [...oscA.customWaveform] : null;
   oscB.customWaveform = oscB.customWaveform ? [...oscB.customWaveform] : null;
+  const sub = s.oscillators.sub;
   return {
     version: 1,
     name,
     oscillators: {
       a: oscA,
       b: oscB,
-      sub: { ...s.oscillators.sub },
+      sub: {
+        on: sub.on,
+        octave: sub.octave,
+        level: sub.level,
+        waveformName: sub.waveformName,
+        customWaveform: sub.customWaveform ? [...sub.customWaveform] : null,
+        controlPoints: sub.controlPoints
+          ? sub.controlPoints.map((p) => ({
+              ...(p as { id: string; x: number; y: number; curveType: number }),
+            }))
+          : null,
+      },
     },
     noise: { ...s.noise },
     filter: { ...s.filter },

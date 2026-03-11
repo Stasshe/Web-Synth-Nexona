@@ -1,7 +1,7 @@
 import { ADSREnvelope } from "../dsp/envelope/adsr";
 import { FilterType, SVFilter } from "../dsp/filter/svf";
 import { ModSource, ModTarget, ModulationMatrix } from "../dsp/modulation/modMatrix";
-import { SubOscillator, type SubShape } from "../dsp/oscillator/subOscillator";
+import { SubOscillator } from "../dsp/oscillator/subOscillator";
 import { UnisonEngine } from "../dsp/oscillator/unisonEngine";
 import { AnalogDrift } from "../dsp/utils/drift";
 import { clamp, midiToFreq } from "../dsp/utils/math";
@@ -37,7 +37,6 @@ export interface VoiceParams {
 
   subOn: boolean;
   subOctave: number;
-  subShape: SubShape;
   subLevel: number;
 
   noiseType: NoiseType;
@@ -111,6 +110,10 @@ export class Voice {
 
   setWavetableB(wt: Wavetable): void {
     this.oscB.setWavetable(wt);
+  }
+
+  setWavetableSub(wt: Wavetable): void {
+    this.sub.setWavetable(wt);
   }
 
   noteOn(note: number, vel: number): void {
@@ -237,7 +240,7 @@ export class Voice {
     }
 
     if (p.subOn) {
-      const subSample = this.sub.process(p.subShape) * p.subLevel;
+      const subSample = this.sub.process() * p.subLevel;
       mixL += subSample;
       mixR += subSample;
     }

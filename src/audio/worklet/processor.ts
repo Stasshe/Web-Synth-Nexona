@@ -3,7 +3,14 @@ import type { Wavetable } from "../dsp/wavetable/wavetableEngine";
 import { SynthEngine } from "../engine/synthEngine";
 
 interface SynthProcessorMessage {
-  type: "init" | "noteOn" | "noteOff" | "setModRoutes" | "loadWavetableA" | "loadWavetableB";
+  type:
+    | "init"
+    | "noteOn"
+    | "noteOff"
+    | "setModRoutes"
+    | "loadWavetableA"
+    | "loadWavetableB"
+    | "loadWavetableSub";
   sab?: SharedArrayBuffer;
   note: number;
   velocity?: number;
@@ -49,6 +56,11 @@ class SynthProcessor extends AudioWorkletProcessor {
         case "loadWavetableB":
           if (msg.wavetable) {
             this.engine.setWavetableB(msg.wavetable);
+          }
+          break;
+        case "loadWavetableSub":
+          if (msg.wavetable) {
+            this.engine.setWavetableSub(msg.wavetable);
           }
           break;
       }

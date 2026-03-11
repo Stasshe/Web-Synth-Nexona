@@ -12,7 +12,11 @@ const NOISE_OPTIONS = [
   { value: "2", label: "Brown" },
 ];
 
-export function SubNoisePanel() {
+interface SubNoisePanelProps {
+  onOpenSubWaveEditor?: () => void;
+}
+
+export function SubNoisePanel({ onOpenSubWaveEditor }: SubNoisePanelProps) {
   const snap = useSnapshot(synthState);
   const sub = snap.oscillators.sub;
   const noise = snap.noise;
@@ -47,15 +51,14 @@ export function SubNoisePanel() {
           color="var(--accent-cyan)"
           formatValue={(v) => `${v}`}
         />
-        <Select
-          value={String(sub.shape)}
-          options={[
-            { value: "0", label: "Sine" },
-            { value: "1", label: "Square" },
-          ]}
-          onChange={(v) => (synthState.oscillators.sub.shape = Number(v))}
-          className="self-center"
-        />
+        <button
+          type="button"
+          onClick={onOpenSubWaveEditor}
+          className="self-center px-2 py-1 text-[10px] text-text-muted hover:text-text-primary bg-bg-surface border border-border-default rounded cursor-pointer transition-colors"
+          title="Edit sub waveform"
+        >
+          {sub.waveformName ?? "Sine"}
+        </button>
       </div>
 
       {/* Noise section */}

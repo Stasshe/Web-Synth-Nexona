@@ -10,6 +10,7 @@ export class VoiceManager {
   private sampleRate: number;
   private wavetableA: Wavetable | null = null;
   private wavetableB: Wavetable | null = null;
+  private wavetableSub: Wavetable | null = null;
 
   constructor(sampleRate: number) {
     this.sampleRate = sampleRate;
@@ -26,6 +27,11 @@ export class VoiceManager {
   setWavetableB(wt: Wavetable): void {
     this.wavetableB = wt;
     for (const v of this.voices) v.setWavetableB(wt);
+  }
+
+  setWavetableSub(wt: Wavetable): void {
+    this.wavetableSub = wt;
+    for (const v of this.voices) v.setWavetableSub(wt);
   }
 
   setModRoutes(routes: ModRoute[]): void {
@@ -68,6 +74,7 @@ export class VoiceManager {
 
     if (this.wavetableA) voice.setWavetableA(this.wavetableA);
     if (this.wavetableB) voice.setWavetableB(this.wavetableB);
+    if (this.wavetableSub) voice.setWavetableSub(this.wavetableSub);
     voice.noteOn(note, velocity);
   }
 

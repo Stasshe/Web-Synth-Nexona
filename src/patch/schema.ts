@@ -6,7 +6,15 @@ export interface PatchData {
   oscillators: {
     a: OscPatch;
     b: OscPatch;
-    sub: { on: boolean; octave: number; shape: number; level: number };
+    sub: {
+      on: boolean;
+      octave: number;
+      shape?: number;
+      level: number;
+      waveformName?: string;
+      customWaveform?: number[] | null;
+      controlPoints?: ControlPointPatch[] | null;
+    };
   };
   noise: { type: number; level: number };
   filter: {
@@ -40,6 +48,7 @@ interface OscPatch {
   waveformType: number;
   waveformName?: string;
   customWaveform?: number[] | null;
+  controlPoints?: ControlPointPatch[] | null;
   level: number;
   framePosition: number;
   detune: number;
@@ -51,6 +60,13 @@ interface OscPatch {
   warpAmount: number;
   warp2Type: number;
   warp2Amount: number;
+}
+
+interface ControlPointPatch {
+  id: string;
+  x: number;
+  y: number;
+  curveType: number;
 }
 
 interface EnvPatch {

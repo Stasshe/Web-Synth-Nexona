@@ -11,6 +11,7 @@ export interface SynthNode {
   setModRoutes: (routes: ModRoute[]) => void;
   loadWavetableA: (wt: Wavetable) => void;
   loadWavetableB: (wt: Wavetable) => void;
+  loadWavetableSub: (wt: Wavetable) => void;
   onWaveformData: (callback: (data: Float32Array) => void) => void;
   disconnect: () => void;
 }
@@ -58,6 +59,9 @@ export async function createSynthNode(ctx: AudioContext): Promise<SynthNode> {
     },
     loadWavetableB(wt: Wavetable) {
       node.port.postMessage({ type: "loadWavetableB", wavetable: wt });
+    },
+    loadWavetableSub(wt: Wavetable) {
+      node.port.postMessage({ type: "loadWavetableSub", wavetable: wt });
     },
     onWaveformData(callback: (data: Float32Array) => void) {
       waveformCallback = callback;

@@ -29,6 +29,10 @@ export function loadPatchIntoState(patch: PatchData): void {
   if (patch.oscillators.b.customWaveform === undefined) s.oscillators.b.customWaveform = null;
 
   Object.assign(s.oscillators.sub, patch.oscillators.sub);
+  // Fill defaults for older patches missing sub waveform fields
+  if (!s.oscillators.sub.waveformName) s.oscillators.sub.waveformName = "Sine";
+  if (s.oscillators.sub.customWaveform === undefined) s.oscillators.sub.customWaveform = null;
+  if (s.oscillators.sub.controlPoints === undefined) s.oscillators.sub.controlPoints = null;
   Object.assign(s.noise, patch.noise);
   Object.assign(s.filter, patch.filter);
   Object.assign(s.envelopes.amp, patch.envelopes.amp);

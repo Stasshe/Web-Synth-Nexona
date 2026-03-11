@@ -3,11 +3,23 @@
 import { WavetableType, generateTable } from "@/audio/dsp/wavetable/wavetableEngine";
 import type { Wavetable } from "@/audio/dsp/wavetable/wavetableEngine";
 import { synthState } from "@/state/synthState";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ControlPoint,
+  CurveType,
+  type WaveformModel,
+  defaultModel,
+  makePointId,
+  sineModel,
+} from "./curveTypes";
+import { generateWaveformFromPoints } from "./generateFromPoints";
 
 const TABLE_SIZE = 2048;
 const CANVAS_W = 600;
 const CANVAS_H = 240;
+const POINT_RADIUS = 6;
+const HIT_RADIUS = 12;
+const MIN_GAP = 0.005; // minimum x gap between points
 
 const WAVEFORM_NAMES: Record<string, string> = {
   sine: "Sine",
@@ -23,44 +35,110 @@ const PRESET_MAP: Record<string, WavetableType> = {
   triangle: WavetableType.TRIANGLE,
 };
 
+const CURVE_LABELS: { type: CurveType; label: string }[] = [
+  { type: CurveType.LINEAR, label: "Linear" },
+  { type: CurveType.SMOOTH, label: "Smooth" },
+  { type: CurveType.STEP, label: "Step" },
+  { type: CurveType.SINE, label: "Sine" },
+];
+
 interface WaveformEditorProps {
   open: boolean;
   onClose: () => void;
   onApply: (wt: Wavetable) => void;
-  osc: "a" | "b";
+  osc: "a" | "b" | "sub";
 }
 
-function createDefaultWaveform(): Float32Array {
-  const data = new Float32Array(TABLE_SIZE + 1);
-  for (let i = 0; i <= TABLE_SIZE; i++) {
-    data[i] = Math.sin((2 * Math.PI * i) / TABLE_SIZE);
+function loadExistingModel(osc: "a" | "b" | "sub"): WaveformModel {
+  const oscState = synthState.oscillators[osc];
+  const controlPoints = (oscState as Record<string, unknown>).controlPoints as
+    | ControlPoint[]
+    | null
+    | undefined;
+  if (controlPoints && controlPoints.length >= 2) {
+    return { points: controlPoints.map((p) => ({ ...p })) };
   }
-  return data;
+  return sineModel();
 }
 
-function loadExistingWaveform(osc: "a" | "b"): Float32Array {
-  const custom = synthState.oscillators[osc].customWaveform;
-  if (custom && custom.length === TABLE_SIZE + 1) {
-    return new Float32Array(custom);
+function loadExistingName(osc: "a" | "b" | "sub"): string {
+  const oscState = synthState.oscillators[osc];
+  return ((oscState as Record<string, unknown>).waveformName as string) ?? "Sine";
+}
+
+function modelToCanvas(x: number, y: number): { cx: number; cy: number } {
+  return {
+    cx: x * CANVAS_W,
+    cy: CANVAS_H / 2 - y * (CANVAS_H / 2 - 4),
+  };
+}
+
+function canvasToModel(
+  clientX: number,
+  clientY: number,
+  canvas: HTMLCanvasElement,
+): { x: number; y: number } {
+  const rect = canvas.getBoundingClientRect();
+  const px = (clientX - rect.left) * (CANVAS_W / rect.width);
+  const py = (clientY - rect.top) * (CANVAS_H / rect.height);
+  const x = Math.max(0, Math.min(1, px / CANVAS_W));
+  const y = Math.max(-1, Math.min(1, -((py - CANVAS_H / 2) / (CANVAS_H / 2 - 4))));
+  return { x, y };
+}
+
+function findHitPoint(
+  mx: number,
+  my: number,
+  canvas: HTMLCanvasElement,
+  model: WaveformModel,
+): string | null {
+  const rect = canvas.getBoundingClientRect();
+  const px = (mx - rect.left) * (CANVAS_W / rect.width);
+  const py = (my - rect.top) * (CANVAS_H / rect.height);
+
+  let best: string | null = null;
+  let bestDist = HIT_RADIUS * HIT_RADIUS;
+
+  for (const pt of model.points) {
+    const { cx, cy } = modelToCanvas(pt.x, pt.y);
+    const dx = px - cx;
+    const dy = py - cy;
+    const d2 = dx * dx + dy * dy;
+    if (d2 < bestDist) {
+      bestDist = d2;
+      best = pt.id;
+    }
   }
-  return createDefaultWaveform();
+  return best;
 }
 
 export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [waveform, setWaveform] = useState<Float32Array>(() => loadExistingWaveform(osc));
-  const [currentName, setCurrentName] = useState<string>(() => synthState.oscillators[osc].waveformName);
-  // Track pending multi-frame wavetable for presets (null = single-frame custom)
+  const [model, setModel] = useState<WaveformModel>(() => loadExistingModel(osc));
+  const [currentName, setCurrentName] = useState<string>(() => loadExistingName(osc));
+  const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
+  const [draggingPointId, setDraggingPointId] = useState<string | null>(null);
   const pendingWavetableRef = useRef<Wavetable | null>(null);
-  const drawingRef = useRef(false);
-  const lastPosRef = useRef<{ x: number; y: number } | null>(null);
 
-  // Reload waveform when opening for a different osc
+  // Derive waveform from model
+  const waveform = useMemo(
+    () => (pendingWavetableRef.current ? null : generateWaveformFromPoints(model, TABLE_SIZE)),
+    [model],
+  );
+
+  // When a preset is active, show its last frame
+  const [presetWaveform, setPresetWaveform] = useState<Float32Array | null>(null);
+  const displayWaveform = presetWaveform ?? waveform ?? new Float32Array(TABLE_SIZE + 1);
+
+  // Reload when opening for a different osc
   useEffect(() => {
     if (open) {
-      setWaveform(loadExistingWaveform(osc));
-      setCurrentName(synthState.oscillators[osc].waveformName);
+      setModel(loadExistingModel(osc));
+      setCurrentName(loadExistingName(osc));
+      setSelectedPointId(null);
+      setDraggingPointId(null);
       pendingWavetableRef.current = null;
+      setPresetWaveform(null);
     }
   }, [open, osc]);
 
@@ -97,8 +175,8 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
       ctx.stroke();
     }
 
-    // Waveform
-    const color = osc === "a" ? "#4488ff" : "#ff8844";
+    // Waveform line
+    const color = osc === "a" ? "#4488ff" : osc === "b" ? "#ff8844" : "#44ddcc";
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
     ctx.shadowColor = color;
@@ -107,7 +185,7 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
 
     for (let x = 0; x < w; x++) {
       const idx = Math.floor((x / w) * TABLE_SIZE);
-      const val = waveform[idx] ?? 0;
+      const val = displayWaveform[idx] ?? 0;
       const y = h / 2 - val * (h / 2 - 4);
       if (x === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
@@ -122,165 +200,210 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
     ctx.lineTo(0, h / 2);
     ctx.fill();
     ctx.globalAlpha = 1;
-  }, [waveform, osc]);
+
+    // Control points (only when not showing a preset)
+    if (!presetWaveform) {
+      // Vertical guide lines at each point
+      ctx.strokeStyle = "rgba(255,255,255,0.08)";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      for (const pt of model.points) {
+        const { cx } = modelToCanvas(pt.x, pt.y);
+        ctx.beginPath();
+        ctx.moveTo(cx, 0);
+        ctx.lineTo(cx, h);
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+
+      // Draw points
+      for (const pt of model.points) {
+        const { cx, cy } = modelToCanvas(pt.x, pt.y);
+        const isSelected = pt.id === selectedPointId;
+
+        // Outer ring
+        ctx.beginPath();
+        ctx.arc(cx, cy, POINT_RADIUS + (isSelected ? 2 : 0), 0, Math.PI * 2);
+        ctx.fillStyle = isSelected ? color : "rgba(255,255,255,0.15)";
+        ctx.fill();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = isSelected ? 2 : 1;
+        ctx.stroke();
+
+        // Inner dot
+        ctx.beginPath();
+        ctx.arc(cx, cy, 2, 0, Math.PI * 2);
+        ctx.fillStyle = "#fff";
+        ctx.fill();
+      }
+    }
+  }, [displayWaveform, osc, model, selectedPointId, presetWaveform]);
 
   useEffect(() => {
     if (open) draw();
   }, [open, draw]);
 
-  const posToWaveform = useCallback(
-    (clientX: number, clientY: number) => {
-      const canvas = canvasRef.current;
-      if (!canvas) return null;
-      const rect = canvas.getBoundingClientRect();
-      const x = (clientX - rect.left) * (CANVAS_W / rect.width);
-      const y = (clientY - rect.top) * (CANVAS_H / rect.height);
-      const idx = Math.floor((x / CANVAS_W) * TABLE_SIZE);
-      const val = -((y - CANVAS_H / 2) / (CANVAS_H / 2 - 4));
-      return { idx: Math.max(0, Math.min(TABLE_SIZE, idx)), val: Math.max(-1, Math.min(1, val)) };
-    },
-    [],
-  );
-
-  const interpolateDraw = useCallback(
-    (from: { x: number; y: number }, to: { x: number; y: number }) => {
-      const p1 = posToWaveform(from.x, from.y);
-      const p2 = posToWaveform(to.x, to.y);
-      if (!p1 || !p2) return;
-
-      setWaveform((prev) => {
-        const next = new Float32Array(prev);
-        const startIdx = Math.min(p1.idx, p2.idx);
-        const endIdx = Math.max(p1.idx, p2.idx);
-        const steps = Math.max(1, endIdx - startIdx);
-        for (let i = startIdx; i <= endIdx && i <= TABLE_SIZE; i++) {
-          const t = steps > 0 ? (i - startIdx) / steps : 0;
-          const val = p1.idx <= p2.idx ? p1.val + (p2.val - p1.val) * t : p2.val + (p1.val - p2.val) * (1 - t);
-          next[i] = val;
-        }
-        next[TABLE_SIZE] = next[0];
-        return next;
-      });
-    },
-    [posToWaveform],
-  );
+  // --- Pointer handlers for point manipulation ---
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
       e.preventDefault();
+      const canvas = canvasRef.current;
+      if (!canvas) return;
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
-      drawingRef.current = true;
-      lastPosRef.current = { x: e.clientX, y: e.clientY };
 
-      const pos = posToWaveform(e.clientX, e.clientY);
-      if (pos) {
-        setWaveform((prev) => {
-          const next = new Float32Array(prev);
-          next[pos.idx] = pos.val;
-          next[TABLE_SIZE] = next[0];
-          return next;
+      // If showing a preset, switch to custom editing on click
+      if (presetWaveform) {
+        setPresetWaveform(null);
+        pendingWavetableRef.current = null;
+        setCurrentName("Custom");
+      }
+
+      const hitId = findHitPoint(e.clientX, e.clientY, canvas, model);
+
+      if (hitId) {
+        // Start dragging existing point
+        setSelectedPointId(hitId);
+        setDraggingPointId(hitId);
+      } else {
+        // Add new point
+        const { x, y } = canvasToModel(e.clientX, e.clientY, canvas);
+        const newPt: ControlPoint = {
+          id: makePointId(),
+          x,
+          y,
+          curveType: CurveType.SMOOTH,
+        };
+        setModel((prev) => {
+          const pts = [...prev.points, newPt].sort((a, b) => a.x - b.x);
+          return { points: pts };
         });
+        setSelectedPointId(newPt.id);
+        setDraggingPointId(newPt.id);
         setCurrentName("Custom");
         pendingWavetableRef.current = null;
       }
     },
-    [posToWaveform],
+    [model, presetWaveform],
   );
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
-      if (!drawingRef.current) return;
-      const cur = { x: e.clientX, y: e.clientY };
-      if (lastPosRef.current) {
-        interpolateDraw(lastPosRef.current, cur);
-      }
-      lastPosRef.current = cur;
+      if (!draggingPointId) return;
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      const { x, y } = canvasToModel(e.clientX, e.clientY, canvas);
+
+      setModel((prev) => {
+        const idx = prev.points.findIndex((p) => p.id === draggingPointId);
+        if (idx < 0) return prev;
+
+        const pts = prev.points.map((p) => ({ ...p }));
+        const isFirst = idx === 0;
+        const isLast = idx === pts.length - 1;
+
+        if (isFirst) {
+          // Endpoint: only y, mirror to last
+          pts[0].y = y;
+          pts[pts.length - 1].y = y;
+        } else if (isLast) {
+          // Endpoint: only y, mirror to first
+          pts[pts.length - 1].y = y;
+          pts[0].y = y;
+        } else {
+          // Interior: clamp x between neighbors
+          const minX = pts[idx - 1].x + MIN_GAP;
+          const maxX = pts[idx + 1].x - MIN_GAP;
+          pts[idx].x = Math.max(minX, Math.min(maxX, x));
+          pts[idx].y = y;
+        }
+
+        return { points: pts };
+      });
     },
-    [interpolateDraw],
+    [draggingPointId],
   );
 
   const handlePointerUp = useCallback(() => {
-    drawingRef.current = false;
-    lastPosRef.current = null;
+    setDraggingPointId(null);
   }, []);
 
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      const hitId = findHitPoint(e.clientX, e.clientY, canvas, model);
+      if (!hitId) return;
+
+      // Can't delete endpoints
+      const idx = model.points.findIndex((p) => p.id === hitId);
+      if (idx === 0 || idx === model.points.length - 1) return;
+
+      setModel((prev) => ({
+        points: prev.points.filter((p) => p.id !== hitId),
+      }));
+      if (selectedPointId === hitId) setSelectedPointId(null);
+      setCurrentName("Custom");
+      pendingWavetableRef.current = null;
+    },
+    [model, selectedPointId],
+  );
+
+  // --- Actions ---
+
   const handleApply = useCallback(() => {
-    // Use multi-frame wavetable for presets, single-frame for custom drawings
+    const finalWaveform = presetWaveform ?? generateWaveformFromPoints(model, TABLE_SIZE);
     const wt = pendingWavetableRef.current ?? {
-      frames: [new Float32Array(waveform)],
+      frames: [new Float32Array(finalWaveform)],
       tableSize: TABLE_SIZE,
       numFrames: 1,
     };
-    synthState.oscillators[osc].waveformName = currentName;
-    synthState.oscillators[osc].customWaveform = Array.from(waveform);
+
+    const oscState = synthState.oscillators[osc] as Record<string, unknown>;
+    oscState.waveformName = currentName;
+    oscState.customWaveform = Array.from(finalWaveform);
+    oscState.controlPoints = model.points.map((p) => ({ ...p }));
     onApply(wt);
     onClose();
-  }, [waveform, currentName, osc, onApply, onClose]);
+  }, [model, currentName, osc, onApply, onClose, presetWaveform]);
 
   const handlePreset = useCallback((type: "sine" | "saw" | "square" | "triangle") => {
-    // Generate multi-frame wavetable for frame morph support
     const wt = generateTable(PRESET_MAP[type], TABLE_SIZE);
     pendingWavetableRef.current = wt;
-    // Show the last frame (full harmonic content) in the editor
-    setWaveform(new Float32Array(wt.frames[wt.numFrames - 1]));
+    setPresetWaveform(new Float32Array(wt.frames[wt.numFrames - 1]));
     setCurrentName(WAVEFORM_NAMES[type]);
+    setSelectedPointId(null);
   }, []);
 
   const handleClear = useCallback(() => {
-    setWaveform(new Float32Array(TABLE_SIZE + 1));
+    setModel(defaultModel());
     pendingWavetableRef.current = null;
+    setPresetWaveform(null);
+    setCurrentName("Custom");
+    setSelectedPointId(null);
   }, []);
 
-  const handleSmooth = useCallback(() => {
-    setWaveform((prev) => {
-      const next = new Float32Array(TABLE_SIZE + 1);
-      for (let i = 0; i < TABLE_SIZE; i++) {
-        const p = (i - 1 + TABLE_SIZE) % TABLE_SIZE;
-        const n = (i + 1) % TABLE_SIZE;
-        next[i] = prev[p] * 0.25 + prev[i] * 0.5 + prev[n] * 0.25;
-      }
-      next[TABLE_SIZE] = next[0];
-      return next;
-    });
-    pendingWavetableRef.current = null;
-  }, []);
-
-  const handleNormalize = useCallback(() => {
-    setWaveform((prev) => {
-      let max = 0;
-      for (let i = 0; i < TABLE_SIZE; i++) {
-        max = Math.max(max, Math.abs(prev[i]));
-      }
-      if (max === 0) return prev;
-      const next = new Float32Array(TABLE_SIZE + 1);
-      for (let i = 0; i <= TABLE_SIZE; i++) {
-        next[i] = prev[i] / max;
-      }
-      return next;
-    });
-    pendingWavetableRef.current = null;
-  }, []);
-
-  const handleHarmonics = useCallback((harmonicCount: number) => {
-    const data = new Float32Array(TABLE_SIZE + 1);
-    for (let h = 1; h <= harmonicCount; h++) {
-      const amp = 1 / h;
-      for (let i = 0; i <= TABLE_SIZE; i++) {
-        data[i] += amp * Math.sin(2 * Math.PI * h * (i / TABLE_SIZE));
-      }
-    }
-    let max = 0;
-    for (let i = 0; i < TABLE_SIZE; i++) max = Math.max(max, Math.abs(data[i]));
-    if (max > 0) for (let i = 0; i <= TABLE_SIZE; i++) data[i] /= max;
-    data[TABLE_SIZE] = data[0];
-    setWaveform(data);
-    setCurrentName(`Harm ${harmonicCount}`);
-    pendingWavetableRef.current = null;
-  }, []);
+  const handleCurveType = useCallback(
+    (ct: CurveType) => {
+      if (!selectedPointId) return;
+      setModel((prev) => ({
+        points: prev.points.map((p) => (p.id === selectedPointId ? { ...p, curveType: ct } : p)),
+      }));
+      pendingWavetableRef.current = null;
+      setPresetWaveform(null);
+      setCurrentName("Custom");
+    },
+    [selectedPointId],
+  );
 
   if (!open) return null;
 
-  const color = osc === "a" ? "var(--osc-a)" : "var(--osc-b)";
+  const color = osc === "a" ? "var(--osc-a)" : osc === "b" ? "var(--osc-b)" : "var(--accent-cyan)";
+  const oscLabel = osc === "sub" ? "SUB" : `OSC ${osc.toUpperCase()}`;
+  const selectedPoint = model.points.find((p) => p.id === selectedPointId);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
@@ -288,7 +411,7 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-2 border-b border-border-default">
           <span className="text-sm font-medium tracking-wider" style={{ color }}>
-            WAVEFORM EDITOR — OSC {osc.toUpperCase()}
+            WAVEFORM EDITOR — {oscLabel}
           </span>
           <div className="flex items-center gap-2">
             <button
@@ -320,7 +443,33 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerLeave={handlePointerUp}
+            onContextMenu={handleContextMenu}
           />
+        </div>
+
+        {/* Curve type toolbar */}
+        <div className="px-4 pb-2 flex flex-wrap items-center gap-1.5">
+          <span className="text-[9px] text-text-muted uppercase mr-1">Curve:</span>
+          {CURVE_LABELS.map(({ type, label }) => (
+            <button
+              key={type}
+              type="button"
+              disabled={!selectedPoint}
+              onClick={() => handleCurveType(type)}
+              className={`px-2 py-0.5 text-[10px] border rounded cursor-pointer transition-colors ${
+                selectedPoint?.curveType === type
+                  ? "text-text-primary bg-bg-darkest border-accent-blue"
+                  : "text-text-muted hover:text-text-primary bg-bg-surface border-border-default"
+              } disabled:opacity-30 disabled:cursor-default`}
+            >
+              {label}
+            </button>
+          ))}
+          {selectedPoint && (
+            <span className="text-[9px] text-text-muted ml-2">
+              ({selectedPoint.x.toFixed(2)}, {selectedPoint.y.toFixed(2)})
+            </span>
+          )}
         </div>
 
         {/* Tools */}
@@ -337,33 +486,7 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
             </button>
           ))}
 
-          <span className="text-[9px] text-text-muted uppercase ml-2 mr-1">Harmonics:</span>
-          {[4, 8, 16, 32].map((n) => (
-            <button
-              key={n}
-              type="button"
-              onClick={() => handleHarmonics(n)}
-              className="px-2 py-0.5 text-[10px] text-text-muted hover:text-text-primary bg-bg-surface border border-border-default rounded cursor-pointer transition-colors"
-            >
-              {n}
-            </button>
-          ))}
-
           <span className="text-[9px] text-text-muted uppercase ml-2 mr-1">Edit:</span>
-          <button
-            type="button"
-            onClick={handleSmooth}
-            className="px-2 py-0.5 text-[10px] text-text-muted hover:text-text-primary bg-bg-surface border border-border-default rounded cursor-pointer transition-colors"
-          >
-            Smooth
-          </button>
-          <button
-            type="button"
-            onClick={handleNormalize}
-            className="px-2 py-0.5 text-[10px] text-text-muted hover:text-text-primary bg-bg-surface border border-border-default rounded cursor-pointer transition-colors"
-          >
-            Normalize
-          </button>
           <button
             type="button"
             onClick={handleClear}
@@ -375,7 +498,8 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
 
         {/* Footer hint */}
         <div className="px-4 py-1.5 text-[10px] text-text-muted border-t border-border-default">
-          Draw on the canvas to shape the waveform. Click Apply to load into the oscillator.
+          Click to add points. Drag to move. Right-click to delete. Select a point to change its
+          curve type.
         </div>
       </div>
     </div>

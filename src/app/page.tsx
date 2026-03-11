@@ -29,7 +29,7 @@ export default function Home() {
   const unbindRef = useRef<(() => void) | null>(null);
   const [waveformData, setWaveformData] = useState<Float32Array | null>(null);
   const [paramEditorOpen, setParamEditorOpen] = useState(false);
-  const [waveEditorOsc, setWaveEditorOsc] = useState<"a" | "b" | null>(null);
+  const [waveEditorOsc, setWaveEditorOsc] = useState<"a" | "b" | "sub" | null>(null);
   const snap = useSnapshot(synthState);
 
   // Load patch from URL hash on mount
@@ -66,6 +66,13 @@ export default function Home() {
         if (oscKey === "a") synth.loadWavetableA(wt);
         else synth.loadWavetableB(wt);
       }
+    }
+    // Apply sub custom wavetable
+    const subState = synthState.oscillators.sub;
+    if (subState.customWaveform && subState.customWaveform.length > 0) {
+      const table = new Float32Array(subState.customWaveform);
+      const wt: Wavetable = { frames: [table], tableSize: table.length - 1, numFrames: 1 };
+      synth.loadWavetableSub(wt);
     }
   }, []);
 
@@ -227,7 +234,7 @@ export default function Home() {
           <div className="grid grid-cols-[1fr_1fr_auto_1fr] gap-1 min-h-0">
             <OscillatorPanel osc="a" onOpenWaveEditor={() => setWaveEditorOsc("a")} />
             <OscillatorPanel osc="b" onOpenWaveEditor={() => setWaveEditorOsc("b")} />
-            <SubNoisePanel />
+            <SubNoisePanel onOpenSubWaveEditor={() => setWaveEditorOsc("sub")} />
             <FilterPanel />
           </div>
 
@@ -278,8 +285,10 @@ export default function Home() {
             onApply={(wt) => {
               if (waveEditorOsc === "a") {
                 synthRef.current?.loadWavetableA(wt);
-              } else {
+              } else if (waveEditorOsc === "b") {
                 synthRef.current?.loadWavetableB(wt);
+              } else if (waveEditorOsc === "sub") {
+                synthRef.current?.loadWavetableSub(wt);
               }
             }}
           />

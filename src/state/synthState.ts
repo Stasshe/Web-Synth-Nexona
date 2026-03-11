@@ -41,8 +41,10 @@ export const synthState = proxy({
     sub: {
       on: false,
       octave: -1,
-      shape: 0,
       level: 0.5,
+      waveformName: "Sine",
+      customWaveform: null as number[] | null,
+      controlPoints: null as unknown[] | null,
     },
   },
   noise: {
@@ -133,7 +135,6 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
       const sub = synthState.oscillators.sub;
       setParam(sabView, SabParam.SubOn, sub.on ? 1 : 0);
       setParam(sabView, SabParam.SubOctave, sub.octave);
-      setParam(sabView, SabParam.SubShape, sub.shape);
       setParam(sabView, SabParam.SubLevel, sub.level);
     }),
   );

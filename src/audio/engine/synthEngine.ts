@@ -5,7 +5,7 @@ import type { ModRoute } from "../dsp/modulation/modMatrix";
 import { NoiseType } from "../dsp/utils/noise";
 import { ParamSmoother } from "../dsp/utils/smoothing";
 import { WarpType } from "../dsp/warp/warpTypes";
-import { type WavetableType, generateTable } from "../dsp/wavetable/wavetableEngine";
+import { WavetableType, generateTable } from "../dsp/wavetable/wavetableEngine";
 import type { Wavetable } from "../dsp/wavetable/wavetableEngine";
 import { SabParam, getParam } from "../sab/layout";
 import type { VoiceParams } from "./voice";
@@ -25,6 +25,7 @@ export class SynthEngine {
   private wtTypeB: WavetableType = 0;
   private customWtA = false;
   private customWtB = false;
+  private wavetableSub: Wavetable;
   private lfo1: LFO;
   private lfo2: LFO;
   private macros = [0, 0, 0, 0];
@@ -56,7 +57,6 @@ export class SynthEngine {
 
     subOn: false,
     subOctave: -1,
-    subShape: 0,
     subLevel: 0.5,
 
     noiseType: NoiseType.WHITE,
@@ -99,11 +99,15 @@ export class SynthEngine {
     this.masterVolume = new ParamSmoother(0.8);
     this.wavetableA = generateTable(0, 2048);
     this.wavetableB = generateTable(0, 2048);
+    // Default sub wavetable: single-frame sine (pure sine from frame 0)
+    const subFullTable = generateTable(WavetableType.SINE, 2048);
+    this.wavetableSub = { frames: [subFullTable.frames[0]], tableSize: 2048, numFrames: 1 };
     this.lfo1 = new LFO(sampleRate, BLOCK_SIZE);
     this.lfo2 = new LFO(sampleRate, BLOCK_SIZE);
 
     this.voiceManager.setWavetableA(this.wavetableA);
     this.voiceManager.setWavetableB(this.wavetableB);
+    this.voiceManager.setWavetableSub(this.wavetableSub);
   }
 
   setSAB(sab: Int32Array): void {
@@ -120,6 +124,11 @@ export class SynthEngine {
     this.wavetableB = wt;
     this.customWtB = true;
     this.voiceManager.setWavetableB(wt);
+  }
+
+  setWavetableSub(wt: Wavetable): void {
+    this.wavetableSub = wt;
+    this.voiceManager.setWavetableSub(wt);
   }
 
   setModRoutes(routes: ModRoute[]): void {
@@ -213,7 +222,6 @@ export class SynthEngine {
     // Sub + Noise
     this.voiceParams.subOn = getParam(this.sab, SabParam.SubOn) > 0.5;
     this.voiceParams.subOctave = getParam(this.sab, SabParam.SubOctave);
-    this.voiceParams.subShape = getParam(this.sab, SabParam.SubShape);
     this.voiceParams.subLevel = getParam(this.sab, SabParam.SubLevel);
     this.voiceParams.noiseType = getParam(this.sab, SabParam.NoiseType) as NoiseType;
     this.voiceParams.noiseLevel = getParam(this.sab, SabParam.NoiseLevel);
