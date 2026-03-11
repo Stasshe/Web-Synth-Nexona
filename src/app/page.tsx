@@ -27,7 +27,7 @@ export default function Home() {
   const synthRef = useRef<SynthNode | null>(null);
   const [waveformData, setWaveformData] = useState<Float32Array | null>(null);
   const [paramEditorOpen, setParamEditorOpen] = useState(false);
-  const [waveEditorOsc, setWaveEditorOsc] = useState<"a" | "b" | "c" | "sub" | null>(null);
+  const [waveEditorOsc, setWaveEditorOsc] = useState<"a" | "b" | "c" | null>(null);
   const snap = useSnapshot(synthState);
   useGlobalScrollLock();
 
@@ -258,7 +258,6 @@ export default function Home() {
               if (waveEditorOsc === "a") synthRef.current?.loadWavetableA(wt);
               else if (waveEditorOsc === "b") synthRef.current?.loadWavetableB(wt);
               else if (waveEditorOsc === "c") synthRef.current?.loadWavetableC(wt);
-              else if (waveEditorOsc === "sub") synthRef.current?.loadWavetableSub(wt);
             }}
           />
         )}

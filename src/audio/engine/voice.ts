@@ -60,12 +60,14 @@ export interface VoiceParams {
   filterDrive: number;
   filterType: number; // index into FILTER_REGISTRY
   filterEnvAmount: number;
+  filterOn: boolean;
 
   filter2Cutoff: number;
   filter2Resonance: number;
   filter2Drive: number;
   filter2Type: number; // index into FILTER_REGISTRY
   filter2EnvAmount: number;
+  filter2On: boolean;
 
   ampAttack: number;
   ampDecay: number;
@@ -285,35 +287,37 @@ export class Voice {
       mixR += n;
     }
 
-    // Pre-filter drive
-    if (p.filterDrive > 1) {
-      mixL = Math.tanh(mixL * p.filterDrive) / p.filterDrive;
-      mixR = Math.tanh(mixR * p.filterDrive) / p.filterDrive;
-    }
-
     // Filter 1
-    const baseCutoff = this.cutoffSmoother.tick();
-    const envMod = filterEnvLevel * p.filterEnvAmount;
-    const cutoff = clamp(baseCutoff * 2 ** ((envMod + modFilterCutoff) * 7), 20, this.sampleRate * 0.49);
-    const reso = clamp(p.filterResonance + modFilterReso * 0.99, 0, 0.99);
-    this.filterL.setParams(cutoff, reso, this.sampleRate);
-    this.filterR.setParams(cutoff, reso, this.sampleRate);
-    mixL = this.filterL.process(mixL);
-    mixR = this.filterR.process(mixR);
+    if (p.filterOn) {
+      if (p.filterDrive > 1) {
+        mixL = Math.tanh(mixL * p.filterDrive) / p.filterDrive;
+        mixR = Math.tanh(mixR * p.filterDrive) / p.filterDrive;
+      }
+      const baseCutoff = this.cutoffSmoother.tick();
+      const envMod = filterEnvLevel * p.filterEnvAmount;
+      const cutoff = clamp(baseCutoff * 2 ** ((envMod + modFilterCutoff) * 7), 20, this.sampleRate * 0.49);
+      const reso = clamp(p.filterResonance + modFilterReso * 0.99, 0, 0.99);
+      this.filterL.setParams(cutoff, reso, this.sampleRate);
+      this.filterR.setParams(cutoff, reso, this.sampleRate);
+      mixL = this.filterL.process(mixL);
+      mixR = this.filterR.process(mixR);
+    }
 
     // Filter 2 (series)
-    if (p.filter2Drive > 1) {
-      mixL = Math.tanh(mixL * p.filter2Drive) / p.filter2Drive;
-      mixR = Math.tanh(mixR * p.filter2Drive) / p.filter2Drive;
+    if (p.filter2On) {
+      if (p.filter2Drive > 1) {
+        mixL = Math.tanh(mixL * p.filter2Drive) / p.filter2Drive;
+        mixR = Math.tanh(mixR * p.filter2Drive) / p.filter2Drive;
+      }
+      const baseCutoff2 = this.cutoff2Smoother.tick();
+      const envMod2 = filterEnvLevel * p.filter2EnvAmount;
+      const cutoff2 = clamp(baseCutoff2 * 2 ** ((envMod2 + modFilter2Cutoff) * 7), 20, this.sampleRate * 0.49);
+      const reso2 = clamp(p.filter2Resonance + modFilter2Reso * 0.99, 0, 0.99);
+      this.filter2L.setParams(cutoff2, reso2, this.sampleRate);
+      this.filter2R.setParams(cutoff2, reso2, this.sampleRate);
+      mixL = this.filter2L.process(mixL);
+      mixR = this.filter2R.process(mixR);
     }
-    const baseCutoff2 = this.cutoff2Smoother.tick();
-    const envMod2 = filterEnvLevel * p.filter2EnvAmount;
-    const cutoff2 = clamp(baseCutoff2 * 2 ** ((envMod2 + modFilter2Cutoff) * 7), 20, this.sampleRate * 0.49);
-    const reso2 = clamp(p.filter2Resonance + modFilter2Reso * 0.99, 0, 0.99);
-    this.filter2L.setParams(cutoff2, reso2, this.sampleRate);
-    this.filter2R.setParams(cutoff2, reso2, this.sampleRate);
-    mixL = this.filter2L.process(mixL);
-    mixR = this.filter2R.process(mixR);
 
     // Amp
     const level = this.levelSmoother.tick();

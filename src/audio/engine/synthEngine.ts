@@ -77,12 +77,14 @@ export class SynthEngine {
     filterDrive: 1,
     filterType: 0,
     filterEnvAmount: 0,
+    filterOn: true,
 
     filter2Cutoff: 20000,
     filter2Resonance: 0,
     filter2Drive: 1,
     filter2Type: 0,
     filter2EnvAmount: 0,
+    filter2On: true,
 
     ampAttack: 0.01,
     ampDecay: 0.1,
@@ -308,6 +310,7 @@ export class SynthEngine {
     this.voiceParams.filterDrive = getParam(this.sab, SabParam.FilterDrive);
     this.voiceParams.filterType = Math.round(getParam(this.sab, SabParam.FilterType));
     this.voiceParams.filterEnvAmount = getParam(this.sab, SabParam.FilterEnvAmount);
+    this.voiceParams.filterOn = getParam(this.sab, SabParam.FilterOn) >= 0.5;
 
     // Filter 2
     this.voiceParams.filter2Cutoff = getParam(this.sab, SabParam.Filter2Cutoff);
@@ -315,6 +318,7 @@ export class SynthEngine {
     this.voiceParams.filter2Drive = getParam(this.sab, SabParam.Filter2Drive);
     this.voiceParams.filter2Type = Math.round(getParam(this.sab, SabParam.Filter2Type));
     this.voiceParams.filter2EnvAmount = getParam(this.sab, SabParam.Filter2EnvAmount);
+    this.voiceParams.filter2On = getParam(this.sab, SabParam.Filter2On) >= 0.5;
 
     // Amp Envelope
     this.voiceParams.ampAttack = getParam(this.sab, SabParam.AmpEnvAttack);

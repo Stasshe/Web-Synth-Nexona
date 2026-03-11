@@ -101,6 +101,8 @@ export function createSAB(): SharedArrayBuffer {
   setParam(view, SabParam.Filter2Drive, 1);
   setParam(view, SabParam.Filter2Type, 0);
   setParam(view, SabParam.Filter2EnvAmount, 0);
+  setParam(view, SabParam.FilterOn, 1);
+  setParam(view, SabParam.Filter2On, 1);
 
   // Distortion (off by default)
   setParam(view, SabParam.DistortionDrive, 1);

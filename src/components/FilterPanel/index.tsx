@@ -42,9 +42,14 @@ export function FilterPanel({ filter = 1 }: FilterPanelProps) {
   const color = CATEGORY_COLORS[currentDef.category] ?? "var(--filter)";
 
   return (
-    <Panel title={`FILTER ${filter}`} color={color}>
+    <Panel
+      title={`FILTER ${filter}`}
+      color={color}
+      onToggle={() => (state.on = !state.on)}
+      enabled={f.on}
+    >
       {/* Category tabs */}
-      <div className="flex gap-0.5 mb-1.5">
+      <div className="flex gap-0.5 mb-1">
         {categories.map((cat) => {
           const catColor = CATEGORY_COLORS[cat] ?? "var(--filter)";
           const isActive = currentDef.category === cat;
@@ -96,8 +101,8 @@ export function FilterPanel({ filter = 1 }: FilterPanelProps) {
         })}
       </div>
 
-      {/* Cutoff knob centred */}
-      <div className="flex justify-center mb-1.5">
+      {/* All knobs on one row: Cutoff + Reso + Drive + Env */}
+      <div className="grid grid-cols-4 gap-1">
         <Knob
           label="Cutoff"
           value={f.cutoff}
@@ -105,29 +110,42 @@ export function FilterPanel({ filter = 1 }: FilterPanelProps) {
           max={20000}
           step={1}
           onChange={(v) => (state.cutoff = v)}
-          size={52}
+          size={36}
           color={color}
           formatValue={(v) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${v.toFixed(0)}`)}
           modRoutes={modCutoff}
           onModDrop={handleModDrop(cutoffTarget)}
         />
-      </div>
-
-      {/* Reso / Drive / Env */}
-      <div className="grid grid-cols-3 gap-1.5">
         <Knob
-          label="Reso" value={f.resonance} min={0} max={0.99}
-          onChange={(v) => (state.resonance = v)} color={color}
-          modRoutes={modReso} onModDrop={handleModDrop(resoTarget)}
+          label="Reso"
+          value={f.resonance}
+          min={0}
+          max={0.99}
+          onChange={(v) => (state.resonance = v)}
+          color={color}
+          size={36}
+          modRoutes={modReso}
+          onModDrop={handleModDrop(resoTarget)}
         />
         <Knob
-          label="Drive" value={f.drive} min={1} max={10} step={0.1}
-          onChange={(v) => (state.drive = v)} color={color}
+          label="Drive"
+          value={f.drive}
+          min={1}
+          max={10}
+          step={0.1}
+          onChange={(v) => (state.drive = v)}
+          color={color}
+          size={36}
           formatValue={(v) => `${v.toFixed(1)}x`}
         />
         <Knob
-          label="Env" value={f.envAmount} min={-1} max={1}
-          onChange={(v) => (state.envAmount = v)} color={color}
+          label="Env"
+          value={f.envAmount}
+          min={-1}
+          max={1}
+          onChange={(v) => (state.envAmount = v)}
+          color={color}
+          size={36}
           formatValue={(v) => `${(v * 100).toFixed(0)}%`}
         />
       </div>

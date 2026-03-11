@@ -109,6 +109,10 @@ export enum SabParam {
   Filter2Type = 153,
   Filter2EnvAmount = 154,
 
+  // Filter on/off: 155-156
+  FilterOn = 155,
+  Filter2On = 156,
+
   // Distortion: 160-163
   DistortionDrive = 160,
   DistortionTone = 161,

@@ -1,7 +1,6 @@
 "use client";
 import { EnvelopePanel } from "@/components/EnvelopePanel";
 import { LfoPanel } from "@/components/LfoPanel";
-import { ModulationPanel } from "@/components/ModulationPanel";
 
 export function ModulatorSidebar() {
   return (
@@ -9,7 +8,6 @@ export function ModulatorSidebar() {
       <EnvelopePanel />
       <LfoPanel index="lfo1" />
       <LfoPanel index="lfo2" />
-      <ModulationPanel />
     </div>
   );
 }

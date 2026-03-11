@@ -72,6 +72,7 @@ export const synthState = proxy({
     level: 0,
   },
   filter: {
+    on: true,
     cutoff: 8000,
     resonance: 0,
     drive: 1,
@@ -79,6 +80,7 @@ export const synthState = proxy({
     envAmount: 0,
   },
   filter2: {
+    on: true,
     cutoff: 20000,
     resonance: 0,
     drive: 1,
@@ -188,6 +190,7 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
 
   const syncFilter = () => {
     const f = synthState.filter;
+    setParam(sabView, SabParam.FilterOn, f.on ? 1 : 0);
     setParam(sabView, SabParam.FilterCutoff, f.cutoff);
     setParam(sabView, SabParam.FilterResonance, f.resonance);
     setParam(sabView, SabParam.FilterDrive, f.drive);
@@ -197,6 +200,7 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
 
   const syncFilter2 = () => {
     const f = synthState.filter2;
+    setParam(sabView, SabParam.Filter2On, f.on ? 1 : 0);
     setParam(sabView, SabParam.Filter2Cutoff, f.cutoff);
     setParam(sabView, SabParam.Filter2Resonance, f.resonance);
     setParam(sabView, SabParam.Filter2Drive, f.drive);
