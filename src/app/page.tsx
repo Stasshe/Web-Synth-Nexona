@@ -19,7 +19,8 @@ import { useGlobalScrollLock } from "@/hooks/scrollLock";
 import { loadPatchIntoState, urlToPatch } from "@/patch/loader";
 import { patchToUrl, stateToPatch } from "@/patch/serializer";
 import { updateModFeedback } from "@/state/modFeedback";
-import { bindStateToSAB, synthState } from "@/state/synthState";
+import { bindStateToSAB, synthState, restoreStateFromSavedData, setupAutoSave } from "@/state/synthState";
+import { initIndexedDB, loadState } from "@/storage/indexeddb";
 import { Circle, Code, Download, Power, Share2, Square, Upload, Volume2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { subscribe } from "valtio";
@@ -42,6 +43,22 @@ export default function Home() {
   const snap = useSnapshot(synthState);
   useGlobalScrollLock();
 
+  // Initialize IndexedDB and load saved state
+  useEffect(() => {
+    const init = async () => {
+      try {
+        await initIndexedDB();
+        const savedState = await loadState();
+        if (savedState) {
+          restoreStateFromSavedData(savedState);
+        }
+      } catch (e) {
+        console.error("Failed to load state from IndexedDB:", e);
+      }
+    };
+    init();
+  }, []);
+
   useEffect(() => {
     const hash = window.location.hash.slice(1);
     if (hash) {
@@ -52,17 +69,28 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const unsub = subscribe(synthState.modulations, () => {
-      if (synthRef.current) {
-        const plain = synthState.modulations.map((r) => ({
-          source: r.source,
-          target: r.target,
-          amount: r.amount,
-        }));
-        synthRef.current.setModRoutes(plain as ModRoute[]);
-      }
-    });
-    return unsub;
+    const unsubs: (() => void)[] = [];
+
+    // Subscribe to modulations
+    unsubs.push(
+      subscribe(synthState.modulations, () => {
+        if (synthRef.current) {
+          const plain = synthState.modulations.map((r) => ({
+            source: r.source,
+            target: r.target,
+            amount: r.amount,
+          }));
+          synthRef.current.setModRoutes(plain as ModRoute[]);
+        }
+      })
+    );
+
+    // Setup auto-save
+    unsubs.push(setupAutoSave());
+
+    return () => {
+      for (const unsub of unsubs) unsub();
+    };
   }, []);
 
   const applyCustomWavetables = useCallback((synth: SynthNode) => {
@@ -104,6 +132,17 @@ export default function Home() {
     applyCustomWavetables(synth);
     setStarted(true);
   }, [started, applyCustomWavetables]);
+
+  // Auto-start audio engine after a brief delay to allow state restoration
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!started) {
+        handleStart();
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [started, handleStart]);
 
   const handleNoteOn = useCallback((note: number, velocity: number) => {
     synthRef.current?.noteOn(note, velocity);
@@ -192,18 +231,13 @@ export default function Home() {
   if (!started) {
     return (
       <main className="flex items-center justify-center min-h-[100dvh]">
-        <button
-          type="button"
-          onClick={handleStart}
-          className="flex items-center gap-3 px-8 py-4 bg-bg-surface border border-border-default rounded-xl
-                     hover:border-accent-blue hover:bg-bg-hover transition-all cursor-pointer text-text-primary"
-        >
-          <Power size={24} className="text-accent-blue" />
+        <div className="flex items-center gap-3 px-8 py-4 bg-bg-surface border border-border-default rounded-xl text-text-primary">
+          <Power size={24} className="text-accent-green animate-pulse" />
           <div className="text-left">
             <div className="text-lg font-medium">Web Synth - Nexona</div>
-            <div className="text-xs text-text-muted">Click to start audio engine</div>
+            <div className="text-xs text-text-muted">Initializing audio engine...</div>
           </div>
-        </button>
+        </div>
       </main>
     );
   }

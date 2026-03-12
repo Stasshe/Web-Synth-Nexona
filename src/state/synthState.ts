@@ -1,6 +1,7 @@
 import { proxy, subscribe } from "valtio";
 import type { ModRoute } from "../audio/dsp/modulation/modMatrix";
 import { SabParam, setParam } from "../audio/sab/layout";
+import { loadState, saveState } from "../storage/indexeddb";
 
 export const synthState = proxy({
   oscillators: {
@@ -340,6 +341,146 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
   syncMisc();
 
   return () => {
+    for (const unsub of unsubs) unsub();
+  };
+}
+
+/**
+ * Restore state from saved data
+ */
+export function restoreStateFromSavedData(data: unknown): void {
+  if (!data || typeof data !== "object") return;
+
+  const saved = data as Record<string, unknown>;
+
+  // Restore oscillators
+  if (saved.oscillators && typeof saved.oscillators === "object") {
+    const oscData = saved.oscillators as Record<string, unknown>;
+    for (const key of ["a", "b", "c"] as const) {
+      if (oscData[key] && typeof oscData[key] === "object") {
+        Object.assign(synthState.oscillators[key], oscData[key]);
+      }
+    }
+    if (oscData.sub && typeof oscData.sub === "object") {
+      Object.assign(synthState.oscillators.sub, oscData.sub);
+    }
+  }
+
+  // Restore other sections
+  if (saved.noise && typeof saved.noise === "object") {
+    Object.assign(synthState.noise, saved.noise);
+  }
+  if (saved.filter && typeof saved.filter === "object") {
+    Object.assign(synthState.filter, saved.filter);
+  }
+  if (saved.filter2 && typeof saved.filter2=== "object") {
+    Object.assign(synthState.filter2, saved.filter2);
+  }
+  if (saved.envelopes && typeof saved.envelopes === "object") {
+    const envData = saved.envelopes as Record<string, unknown>;
+    if (envData.amp && typeof envData.amp === "object") {
+      Object.assign(synthState.envelopes.amp, envData.amp);
+    }
+    if (envData.filter && typeof envData.filter === "object") {
+      Object.assign(synthState.envelopes.filter, envData.filter);
+    }
+  }
+  if (saved.lfos && typeof saved.lfos === "object") {
+    const lfosData = saved.lfos as Record<string, unknown>;
+    if (lfosData.lfo1 && typeof lfosData.lfo1 === "object") {
+      Object.assign(synthState.lfos.lfo1, lfosData.lfo1);
+    }
+    if (lfosData.lfo2 && typeof lfosData.lfo2 === "object") {
+      Object.assign(synthState.lfos.lfo2, lfosData.lfo2);
+    }
+  }
+  if (saved.effects && typeof saved.effects === "object") {
+    const fxData = saved.effects as Record<string, unknown>;
+    for (const key of ["distortion", "compressor", "chorus", "flanger", "phaser", "delay", "reverb", "eq"] as const) {
+      if (fxData[key] && typeof fxData[key] === "object") {
+        Object.assign(synthState.effects[key], fxData[key]);
+      }
+    }
+  }
+  if (saved.master && typeof saved.master === "object") {
+    Object.assign(synthState.master, saved.master);
+  }
+  if (typeof saved.drift === "number") {
+    synthState.drift = saved.drift;
+  }
+  if (Array.isArray(saved.macros)) {
+    synthState.macros = [...saved.macros];
+  }
+}
+
+/**
+ * Setup auto-save to IndexedDB
+ * Subscribe to all state changes and save
+ */
+export function setupAutoSave(): () => void {
+  let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  const performSave = async () => {
+    // Create a plain object copy of the state (excluding custom waveforms which are large)
+    const stateCopy = {
+      oscillators: {
+        a: { ...synthState.oscillators.a, customWaveform: null },
+        b: { ...synthState.oscillators.b, customWaveform: null },
+        c: { ...synthState.oscillators.c, customWaveform: null },
+        sub: { ...synthState.oscillators.sub, customWaveform: null },
+      },
+      noise: { ...synthState.noise },
+      filter: { ...synthState.filter },
+      filter2: { ...synthState.filter2 },
+      envelopes: {
+        amp: { ...synthState.envelopes.amp },
+        filter: { ...synthState.envelopes.filter },
+      },
+      lfos: {
+        lfo1: { ...synthState.lfos.lfo1 },
+        lfo2: { ...synthState.lfos.lfo2 },
+      },
+      effects: {
+        distortion: { ...synthState.effects.distortion },
+        compressor: { ...synthState.effects.compressor },
+        chorus: { ...synthState.effects.chorus },
+        flanger: { ...synthState.effects.flanger },
+        phaser: { ...synthState.effects.phaser },
+        delay: { ...synthState.effects.delay },
+        reverb: { ...synthState.effects.reverb },
+        eq: { ...synthState.effects.eq },
+      },
+      master: { ...synthState.master },
+      drift: synthState.drift,
+      macros: [...synthState.macros],
+    };
+
+    await saveState(stateCopy);
+  };
+
+  const debouncedSave = () => {
+    if (saveTimeout) clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(performSave, 1000);
+  };
+
+  // Subscribe to all top-level state changes
+  const unsubs: (() => void)[] = [];
+  unsubs.push(subscribe(synthState.oscillators, debouncedSave));
+  unsubs.push(subscribe(synthState.noise, debouncedSave));
+  unsubs.push(subscribe(synthState.filter, debouncedSave));
+  unsubs.push(subscribe(synthState.filter2, debouncedSave));
+  unsubs.push(subscribe(synthState.envelopes, debouncedSave));
+  unsubs.push(subscribe(synthState.lfos, debouncedSave));
+  unsubs.push(subscribe(synthState.effects, debouncedSave));
+  unsubs.push(subscribe(synthState.master, debouncedSave));
+  unsubs.push(
+    subscribe(synthState, () => {
+      if (synthState.drift || synthState.macros) debouncedSave();
+    })
+  );
+
+  return () => {
+    if (saveTimeout) clearTimeout(saveTimeout);
     for (const unsub of unsubs) unsub();
   };
 }
