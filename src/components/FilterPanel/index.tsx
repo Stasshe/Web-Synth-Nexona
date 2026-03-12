@@ -119,6 +119,7 @@ export function FilterPanel({ filter = 1 }: FilterPanelProps) {
           formatValue={(v) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${v.toFixed(0)}`)}
           modRoutes={modCutoff}
           onModDrop={handleModDrop(cutoffTarget)}
+          modTarget={cutoffTarget}
         />
         <Knob
           label="Reso"
@@ -130,6 +131,7 @@ export function FilterPanel({ filter = 1 }: FilterPanelProps) {
           size={36}
           modRoutes={modReso}
           onModDrop={handleModDrop(resoTarget)}
+          modTarget={resoTarget}
         />
         <Knob
           label="Drive"
@@ -143,6 +145,7 @@ export function FilterPanel({ filter = 1 }: FilterPanelProps) {
           formatValue={(v) => `${v.toFixed(1)}x`}
           modRoutes={modDrive}
           onModDrop={handleModDrop(driveTarget)}
+          modTarget={driveTarget}
         />
         <Knob
           label="Env"
@@ -155,6 +158,7 @@ export function FilterPanel({ filter = 1 }: FilterPanelProps) {
           formatValue={(v) => `${(v * 100).toFixed(0)}%`}
           modRoutes={modEnvAmt}
           onModDrop={handleModDrop(envAmtTarget)}
+          modTarget={envAmtTarget}
         />
       </div>
     </Panel>

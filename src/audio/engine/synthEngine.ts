@@ -1,6 +1,7 @@
 import { EffectsChain, type EffectsParams } from "../dsp/effects/effectsChain";
 import { LFO, type LfoShape } from "../dsp/lfo/lfo";
 import type { ModRoute } from "../dsp/modulation/modMatrix";
+import { SmoothRandom } from "../dsp/modulation/smoothRandom";
 import { SpectralMorphProcessor } from "../dsp/spectralMorph/spectralMorphProcessor";
 import type { SpectralMorphType } from "../dsp/spectralMorph/spectralMorphTypes";
 import { NoiseType } from "../dsp/utils/noise";
@@ -12,6 +13,18 @@ import type { VoiceParams } from "./voice";
 import { VoiceManager } from "./voiceManager";
 
 const BLOCK_SIZE = 128;
+
+export interface ModFeedback {
+  lfo1Phase: number;
+  lfo2Phase: number;
+  lfo1Value: number;
+  lfo2Value: number;
+  randomValue: number;
+  envAmpLevel: number;
+  envAmpState: number;
+  envFilterLevel: number;
+  envFilterState: number;
+}
 
 export class SynthEngine {
   private voiceManager: VoiceManager;
@@ -42,6 +55,7 @@ export class SynthEngine {
 
   private lfo1: LFO;
   private lfo2: LFO;
+  private smoothRandom: SmoothRandom;
   private macros = [0, 0, 0, 0];
 
   private voiceParams: VoiceParams = {
@@ -182,6 +196,7 @@ export class SynthEngine {
     this.wavetableSub = { frames: [subFullTable.frames[0]], tableSize: 2048, numFrames: 1 };
     this.lfo1 = new LFO(sampleRate, BLOCK_SIZE);
     this.lfo2 = new LFO(sampleRate, BLOCK_SIZE);
+    this.smoothRandom = new SmoothRandom(sampleRate, BLOCK_SIZE, 2);
 
     this.spectralMorphA.setSource(this.sourceWtA);
     this.spectralMorphB.setSource(this.sourceWtB);
@@ -257,7 +272,8 @@ export class SynthEngine {
 
     const lfo1Val = this.lfo1.process();
     const lfo2Val = this.lfo2.process();
-    this.voiceManager.setLfoValues(lfo1Val, lfo2Val, this.macros);
+    const randomVal = this.smoothRandom.process();
+    this.voiceManager.setLfoValues(lfo1Val, lfo2Val, this.macros, randomVal);
     this.voiceManager.setParams(this.voiceParams);
     this.effectsChain.setParams(this.effectsParams);
 
@@ -268,6 +284,21 @@ export class SynthEngine {
       left[i] = l * master;
       right[i] = r * master;
     }
+  }
+
+  getModFeedback(): ModFeedback {
+    const voiceEnv = this.voiceManager.getActiveEnvelopeState();
+    return {
+      lfo1Phase: this.lfo1.getPhase(),
+      lfo2Phase: this.lfo2.getPhase(),
+      lfo1Value: this.lfo1.getValue(),
+      lfo2Value: this.lfo2.getValue(),
+      randomValue: this.smoothRandom.getValue(),
+      envAmpLevel: voiceEnv.ampLevel,
+      envAmpState: voiceEnv.ampState,
+      envFilterLevel: voiceEnv.filterLevel,
+      envFilterState: voiceEnv.filterState,
+    };
   }
 
   private readParams(): void {

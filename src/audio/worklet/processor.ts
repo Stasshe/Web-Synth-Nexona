@@ -77,14 +77,15 @@ class SynthProcessor extends AudioWorkletProcessor {
     if (!this.initialized) return true;
     this.engine.processBlock(outputs[0]);
 
-    // Send waveform snapshot every 8 blocks (~43fps at 48kHz/128)
+    // Send feedback every 8 blocks (~43fps at 48kHz/128)
     this.blockCount++;
     if (this.blockCount >= 8) {
       this.blockCount = 0;
       const left = outputs[0][0];
+      const feedback = this.engine.getModFeedback();
       if (left) {
         this.waveformBuffer.set(left);
-        this.port.postMessage({ type: "waveform", data: this.waveformBuffer }, [
+        this.port.postMessage({ type: "waveform", data: this.waveformBuffer, feedback }, [
           this.waveformBuffer.buffer,
         ]);
         this.waveformBuffer = new Float32Array(128);

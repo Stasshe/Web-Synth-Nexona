@@ -60,6 +60,10 @@ export class LFO {
     return this.value;
   }
 
+  getPhase(): number {
+    return this.phase;
+  }
+
   reset(): void {
     this.phase = 0;
     this.value = 0;

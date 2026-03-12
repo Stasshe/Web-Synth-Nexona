@@ -3,6 +3,7 @@ import { ModSource } from "@/audio/dsp/modulation/modMatrix";
 import { Knob } from "@/components/ui/Knob";
 import { Panel } from "@/components/ui/Panel";
 import { DND_TYPES, type ModSourceDragItem } from "@/dnd/types";
+import { modFeedbackState } from "@/state/modFeedback";
 import { synthState } from "@/state/synthState";
 import { GripHorizontal } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
@@ -22,10 +23,12 @@ interface LfoPanelProps {
 
 export function LfoPanel({ index }: LfoPanelProps) {
   const snap = useSnapshot(synthState);
+  const fb = useSnapshot(modFeedbackState);
   const lfo = snap.lfos[index];
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const label = index === "lfo1" ? "LFO 1" : "LFO 2";
   const modSource = index === "lfo1" ? ModSource.LFO1 : ModSource.LFO2;
+  const phase = index === "lfo1" ? fb.lfo1Phase : fb.lfo2Phase;
 
   const [{ isDragging }, dragRef] = useDrag(
     () => ({
@@ -62,22 +65,22 @@ export function LfoPanel({ index }: LfoPanelProps) {
     ctx.beginPath();
 
     for (let x = 0; x < w; x++) {
-      const phase = x / w;
+      const p = x / w;
       let y = 0;
       switch (lfo.shape) {
-        case 0: // Sine
-          y = Math.sin(2 * Math.PI * phase);
+        case 0:
+          y = Math.sin(2 * Math.PI * p);
           break;
-        case 1: // Triangle
-          if (phase < 0.25) y = phase * 4;
-          else if (phase < 0.75) y = 2 - phase * 4;
-          else y = phase * 4 - 4;
+        case 1:
+          if (p < 0.25) y = p * 4;
+          else if (p < 0.75) y = 2 - p * 4;
+          else y = p * 4 - 4;
           break;
-        case 2: // Square
-          y = phase < 0.5 ? 1 : -1;
+        case 2:
+          y = p < 0.5 ? 1 : -1;
           break;
-        case 3: // Random (show stepped)
-          y = Math.sin(2 * Math.PI * phase * 3) > 0 ? 0.6 : -0.4;
+        case 3:
+          y = Math.sin(2 * Math.PI * p * 3) > 0 ? 0.6 : -0.4;
           break;
       }
       const py = h / 2 - (y * (h - 16)) / 2;
@@ -85,7 +88,18 @@ export function LfoPanel({ index }: LfoPanelProps) {
       else ctx.lineTo(x, py);
     }
     ctx.stroke();
-  }, [lfo.shape]);
+
+    // Phase indicator (playhead)
+    if (phase > 0) {
+      const px = phase * w;
+      ctx.strokeStyle = "rgba(136, 68, 255, 0.5)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(px, 0);
+      ctx.lineTo(px, h);
+      ctx.stroke();
+    }
+  }, [lfo.shape, phase]);
 
   useEffect(() => {
     drawWaveform();

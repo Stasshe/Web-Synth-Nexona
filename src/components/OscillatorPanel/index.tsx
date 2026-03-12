@@ -342,6 +342,7 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
           color={color}
           modRoutes={modFrame}
           onModDrop={handleModDrop(targets.frame)}
+          modTarget={targets.frame}
           size={24}
           formatValue={(v) => `${Math.round(v * 63)}`}
         />
@@ -382,6 +383,7 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
               color={color}
               modRoutes={modSpectralMorph}
               onModDrop={handleModDrop(targets.spectralMorph)}
+              modTarget={targets.spectralMorph}
               size={28}
             />
           </div>
@@ -405,6 +407,7 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
               color={color}
               modRoutes={modWarp}
               onModDrop={handleModDrop(targets.warp)}
+              modTarget={targets.warp}
               size={28}
             />
           </div>
@@ -428,6 +431,7 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
               color={color}
               modRoutes={modWarp2}
               onModDrop={handleModDrop(targets.warp2)}
+              modTarget={targets.warp2}
               size={28}
             />
           </div>
@@ -468,6 +472,7 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
           color={color}
           modRoutes={modPitch}
           onModDrop={handleModDrop(targets.pitch)}
+          modTarget={targets.pitch}
           formatValue={(v) => `${v > 0 ? "+" : ""}${v.toFixed(0)}ct`}
           size={28}
         />
@@ -492,6 +497,7 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
           color={color}
           modRoutes={modUnisonDetune}
           onModDrop={handleModDrop(targets.unisonDetune)}
+          modTarget={targets.unisonDetune}
           formatValue={(v) => `${v.toFixed(0)}ct`}
           size={28}
         />
@@ -504,6 +510,7 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
           color={color}
           modRoutes={modUnisonSpread}
           onModDrop={handleModDrop(targets.unisonSpread)}
+          modTarget={targets.unisonSpread}
           size={28}
         />
       </div>
@@ -537,6 +544,7 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
           color={color}
           modRoutes={modLevel}
           onModDrop={handleModDrop(targets.level)}
+          modTarget={targets.level}
           size={28}
         />
         <Knob
@@ -548,6 +556,7 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
           color={color}
           modRoutes={modPan}
           onModDrop={handleModDrop(targets.pan)}
+          modTarget={targets.pan}
           formatValue={(v) =>
             Math.abs(v) < 0.01
               ? "C"

@@ -101,7 +101,7 @@ export class VoiceManager {
     }
   }
 
-  setLfoValues(lfo1: number, lfo2: number, macros: number[]): void {
+  setLfoValues(lfo1: number, lfo2: number, macros: number[], randomVal: number): void {
     for (const v of this.voices) {
       if (!v.isIdle()) {
         v.modMatrix.setSourceValue(ModSource.LFO1, lfo1);
@@ -110,9 +110,29 @@ export class VoiceManager {
         v.modMatrix.setSourceValue(ModSource.MACRO2, macros[1] ?? 0);
         v.modMatrix.setSourceValue(ModSource.MACRO3, macros[2] ?? 0);
         v.modMatrix.setSourceValue(ModSource.MACRO4, macros[3] ?? 0);
-        v.modMatrix.setSourceValue(ModSource.RANDOM, Math.random() * 2 - 1);
+        v.modMatrix.setSourceValue(ModSource.RANDOM, randomVal);
       }
     }
+  }
+
+  getActiveEnvelopeState(): {
+    ampLevel: number;
+    ampState: number;
+    filterLevel: number;
+    filterState: number;
+  } {
+    // Return envelope state from the most recently active voice
+    for (const v of this.voices) {
+      if (!v.isIdle()) {
+        return {
+          ampLevel: v.ampEnvelope.getLevel(),
+          ampState: v.ampEnvelope.state,
+          filterLevel: v.filterEnvelope.getLevel(),
+          filterState: v.filterEnvelope.state,
+        };
+      }
+    }
+    return { ampLevel: 0, ampState: 0, filterLevel: 0, filterState: 0 };
   }
 
   /** Process one sample, returns mixed [left, right]. */

@@ -1,5 +1,6 @@
 import type { ModRoute } from "../dsp/modulation/modMatrix";
 import type { Wavetable } from "../dsp/wavetable/wavetablePresets";
+import type { ModFeedback } from "../engine/synthEngine";
 import { createSAB } from "../sab/init";
 
 export interface SynthNode {
@@ -14,6 +15,7 @@ export interface SynthNode {
   loadWavetableC: (wt: Wavetable) => void;
   loadWavetableSub: (wt: Wavetable) => void;
   onWaveformData: (callback: (data: Float32Array) => void) => void;
+  onModFeedback: (callback: (feedback: ModFeedback) => void) => void;
   disconnect: () => void;
 }
 
@@ -33,10 +35,12 @@ export async function createSynthNode(ctx: AudioContext): Promise<SynthNode> {
   node.connect(ctx.destination);
 
   let waveformCallback: ((data: Float32Array) => void) | null = null;
+  let modFeedbackCallback: ((feedback: ModFeedback) => void) | null = null;
 
   node.port.onmessage = (e: MessageEvent) => {
-    if (e.data.type === "waveform" && waveformCallback) {
-      waveformCallback(e.data.data);
+    if (e.data.type === "waveform") {
+      if (waveformCallback) waveformCallback(e.data.data);
+      if (modFeedbackCallback && e.data.feedback) modFeedbackCallback(e.data.feedback);
     }
   };
 
@@ -51,7 +55,6 @@ export async function createSynthNode(ctx: AudioContext): Promise<SynthNode> {
       node.port.postMessage({ type: "noteOff", note });
     },
     setModRoutes(routes: ModRoute[]) {
-      // Strip Valtio proxies — postMessage structured clone can't handle Proxy objects
       const plain = routes.map((r) => ({ source: r.source, target: r.target, amount: r.amount }));
       node.port.postMessage({ type: "setModRoutes", routes: plain });
     },
@@ -69,6 +72,9 @@ export async function createSynthNode(ctx: AudioContext): Promise<SynthNode> {
     },
     onWaveformData(callback: (data: Float32Array) => void) {
       waveformCallback = callback;
+    },
+    onModFeedback(callback: (feedback: ModFeedback) => void) {
+      modFeedbackCallback = callback;
     },
     disconnect() {
       node.disconnect();

@@ -1,6 +1,8 @@
 "use client";
+import type { ModTarget } from "@/audio/dsp/modulation/modMatrix";
 import { DND_TYPES, type ModSourceDragItem } from "@/dnd/types";
 import type { ModRouteInfo } from "@/hooks/useModAmount";
+import { useLiveModulation } from "@/hooks/useModAmount";
 import { synthState } from "@/state/synthState";
 import { useCallback, useRef } from "react";
 import { useDrop } from "react-dnd";
@@ -16,6 +18,7 @@ const SOURCE_LABELS: Record<number, string> = {
   7: "M2",
   8: "M3",
   9: "M4",
+  10: "Rn",
 };
 
 interface KnobProps {
@@ -30,6 +33,7 @@ interface KnobProps {
   modRoutes?: ModRouteInfo[];
   formatValue?: (v: number) => string;
   onModDrop?: (item: ModSourceDragItem) => void;
+  modTarget?: ModTarget;
 }
 
 export function Knob({
@@ -44,9 +48,11 @@ export function Knob({
   modRoutes,
   formatValue,
   onModDrop,
+  modTarget,
 }: KnobProps) {
   const dragRef = useRef<{ startY: number; startValue: number } | null>(null);
   const modAmount = modRoutes ? modRoutes.reduce((sum, r) => sum + r.amount, 0) : 0;
+  const liveModValue = useLiveModulation(modTarget ?? (0 as ModTarget));
 
   const [{ isOver, canDrop }, dropRef] = useDrop(
     () => ({
@@ -123,11 +129,12 @@ export function Knob({
       ? `${(value / 1000).toFixed(1)}k`
       : value.toFixed(step >= 1 ? 0 : step >= 0.1 ? 1 : 2);
 
-  // Mod indicator ring
-  const modEnd = Math.min(1, Math.max(0, normalized + modAmount));
+  // Mod indicator ring - uses live value when available, falls back to static amount
+  const effectiveMod = modTarget && modRoutes && modRoutes.length > 0 ? liveModValue : modAmount;
+  const modEnd = Math.min(1, Math.max(0, normalized + effectiveMod));
   const modAngle = startAngle + modEnd * range;
-  const modArcStart = modAmount >= 0 ? angle : modAngle;
-  const modArcEnd = modAmount >= 0 ? modAngle : angle;
+  const modArcStart = effectiveMod >= 0 ? angle : modAngle;
+  const modArcEnd = effectiveMod >= 0 ? modAngle : angle;
 
   const showDropHighlight = isOver && canDrop;
 
@@ -173,7 +180,7 @@ export function Knob({
             strokeLinecap="round"
           />
         )}
-        {modAmount !== 0 && modArcEnd > modArcStart + 0.1 && (
+        {effectiveMod !== 0 && modArcEnd > modArcStart + 0.1 && (
           <path
             d={arcPath(modArcStart, modArcEnd)}
             fill="none"

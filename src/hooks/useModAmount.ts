@@ -1,6 +1,7 @@
 "use client";
 
-import type { ModTarget } from "@/audio/dsp/modulation/modMatrix";
+import { ModSource, type ModTarget } from "@/audio/dsp/modulation/modMatrix";
+import { modFeedbackState } from "@/state/modFeedback";
 import { synthState } from "@/state/synthState";
 import { useSnapshot } from "valtio";
 
@@ -20,4 +21,37 @@ export function useModRoutes(target: ModTarget): ModRouteInfo[] {
     }
   }
   return routes;
+}
+
+export function useLiveModulation(target: ModTarget): number {
+  const snap = useSnapshot(synthState);
+  const fb = useSnapshot(modFeedbackState);
+
+  let sum = 0;
+  for (const r of snap.modulations) {
+    if (r.target !== target) continue;
+    let sourceVal = 0;
+    switch (r.source) {
+      case ModSource.LFO1:
+        sourceVal = fb.lfo1Value;
+        break;
+      case ModSource.LFO2:
+        sourceVal = fb.lfo2Value;
+        break;
+      case ModSource.AMP_ENV:
+        sourceVal = fb.envAmpLevel;
+        break;
+      case ModSource.FILTER_ENV:
+        sourceVal = fb.envFilterLevel;
+        break;
+      case ModSource.RANDOM:
+        sourceVal = fb.randomValue;
+        break;
+      default:
+        sourceVal = 0;
+        break;
+    }
+    sum += sourceVal * r.amount;
+  }
+  return sum;
 }

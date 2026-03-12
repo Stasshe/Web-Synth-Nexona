@@ -57,6 +57,7 @@ export function NoisePanel() {
           size={36}
           modRoutes={modNoiseLevel}
           onModDrop={handleModDrop(ModTarget.NOISE_LEVEL)}
+          modTarget={ModTarget.NOISE_LEVEL}
         />
         <Knob
           label="Sub"
@@ -68,6 +69,7 @@ export function NoisePanel() {
           size={36}
           modRoutes={modSubLevel}
           onModDrop={handleModDrop(ModTarget.SUB_LEVEL)}
+          modTarget={ModTarget.SUB_LEVEL}
         />
       </div>
     </Panel>

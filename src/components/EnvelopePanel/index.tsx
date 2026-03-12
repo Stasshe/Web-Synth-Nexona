@@ -2,6 +2,7 @@
 import { ModSource } from "@/audio/dsp/modulation/modMatrix";
 import { Panel } from "@/components/ui/Panel";
 import { DND_TYPES, type ModSourceDragItem } from "@/dnd/types";
+import { modFeedbackState } from "@/state/modFeedback";
 import { synthState } from "@/state/synthState";
 import { GripHorizontal } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -12,6 +13,7 @@ type EnvType = "amp" | "filter";
 
 export function EnvelopePanel() {
   const snap = useSnapshot(synthState);
+  const fb = useSnapshot(modFeedbackState);
   const [activeEnv, setActiveEnv] = useState<EnvType>("amp");
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const env = snap.envelopes[activeEnv];
@@ -19,6 +21,9 @@ export function EnvelopePanel() {
   const color = activeEnv === "amp" ? "var(--env-amp)" : "var(--env-filter)";
   const modSource = activeEnv === "amp" ? ModSource.AMP_ENV : ModSource.FILTER_ENV;
   const modLabel = activeEnv === "amp" ? "Amp Env" : "Flt Env";
+
+  const envLevel = activeEnv === "amp" ? fb.envAmpLevel : fb.envFilterLevel;
+  const envState = activeEnv === "amp" ? fb.envAmpState : fb.envFilterState;
 
   const [{ isDragging }, dragRef] = useDrag(
     () => ({
@@ -92,7 +97,51 @@ export function EnvelopePanel() {
       ctx.fillStyle = strokeColor;
       ctx.fill();
     }
-  }, [env, activeEnv]);
+
+    // Position indicator - compute X based on state and level
+    if (envState > 0) {
+      let posX = pad;
+      const level = envLevel;
+      // ATTACK=1: level goes 0→1, x goes 0→attack end
+      // DECAY=2: level goes 1→sustain, x goes attack end→decay end
+      // SUSTAIN=3: level=sustain, x stays in sustain region
+      // RELEASE=4: level goes sustain→0, x goes from sustain end→release end
+      if (envState === 1) {
+        // Attack: level rising from 0 to 1
+        posX = timeToX(level * env.attack);
+      } else if (envState === 2) {
+        // Decay: level falling from 1 to sustain
+        const decayProgress = env.sustain < 1 ? (1 - level) / (1 - env.sustain) : 1;
+        posX = timeToX(env.attack + Math.min(1, decayProgress) * env.decay);
+      } else if (envState === 3) {
+        // Sustain: hold in sustain zone center
+        posX = timeToX(env.attack + env.decay + 0.15);
+      } else if (envState === 4) {
+        // Release: level falling from sustain to 0
+        const releaseProgress = env.sustain > 0 ? 1 - level / env.sustain : 1;
+        posX = timeToX(env.attack + env.decay + 0.3 + Math.min(1, releaseProgress) * env.release);
+      }
+
+      const posY = levelToY(level);
+
+      // Vertical line
+      ctx.strokeStyle = `${strokeColor}80`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(posX, 0);
+      ctx.lineTo(posX, h);
+      ctx.stroke();
+
+      // Dot at current position
+      ctx.beginPath();
+      ctx.arc(posX, posY, 5, 0, Math.PI * 2);
+      ctx.fillStyle = strokeColor;
+      ctx.fill();
+      ctx.strokeStyle = "#fff";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+  }, [env, activeEnv, envLevel, envState]);
 
   useEffect(() => {
     drawEnvelope();
