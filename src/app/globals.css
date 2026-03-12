@@ -102,6 +102,20 @@ input[type="number"] {
   border-radius: 3px;
 }
 
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--bg-active);
+  border-radius: 2px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--border-accent);
+}
+
 /* Prism JSONC token colors */
 .token.comment {
   color: var(--text-muted);
