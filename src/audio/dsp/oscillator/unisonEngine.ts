@@ -33,9 +33,13 @@ export class UnisonEngine {
 
   setWavetable(wt: Wavetable): void {
     if (this.wavetable && this.wavetable !== wt) {
-      this.prevWavetable = this.wavetable;
-      this.crossfadePos = 0;
-      this.crossfadeInc = 1 / UnisonEngine.CROSSFADE_SAMPLES;
+      // If already crossfading, keep prevWavetable and position — just update the target.
+      // This avoids discontinuities from resetting the crossfade mid-transition.
+      if (!this.prevWavetable || this.crossfadePos >= 1) {
+        this.prevWavetable = this.wavetable;
+        this.crossfadePos = 0;
+        this.crossfadeInc = 1 / UnisonEngine.CROSSFADE_SAMPLES;
+      }
     }
     this.wavetable = wt;
   }
