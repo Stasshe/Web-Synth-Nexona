@@ -1,4 +1,4 @@
-# Web Wavetable Synth — Architecture v2
+# Web Synth - Nexona — Architecture v2
 
 ## Goals
 

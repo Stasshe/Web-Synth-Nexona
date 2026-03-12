@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Web Wavetable Synth",
+  title: "Web Synth - Nexona",
   description: "Browser-based wavetable synthesizer",
 };
 

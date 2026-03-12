@@ -147,7 +147,7 @@ export default function Home() {
         >
           <Power size={24} className="text-accent-blue" />
           <div className="text-left">
-            <div className="text-lg font-medium">Web Wavetable Synth</div>
+            <div className="text-lg font-medium">Web Synth - Nexona</div>
             <div className="text-xs text-text-muted">Click to start audio engine</div>
           </div>
         </button>
@@ -165,7 +165,7 @@ export default function Home() {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-accent-green animate-pulse" />
-              <span className="text-xs font-medium tracking-wider">WEB WAVETABLE SYNTH</span>
+              <span className="text-xs font-medium tracking-wider">Web Synth -Nexona</span>
             </div>
             <Visualizer waveformData={waveformData} />
           </div>
