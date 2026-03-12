@@ -1,7 +1,11 @@
 "use client";
+import { ModSource } from "@/audio/dsp/modulation/modMatrix";
 import { Panel } from "@/components/ui/Panel";
+import { DND_TYPES, type ModSourceDragItem } from "@/dnd/types";
 import { synthState } from "@/state/synthState";
+import { GripHorizontal } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useDrag } from "react-dnd";
 import { useSnapshot } from "valtio";
 
 type EnvType = "amp" | "filter";
@@ -13,6 +17,19 @@ export function EnvelopePanel() {
   const env = snap.envelopes[activeEnv];
 
   const color = activeEnv === "amp" ? "var(--env-amp)" : "var(--env-filter)";
+  const modSource = activeEnv === "amp" ? ModSource.AMP_ENV : ModSource.FILTER_ENV;
+  const modLabel = activeEnv === "amp" ? "Amp Env" : "Flt Env";
+
+  const [{ isDragging }, dragRef] = useDrag(
+    () => ({
+      type: DND_TYPES.MOD_SOURCE,
+      item: { source: modSource, label: modLabel } as ModSourceDragItem,
+      collect: (monitor) => ({
+        isDragging: monitor.isDragging(),
+      }),
+    }),
+    [modSource, modLabel],
+  );
 
   const drawEnvelope = useCallback(() => {
     const canvas = canvasRef.current;
@@ -121,7 +138,7 @@ export function EnvelopePanel() {
         className="w-full h-[70px] rounded bg-bg-dark mb-2"
       />
 
-      <div className="grid grid-cols-4 gap-1">
+      <div className="grid grid-cols-4 gap-1 mb-2">
         {(["attack", "decay", "sustain", "release"] as const).map((p) => (
           <div key={p} className="flex flex-col items-center gap-0.5">
             <input
@@ -141,6 +158,20 @@ export function EnvelopePanel() {
             </span>
           </div>
         ))}
+      </div>
+
+      <div className="flex justify-center">
+        <div
+          ref={dragRef as unknown as React.Ref<HTMLDivElement>}
+          className="flex flex-col items-center gap-0.5 cursor-grab active:cursor-grabbing select-none transition-opacity"
+          style={{ opacity: isDragging ? 0.4 : 1 }}
+          title={`Drag to assign ${modLabel} modulation`}
+        >
+          <GripHorizontal size={16} style={{ color }} />
+          <span className="text-[8px] uppercase tracking-wider" style={{ color }}>
+            MOD
+          </span>
+        </div>
       </div>
     </Panel>
   );

@@ -14,6 +14,7 @@ const MOD_SOURCE_NAMES: Record<number, string> = {
   7: "M2",
   8: "M3",
   9: "M4",
+  10: "Rnd",
 };
 
 const MOD_TARGET_NAMES: Record<number, string> = {
@@ -35,6 +36,27 @@ const MOD_TARGET_NAMES: Record<number, string> = {
   15: "C Level",
   16: "F2 Cutoff",
   17: "F2 Reso",
+  18: "A SpMorph",
+  19: "B SpMorph",
+  20: "C SpMorph",
+  21: "A Pan",
+  22: "B Pan",
+  23: "C Pan",
+  24: "A UniDet",
+  25: "B UniDet",
+  26: "C UniDet",
+  27: "A UniSpr",
+  28: "B UniSpr",
+  29: "C UniSpr",
+  30: "F1 Drive",
+  31: "F2 Drive",
+  32: "F1 EnvAmt",
+  33: "F2 EnvAmt",
+  34: "Noise Lvl",
+  35: "Sub Lvl",
+  36: "A Warp2",
+  37: "B Warp2",
+  38: "C Warp2",
 };
 
 export function ModulationPanel() {
@@ -56,7 +78,7 @@ export function ModulationPanel() {
     <Panel title="MOD ROUTES" color="var(--accent-purple)">
       {routes.length === 0 ? (
         <div className="text-[9px] text-text-muted text-center py-2">
-          Drag MOD from LFO to a knob
+          Drag MOD from LFO/ENV to a knob
         </div>
       ) : (
         <div className="space-y-1 max-h-[120px] overflow-y-auto">

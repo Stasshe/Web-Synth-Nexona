@@ -6,11 +6,7 @@ import type { SpectralMorphType } from "../dsp/spectralMorph/spectralMorphTypes"
 import { NoiseType } from "../dsp/utils/noise";
 import { ParamSmoother } from "../dsp/utils/smoothing";
 import { WarpType } from "../dsp/warp/warpTypes";
-import {
-  type Wavetable,
-  generatePreset,
-  PRESET_COUNT,
-} from "../dsp/wavetable/wavetablePresets";
+import { PRESET_COUNT, type Wavetable, generatePreset } from "../dsp/wavetable/wavetablePresets";
 import { SabParam, getParam } from "../sab/layout";
 import type { VoiceParams } from "./voice";
 import { VoiceManager } from "./voiceManager";
@@ -64,6 +60,7 @@ export class SynthEngine {
     oscAWarpAmount: 0,
     oscAWarp2Type: WarpType.NONE,
     oscAWarp2Amount: 0,
+    oscAPan: 0,
 
     oscBOn: false,
     oscBLevel: 0.8,
@@ -80,6 +77,7 @@ export class SynthEngine {
     oscBWarpAmount: 0,
     oscBWarp2Type: WarpType.NONE,
     oscBWarp2Amount: 0,
+    oscBPan: 0,
 
     oscCOn: false,
     oscCLevel: 0.8,
@@ -96,6 +94,7 @@ export class SynthEngine {
     oscCWarpAmount: 0,
     oscCWarp2Type: WarpType.NONE,
     oscCWarp2Amount: 0,
+    oscCPan: 0,
 
     subOn: false,
     subOctave: -1,
@@ -292,6 +291,7 @@ export class SynthEngine {
     this.voiceParams.oscAWarpAmount = getParam(this.sab, SabParam.OscAWarpAmount);
     this.voiceParams.oscAWarp2Type = getParam(this.sab, SabParam.OscAWarp2Type) as WarpType;
     this.voiceParams.oscAWarp2Amount = getParam(this.sab, SabParam.OscAWarp2Amount);
+    this.voiceParams.oscAPan = getParam(this.sab, SabParam.OscAPan);
 
     const newWtTypeA = Math.round(getParam(this.sab, SabParam.OscAWavetableIndex));
     if (newWtTypeA !== this.wtTypeA) {
@@ -329,6 +329,7 @@ export class SynthEngine {
     this.voiceParams.oscBWarpAmount = getParam(this.sab, SabParam.OscBWarpAmount);
     this.voiceParams.oscBWarp2Type = getParam(this.sab, SabParam.OscBWarp2Type) as WarpType;
     this.voiceParams.oscBWarp2Amount = getParam(this.sab, SabParam.OscBWarp2Amount);
+    this.voiceParams.oscBPan = getParam(this.sab, SabParam.OscBPan);
 
     const newWtTypeB = Math.round(getParam(this.sab, SabParam.OscBWavetableIndex));
     if (newWtTypeB !== this.wtTypeB) {
@@ -366,6 +367,7 @@ export class SynthEngine {
     this.voiceParams.oscCWarpAmount = getParam(this.sab, SabParam.OscCWarpAmount);
     this.voiceParams.oscCWarp2Type = getParam(this.sab, SabParam.OscCWarp2Type) as WarpType;
     this.voiceParams.oscCWarp2Amount = getParam(this.sab, SabParam.OscCWarp2Amount);
+    this.voiceParams.oscCPan = getParam(this.sab, SabParam.OscCPan);
 
     const newWtTypeC = Math.round(getParam(this.sab, SabParam.OscCWavetableIndex));
     if (newWtTypeC !== this.wtTypeC) {

@@ -1,6 +1,6 @@
 import { EnvelopeState } from "../dsp/envelope/adsr";
 import { type ModRoute, ModSource } from "../dsp/modulation/modMatrix";
-import type { Wavetable } from "../dsp/wavetable/wavetableEngine";
+import type { Wavetable } from "../dsp/wavetable/wavetablePresets";
 import { Voice, type VoiceParams } from "./voice";
 
 const MAX_VOICES = 16;
@@ -110,6 +110,7 @@ export class VoiceManager {
         v.modMatrix.setSourceValue(ModSource.MACRO2, macros[1] ?? 0);
         v.modMatrix.setSourceValue(ModSource.MACRO3, macros[2] ?? 0);
         v.modMatrix.setSourceValue(ModSource.MACRO4, macros[3] ?? 0);
+        v.modMatrix.setSourceValue(ModSource.RANDOM, Math.random() * 2 - 1);
       }
     }
   }

@@ -9,7 +9,7 @@ import { clamp, midiToFreq } from "../dsp/utils/math";
 import { NoiseGenerator, type NoiseType } from "../dsp/utils/noise";
 import { ParamSmoother } from "../dsp/utils/smoothing";
 import type { WarpType } from "../dsp/warp/warpTypes";
-import type { Wavetable } from "../dsp/wavetable/wavetableEngine";
+import type { Wavetable } from "../dsp/wavetable/wavetablePresets";
 
 export interface VoiceParams {
   oscAOn: boolean;
@@ -27,6 +27,7 @@ export interface VoiceParams {
   oscAWarpAmount: number;
   oscAWarp2Type: WarpType;
   oscAWarp2Amount: number;
+  oscAPan: number;
 
   oscBOn: boolean;
   oscBLevel: number;
@@ -43,6 +44,7 @@ export interface VoiceParams {
   oscBWarpAmount: number;
   oscBWarp2Type: WarpType;
   oscBWarp2Amount: number;
+  oscBPan: number;
 
   oscCOn: boolean;
   oscCLevel: number;
@@ -59,6 +61,7 @@ export interface VoiceParams {
   oscCWarpAmount: number;
   oscCWarp2Type: WarpType;
   oscCWarp2Amount: number;
+  oscCPan: number;
 
   subOn: boolean;
   subOctave: number;
@@ -265,6 +268,24 @@ export class Voice {
     const modFilter2Reso = this.modMatrix.getModulation(ModTarget.FILTER2_RESONANCE);
     const modAmpLevel = this.modMatrix.getModulation(ModTarget.AMP_LEVEL);
     const modPan = this.modMatrix.getModulation(ModTarget.PAN);
+    const modOscAPan = this.modMatrix.getModulation(ModTarget.OSC_A_PAN);
+    const modOscBPan = this.modMatrix.getModulation(ModTarget.OSC_B_PAN);
+    const modOscCPan = this.modMatrix.getModulation(ModTarget.OSC_C_PAN);
+    const modOscAUniDet = this.modMatrix.getModulation(ModTarget.OSC_A_UNISON_DETUNE);
+    const modOscBUniDet = this.modMatrix.getModulation(ModTarget.OSC_B_UNISON_DETUNE);
+    const modOscCUniDet = this.modMatrix.getModulation(ModTarget.OSC_C_UNISON_DETUNE);
+    const modOscAUniSpr = this.modMatrix.getModulation(ModTarget.OSC_A_UNISON_SPREAD);
+    const modOscBUniSpr = this.modMatrix.getModulation(ModTarget.OSC_B_UNISON_SPREAD);
+    const modOscCUniSpr = this.modMatrix.getModulation(ModTarget.OSC_C_UNISON_SPREAD);
+    const modFilterDrive = this.modMatrix.getModulation(ModTarget.FILTER_DRIVE);
+    const modFilter2Drive = this.modMatrix.getModulation(ModTarget.FILTER2_DRIVE);
+    const modFilterEnvAmt = this.modMatrix.getModulation(ModTarget.FILTER_ENV_AMOUNT);
+    const modFilter2EnvAmt = this.modMatrix.getModulation(ModTarget.FILTER2_ENV_AMOUNT);
+    const modNoiseLevel = this.modMatrix.getModulation(ModTarget.NOISE_LEVEL);
+    const modSubLevel = this.modMatrix.getModulation(ModTarget.SUB_LEVEL);
+    const modOscAWarp2 = this.modMatrix.getModulation(ModTarget.OSC_A_WARP2_AMOUNT);
+    const modOscBWarp2 = this.modMatrix.getModulation(ModTarget.OSC_B_WARP2_AMOUNT);
+    const modOscCWarp2 = this.modMatrix.getModulation(ModTarget.OSC_C_WARP2_AMOUNT);
 
     let mixL = 0;
     let mixR = 0;
@@ -274,16 +295,24 @@ export class Voice {
       const freq = midiToFreq(this.note + pitchOffset);
       this.oscA.setFrequency(freq * (p.driftAmount > 0 ? this.drift.getFreqMultiplier() : 1));
       this.oscA.setFramePosition(clamp(p.oscAFramePosition + modOscAFrame, 0, 1));
+      this.oscA.setUnisonCount(
+        p.oscAUnisonVoices,
+        clamp(p.oscAUnisonDetune + modOscAUniDet * 100, 0, 100),
+        clamp(p.oscAUnisonSpread + modOscAUniSpr, 0, 1),
+      );
       this.oscA.setWarp(
         p.oscAWarpType,
         clamp(p.oscAWarpAmount + modOscAWarp, 0, 1),
         p.oscAWarp2Type,
-        p.oscAWarp2Amount,
+        clamp(p.oscAWarp2Amount + modOscAWarp2, 0, 1),
       );
       const [al, ar] = this.oscA.process();
       const aLevel = clamp(p.oscALevel + modOscALevel, 0, 1);
-      mixL += al * aLevel;
-      mixR += ar * aLevel;
+      const aPan = clamp(p.oscAPan + modOscAPan, -1, 1);
+      const aPanR = 0.5 + aPan * 0.5;
+      const aPanL = 1 - aPanR;
+      mixL += al * aLevel * aPanL * 2;
+      mixR += ar * aLevel * aPanR * 2;
     }
 
     if (p.oscBOn) {
@@ -291,16 +320,24 @@ export class Voice {
       const freq = midiToFreq(this.note + pitchOffset);
       this.oscB.setFrequency(freq * (p.driftAmount > 0 ? this.drift.getFreqMultiplier() : 1));
       this.oscB.setFramePosition(clamp(p.oscBFramePosition + modOscBFrame, 0, 1));
+      this.oscB.setUnisonCount(
+        p.oscBUnisonVoices,
+        clamp(p.oscBUnisonDetune + modOscBUniDet * 100, 0, 100),
+        clamp(p.oscBUnisonSpread + modOscBUniSpr, 0, 1),
+      );
       this.oscB.setWarp(
         p.oscBWarpType,
         clamp(p.oscBWarpAmount + modOscBWarp, 0, 1),
         p.oscBWarp2Type,
-        p.oscBWarp2Amount,
+        clamp(p.oscBWarp2Amount + modOscBWarp2, 0, 1),
       );
       const [bl, br] = this.oscB.process();
       const bLevel = clamp(p.oscBLevel + modOscBLevel, 0, 1);
-      mixL += bl * bLevel;
-      mixR += br * bLevel;
+      const bPan = clamp(p.oscBPan + modOscBPan, -1, 1);
+      const bPanR = 0.5 + bPan * 0.5;
+      const bPanL = 1 - bPanR;
+      mixL += bl * bLevel * bPanL * 2;
+      mixR += br * bLevel * bPanR * 2;
     }
 
     if (p.oscCOn) {
@@ -308,38 +345,50 @@ export class Voice {
       const freq = midiToFreq(this.note + pitchOffset);
       this.oscC.setFrequency(freq * (p.driftAmount > 0 ? this.drift.getFreqMultiplier() : 1));
       this.oscC.setFramePosition(clamp(p.oscCFramePosition + modOscCFrame, 0, 1));
+      this.oscC.setUnisonCount(
+        p.oscCUnisonVoices,
+        clamp(p.oscCUnisonDetune + modOscCUniDet * 100, 0, 100),
+        clamp(p.oscCUnisonSpread + modOscCUniSpr, 0, 1),
+      );
       this.oscC.setWarp(
         p.oscCWarpType,
         clamp(p.oscCWarpAmount + modOscCWarp, 0, 1),
         p.oscCWarp2Type,
-        p.oscCWarp2Amount,
+        clamp(p.oscCWarp2Amount + modOscCWarp2, 0, 1),
       );
       const [cl, cr] = this.oscC.process();
       const cLevel = clamp(p.oscCLevel + modOscCLevel, 0, 1);
-      mixL += cl * cLevel;
-      mixR += cr * cLevel;
+      const cPan = clamp(p.oscCPan + modOscCPan, -1, 1);
+      const cPanR = 0.5 + cPan * 0.5;
+      const cPanL = 1 - cPanR;
+      mixL += cl * cLevel * cPanL * 2;
+      mixR += cr * cLevel * cPanR * 2;
     }
 
     if (p.subOn) {
-      const s = this.sub.process() * p.subLevel;
+      const subLvl = clamp(p.subLevel + modSubLevel, 0, 1);
+      const s = this.sub.process() * subLvl;
       mixL += s;
       mixR += s;
     }
 
-    if (p.noiseLevel > 0) {
-      const n = this.noise.process(p.noiseType) * p.noiseLevel;
+    if (p.noiseLevel > 0 || modNoiseLevel > 0) {
+      const noiseLvl = clamp(p.noiseLevel + modNoiseLevel, 0, 1);
+      const n = this.noise.process(p.noiseType) * noiseLvl;
       mixL += n;
       mixR += n;
     }
 
     // Filter 1
     if (p.filterOn) {
-      if (p.filterDrive > 1) {
-        mixL = Math.tanh(mixL * p.filterDrive) / p.filterDrive;
-        mixR = Math.tanh(mixR * p.filterDrive) / p.filterDrive;
+      const drive = clamp(p.filterDrive + modFilterDrive * 9, 1, 10);
+      if (drive > 1) {
+        mixL = Math.tanh(mixL * drive) / drive;
+        mixR = Math.tanh(mixR * drive) / drive;
       }
       const baseCutoff = this.cutoffSmoother.tick();
-      const envMod = filterEnvLevel * p.filterEnvAmount;
+      const envAmt = clamp(p.filterEnvAmount + modFilterEnvAmt, -1, 1);
+      const envMod = filterEnvLevel * envAmt;
       const cutoff = clamp(
         baseCutoff * 2 ** ((envMod + modFilterCutoff) * 7),
         20,
@@ -354,12 +403,14 @@ export class Voice {
 
     // Filter 2 (series)
     if (p.filter2On) {
-      if (p.filter2Drive > 1) {
-        mixL = Math.tanh(mixL * p.filter2Drive) / p.filter2Drive;
-        mixR = Math.tanh(mixR * p.filter2Drive) / p.filter2Drive;
+      const drive2 = clamp(p.filter2Drive + modFilter2Drive * 9, 1, 10);
+      if (drive2 > 1) {
+        mixL = Math.tanh(mixL * drive2) / drive2;
+        mixR = Math.tanh(mixR * drive2) / drive2;
       }
       const baseCutoff2 = this.cutoff2Smoother.tick();
-      const envMod2 = filterEnvLevel * p.filter2EnvAmount;
+      const envAmt2 = clamp(p.filter2EnvAmount + modFilter2EnvAmt, -1, 1);
+      const envMod2 = filterEnvLevel * envAmt2;
       const cutoff2 = clamp(
         baseCutoff2 * 2 ** ((envMod2 + modFilter2Cutoff) * 7),
         20,
@@ -378,7 +429,7 @@ export class Voice {
     mixL *= ampLevel * level * this.velocity * ampMod;
     mixR *= ampLevel * level * this.velocity * ampMod;
 
-    // Pan
+    // Global Pan
     const panVal = clamp(modPan, -1, 1);
     if (panVal !== 0) {
       const panR = clamp(0.5 + panVal * 0.5, 0, 1);

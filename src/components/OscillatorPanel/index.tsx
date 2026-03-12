@@ -1,8 +1,8 @@
 "use client";
 import { ModTarget } from "@/audio/dsp/modulation/modMatrix";
 import { SPECTRAL_MORPH_NAMES } from "@/audio/dsp/spectralMorph/spectralMorphTypes";
-import { computePreviewSamples } from "@/audio/dsp/wavetable/wavetablePreview";
 import { PRESET_COUNT, PRESET_NAMES } from "@/audio/dsp/wavetable/wavetablePresets";
+import { computePreviewSamples } from "@/audio/dsp/wavetable/wavetablePreview";
 import { Knob } from "@/components/ui/Knob";
 import { Panel } from "@/components/ui/Panel";
 import { Select } from "@/components/ui/Select";
@@ -48,33 +48,48 @@ const OSC_MOD_TARGETS: Record<
     level: ModTarget;
     frame: ModTarget;
     warp: ModTarget;
+    warp2: ModTarget;
     pitch: ModTarget;
     spectralMorph: ModTarget;
+    pan: ModTarget;
+    unisonDetune: ModTarget;
+    unisonSpread: ModTarget;
   }
 > = {
   a: {
     level: ModTarget.OSC_A_LEVEL,
     frame: ModTarget.OSC_A_FRAME,
     warp: ModTarget.OSC_A_WARP_AMOUNT,
+    warp2: ModTarget.OSC_A_WARP2_AMOUNT,
     pitch: ModTarget.OSC_A_PITCH,
     spectralMorph: ModTarget.OSC_A_SPECTRAL_MORPH,
+    pan: ModTarget.OSC_A_PAN,
+    unisonDetune: ModTarget.OSC_A_UNISON_DETUNE,
+    unisonSpread: ModTarget.OSC_A_UNISON_SPREAD,
   },
   b: {
     level: ModTarget.OSC_B_LEVEL,
     frame: ModTarget.OSC_B_FRAME,
     warp: ModTarget.OSC_B_WARP_AMOUNT,
+    warp2: ModTarget.OSC_B_WARP2_AMOUNT,
     pitch: ModTarget.OSC_B_PITCH,
     spectralMorph: ModTarget.OSC_B_SPECTRAL_MORPH,
+    pan: ModTarget.OSC_B_PAN,
+    unisonDetune: ModTarget.OSC_B_UNISON_DETUNE,
+    unisonSpread: ModTarget.OSC_B_UNISON_SPREAD,
   },
   c: {
     level: ModTarget.OSC_C_LEVEL,
     frame: ModTarget.OSC_C_FRAME,
     warp: ModTarget.OSC_C_WARP_AMOUNT,
+    warp2: ModTarget.OSC_C_WARP2_AMOUNT,
     pitch: ModTarget.OSC_C_PITCH,
     spectralMorph: ModTarget.OSC_C_SPECTRAL_MORPH,
+    pan: ModTarget.OSC_C_PAN,
+    unisonDetune: ModTarget.OSC_C_UNISON_DETUNE,
+    unisonSpread: ModTarget.OSC_C_UNISON_SPREAD,
   },
 };
-
 
 function WaveformPreview({
   waveformType,
@@ -212,8 +227,13 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
 
   const modLevel = useModRoutes(targets.level);
   const modWarp = useModRoutes(targets.warp);
+  const modWarp2 = useModRoutes(targets.warp2);
   const modPitch = useModRoutes(targets.pitch);
   const modSpectralMorph = useModRoutes(targets.spectralMorph);
+  const modPan = useModRoutes(targets.pan);
+  const modUnisonDetune = useModRoutes(targets.unisonDetune);
+  const modUnisonSpread = useModRoutes(targets.unisonSpread);
+  const modFrame = useModRoutes(targets.frame);
 
   const handleModDrop = useCallback(
     (target: ModTarget) => (item: ModSourceDragItem) => {
@@ -311,8 +331,20 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
         )}
       </div>
 
-      {/* Frame position slider */}
-      <div className="mb-1.5 px-0.5">
+      {/* Frame position */}
+      <div className="mb-1.5 px-0.5 flex items-center gap-1">
+        <Knob
+          label="Pos"
+          value={data.framePosition}
+          min={0}
+          max={1}
+          onChange={(v) => (state.framePosition = v)}
+          color={color}
+          modRoutes={modFrame}
+          onModDrop={handleModDrop(targets.frame)}
+          size={24}
+          formatValue={(v) => `${Math.round(v * 63)}`}
+        />
         <input
           type="range"
           min={0}
@@ -320,7 +352,7 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
           step={0.001}
           value={data.framePosition}
           onChange={(e) => (state.framePosition = Number(e.target.value))}
-          className="w-full h-1.5 rounded appearance-none cursor-pointer"
+          className="flex-1 h-1.5 rounded appearance-none cursor-pointer"
           style={{
             background: `linear-gradient(to right, ${color} ${data.framePosition * 100}%, var(--bg-darkest) ${data.framePosition * 100}%)`,
             accentColor: color,
@@ -330,7 +362,7 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
       </div>
 
       {/* Spectral Morph + Distortion row */}
-      <div className="grid grid-cols-2 gap-1 mb-1.5">
+      <div className="grid grid-cols-3 gap-1 mb-1.5">
         <div>
           <div className="text-[8px] text-text-secondary mb-0.5 uppercase tracking-wider">
             Spectral
@@ -356,7 +388,7 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
         </div>
         <div>
           <div className="text-[8px] text-text-secondary mb-0.5 uppercase tracking-wider">
-            Distortion
+            Warp 1
           </div>
           <Select
             value={String(data.warpType)}
@@ -373,6 +405,29 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
               color={color}
               modRoutes={modWarp}
               onModDrop={handleModDrop(targets.warp)}
+              size={28}
+            />
+          </div>
+        </div>
+        <div>
+          <div className="text-[8px] text-text-secondary mb-0.5 uppercase tracking-wider">
+            Warp 2
+          </div>
+          <Select
+            value={String(data.warp2Type)}
+            options={WARP_OPTIONS}
+            onChange={(v) => (state.warp2Type = Number(v))}
+          />
+          <div className="mt-1 flex justify-center">
+            <Knob
+              label="Amt"
+              value={data.warp2Amount}
+              min={0}
+              max={1}
+              onChange={(v) => (state.warp2Amount = v)}
+              color={color}
+              modRoutes={modWarp2}
+              onModDrop={handleModDrop(targets.warp2)}
               size={28}
             />
           </div>
@@ -435,6 +490,8 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
           step={1}
           onChange={(v) => (state.unisonDetune = v)}
           color={color}
+          modRoutes={modUnisonDetune}
+          onModDrop={handleModDrop(targets.unisonDetune)}
           formatValue={(v) => `${v.toFixed(0)}ct`}
           size={28}
         />
@@ -445,6 +502,8 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
           max={1}
           onChange={(v) => (state.unisonSpread = v)}
           color={color}
+          modRoutes={modUnisonSpread}
+          onModDrop={handleModDrop(targets.unisonSpread)}
           size={28}
         />
       </div>
@@ -487,6 +546,8 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
           max={1}
           onChange={(v) => (state.pan = v)}
           color={color}
+          modRoutes={modPan}
+          onModDrop={handleModDrop(targets.pan)}
           formatValue={(v) =>
             Math.abs(v) < 0.01
               ? "C"

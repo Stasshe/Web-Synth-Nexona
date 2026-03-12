@@ -26,9 +26,13 @@ export function FilterPanel({ filter = 1 }: FilterPanelProps) {
   const state = filter === 1 ? synthState.filter : synthState.filter2;
   const cutoffTarget = filter === 1 ? ModTarget.FILTER_CUTOFF : ModTarget.FILTER2_CUTOFF;
   const resoTarget = filter === 1 ? ModTarget.FILTER_RESONANCE : ModTarget.FILTER2_RESONANCE;
+  const driveTarget = filter === 1 ? ModTarget.FILTER_DRIVE : ModTarget.FILTER2_DRIVE;
+  const envAmtTarget = filter === 1 ? ModTarget.FILTER_ENV_AMOUNT : ModTarget.FILTER2_ENV_AMOUNT;
 
   const modCutoff = useModRoutes(cutoffTarget);
   const modReso = useModRoutes(resoTarget);
+  const modDrive = useModRoutes(driveTarget);
+  const modEnvAmt = useModRoutes(envAmtTarget);
 
   const handleModDrop = useCallback(
     (target: ModTarget) => (item: ModSourceDragItem) => {
@@ -137,6 +141,8 @@ export function FilterPanel({ filter = 1 }: FilterPanelProps) {
           color={color}
           size={36}
           formatValue={(v) => `${v.toFixed(1)}x`}
+          modRoutes={modDrive}
+          onModDrop={handleModDrop(driveTarget)}
         />
         <Knob
           label="Env"
@@ -147,6 +153,8 @@ export function FilterPanel({ filter = 1 }: FilterPanelProps) {
           color={color}
           size={36}
           formatValue={(v) => `${(v * 100).toFixed(0)}%`}
+          modRoutes={modEnvAmt}
+          onModDrop={handleModDrop(envAmtTarget)}
         />
       </div>
     </Panel>
