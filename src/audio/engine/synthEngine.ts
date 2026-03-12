@@ -2,14 +2,11 @@ import { EffectsChain, type EffectsParams } from "../dsp/effects/effectsChain";
 import { LFO, type LfoShape } from "../dsp/lfo/lfo";
 import type { ModRoute } from "../dsp/modulation/modMatrix";
 import { SpectralMorphProcessor } from "../dsp/spectralMorph/spectralMorphProcessor";
-import { SpectralMorphType } from "../dsp/spectralMorph/spectralMorphTypes";
+import type { SpectralMorphType } from "../dsp/spectralMorph/spectralMorphTypes";
 import { NoiseType } from "../dsp/utils/noise";
 import { ParamSmoother } from "../dsp/utils/smoothing";
 import { WarpType } from "../dsp/warp/warpTypes";
-import {
-  type Wavetable,
-  generateWavetableByIndex,
-} from "../dsp/wavetable/wavetableEngine";
+import { type Wavetable, generateWavetableByIndex } from "../dsp/wavetable/wavetableEngine";
 import { PRESET_COUNT } from "../dsp/wavetable/wavetablePresets";
 import { SabParam, getParam } from "../sab/layout";
 import type { VoiceParams } from "./voice";
@@ -303,7 +300,10 @@ export class SynthEngine {
 
     const morphTypeA = Math.round(getParam(this.sab, SabParam.OscASpectralMorphType));
     const morphAmountA = getParam(this.sab, SabParam.OscASpectralMorphAmount);
-    if (morphTypeA !== this.prevMorphTypeA || Math.abs(morphAmountA - this.prevMorphAmountA) > 0.007) {
+    if (
+      morphTypeA !== this.prevMorphTypeA ||
+      Math.abs(morphAmountA - this.prevMorphAmountA) > 0.007
+    ) {
       this.prevMorphTypeA = morphTypeA;
       this.prevMorphAmountA = morphAmountA;
       const morphed = this.spectralMorphA.getMorphed(morphTypeA as SpectralMorphType, morphAmountA);
@@ -337,7 +337,10 @@ export class SynthEngine {
 
     const morphTypeB = Math.round(getParam(this.sab, SabParam.OscBSpectralMorphType));
     const morphAmountB = getParam(this.sab, SabParam.OscBSpectralMorphAmount);
-    if (morphTypeB !== this.prevMorphTypeB || Math.abs(morphAmountB - this.prevMorphAmountB) > 0.007) {
+    if (
+      morphTypeB !== this.prevMorphTypeB ||
+      Math.abs(morphAmountB - this.prevMorphAmountB) > 0.007
+    ) {
       this.prevMorphTypeB = morphTypeB;
       this.prevMorphAmountB = morphAmountB;
       const morphed = this.spectralMorphB.getMorphed(morphTypeB as SpectralMorphType, morphAmountB);
@@ -371,7 +374,10 @@ export class SynthEngine {
 
     const morphTypeC = Math.round(getParam(this.sab, SabParam.OscCSpectralMorphType));
     const morphAmountC = getParam(this.sab, SabParam.OscCSpectralMorphAmount);
-    if (morphTypeC !== this.prevMorphTypeC || Math.abs(morphAmountC - this.prevMorphAmountC) > 0.007) {
+    if (
+      morphTypeC !== this.prevMorphTypeC ||
+      Math.abs(morphAmountC - this.prevMorphAmountC) > 0.007
+    ) {
       this.prevMorphTypeC = morphTypeC;
       this.prevMorphAmountC = morphAmountC;
       const morphed = this.spectralMorphC.getMorphed(morphTypeC as SpectralMorphType, morphAmountC);

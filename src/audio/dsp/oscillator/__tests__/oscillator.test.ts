@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateSineTable } from "../../wavetable/wavetableEngine";
+import { generateWavetableByIndex } from "../../wavetable/wavetableEngine";
 import { Oscillator } from "../oscillator";
 
 describe("Oscillator", () => {
@@ -10,9 +10,9 @@ describe("Oscillator", () => {
     expect(osc.process()).toBe(0);
   });
 
-  it("outputs sine wave with sine table", () => {
+  it("outputs bounded waveform with wavetable loaded", () => {
     const osc = new Oscillator(SR);
-    osc.setWavetable(generateSineTable(2048));
+    osc.setWavetable(generateWavetableByIndex(0, 2048));
     osc.setFrequency(440);
 
     const samples: number[] = [];
@@ -26,14 +26,14 @@ describe("Oscillator", () => {
     expect(max).toBeLessThanOrEqual(1.001);
     expect(min).toBeGreaterThanOrEqual(-1.001);
 
-    // Check RMS is close to 1/sqrt(2) for sine wave
+    // Check RMS is non-trivial (producing sound)
     const rms = Math.sqrt(samples.reduce((s, v) => s + v * v, 0) / samples.length);
-    expect(rms).toBeCloseTo(1 / Math.sqrt(2), 1);
+    expect(rms).toBeGreaterThan(0.1);
   });
 
   it("produces correct frequency", () => {
     const osc = new Oscillator(SR);
-    osc.setWavetable(generateSineTable(2048));
+    osc.setWavetable(generateWavetableByIndex(0, 2048));
     osc.setFrequency(1000);
 
     // Count zero crossings in 1 second

@@ -8,7 +8,8 @@ import { Select } from "@/components/ui/Select";
 import type { ModSourceDragItem } from "@/dnd/types";
 import { useModRoutes } from "@/hooks/useModAmount";
 import { synthState } from "@/state/synthState";
-import { useCallback, useMemo } from "react";
+import { Pencil } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSnapshot } from "valtio";
 
 const WARP_OPTIONS = [
@@ -94,57 +95,131 @@ function computePreviewSamples(
 
   const result = new Float32Array(N);
   const f = framePosition;
-  const frameIdx = Math.round(f * 63);
-  const numH = 32 + Math.round((frameIdx / 63) * 96);
+  const numH = 64;
 
   for (let i = 0; i < N; i++) {
     const phase = (2 * Math.PI * i) / N;
     let s = 0;
     switch (waveformType) {
-      case 0: // Sine
-        s = Math.sin(phase);
-        for (let h = 2; h <= numH; h++) {
-          s += Math.sin(h * phase) * (1 / (h * h)) * f;
-        }
+      case 0: {
+        // Init (saw with bandwidth)
+        const frameH = 32 + Math.round(f * 96);
+        for (let h = 1; h <= frameH; h++) s += Math.sin(h * phase) / h;
         break;
-      case 1: // Saw
-        for (let h = 1; h <= numH; h++) s += Math.sin(h * phase) / h;
-        break;
-      case 2: // Square
-        for (let h = 1; h <= numH; h += 2) s += Math.sin(h * phase) / h;
-        break;
-      case 3: // Triangle
-        for (let h = 1; h <= numH; h += 2) {
-          const sign = ((h - 1) / 2) % 2 === 0 ? 1 : -1;
-          s += (sign * Math.sin(h * phase)) / (h * h);
-        }
-        break;
-      case 5: {
+      }
+      case 1: {
         // Basic Shapes
-        const t4 = f;
-        for (let h = 1; h <= 64; h++) {
+        for (let h = 1; h <= numH; h++) {
           const sine = h === 1 ? 1 : 0;
           const tri = h % 2 === 1 ? (((h - 1) / 2) % 2 === 0 ? 1 : -1) / (h * h) : 0;
           const sq = h % 2 === 1 ? 1 / h : 0;
           const saw = 1 / h;
           let amp: number;
-          if (t4 < 1 / 3) amp = sine * (1 - t4 * 3) + tri * t4 * 3;
-          else if (t4 < 2 / 3) amp = tri * (1 - (t4 - 1 / 3) * 3) + sq * ((t4 - 1 / 3) * 3);
-          else amp = sq * (1 - (t4 - 2 / 3) * 3) + saw * ((t4 - 2 / 3) * 3);
+          if (f < 1 / 3) amp = sine * (1 - f * 3) + tri * f * 3;
+          else if (f < 2 / 3) amp = tri * (1 - (f - 1 / 3) * 3) + sq * ((f - 1 / 3) * 3);
+          else amp = sq * (1 - (f - 2 / 3) * 3) + saw * ((f - 2 / 3) * 3);
           if (Math.abs(amp) > 1e-8) s += Math.sin(h * phase) * amp;
         }
         break;
       }
-      case 6: {
+      case 2: {
         // PWM
         const width = 0.05 + f * 0.9;
-        for (let h = 1; h <= 64; h++) {
+        for (let h = 1; h <= numH; h++) {
           const amp = (2 / (h * Math.PI)) * Math.sin(h * Math.PI * width);
           if (Math.abs(amp) > 1e-8) s += Math.sin(h * phase) * amp;
         }
         break;
       }
-      default: // For presets 4,7-11, show a basic saw-like shape
+      case 3: {
+        // Formant
+        const vowels = [
+          [730, 1090, 2440],
+          [270, 2290, 3010],
+          [300, 870, 2240],
+          [660, 1720, 2410],
+        ];
+        const bw = [130, 180, 250];
+        const baseFreq = 130.81;
+        const vowelPos = f * (vowels.length - 1);
+        const vIdx = Math.min(Math.floor(vowelPos), vowels.length - 2);
+        const vFrac = vowelPos - vIdx;
+        const formants = [
+          vowels[vIdx][0] * (1 - vFrac) + vowels[vIdx + 1][0] * vFrac,
+          vowels[vIdx][1] * (1 - vFrac) + vowels[vIdx + 1][1] * vFrac,
+          vowels[vIdx][2] * (1 - vFrac) + vowels[vIdx + 1][2] * vFrac,
+        ];
+        for (let h = 1; h <= numH; h++) {
+          const hFreq = h * baseFreq;
+          let amp = 0;
+          for (let fi = 0; fi < 3; fi++) {
+            const diff = hFreq - formants[fi];
+            amp += Math.exp(-(diff * diff) / (2 * bw[fi] * bw[fi]));
+          }
+          amp /= Math.sqrt(h);
+          if (amp > 1e-8) s += Math.sin(h * phase) * amp;
+        }
+        break;
+      }
+      case 4: {
+        // Additive
+        for (let h = 1; h <= numH; h++) {
+          let amp: number;
+          if (f < 0.2) {
+            const blend = f * 5;
+            amp = h === 1 ? 1 : h % 2 === 1 ? blend / h : 0;
+          } else if (f < 0.4) {
+            const blend = (f - 0.2) * 5;
+            amp = h % 2 === 1 ? 1 / h : (blend * 0.8) / h;
+          } else if (f < 0.6) {
+            const blend = (f - 0.4) * 5;
+            const isSaw = 1 / h;
+            const isThird = h % 3 === 1 ? 1 / h : 0;
+            amp = isSaw * (1 - blend) + isThird * blend;
+          } else if (f < 0.8) {
+            const blend = (f - 0.6) * 5;
+            const isThird = h % 3 === 1 ? 1 / h : 0;
+            const revSaw = 1 / (numH - h + 1);
+            amp = isThird * (1 - blend) + revSaw * blend * 0.5;
+          } else {
+            const blend = (f - 0.8) * 5;
+            const revSaw = 1 / (numH - h + 1);
+            const buzz = 1 / Math.sqrt(h);
+            amp = revSaw * 0.5 * (1 - blend) + buzz * blend;
+          }
+          if (Math.abs(amp) > 1e-8) s += Math.sin(h * phase) * amp;
+        }
+        break;
+      }
+      case 5: {
+        // Digital (FM)
+        const ratios = [1, 2, 3, 1.5, 2.5, 3.5, 4, 5];
+        const ratioIdx = f * (ratios.length - 1);
+        const rIdx = Math.min(Math.floor(ratioIdx), ratios.length - 2);
+        const rFrac = ratioIdx - rIdx;
+        const ratio = ratios[rIdx] * (1 - rFrac) + ratios[rIdx + 1] * rFrac;
+        const modIndex = 0.5 + f * 4;
+        s = Math.sin(phase + modIndex * Math.sin(ratio * phase));
+        break;
+      }
+      case 6: {
+        // Pluck
+        for (let h = 1; h <= numH; h++) {
+          const decay = Math.exp(-h * f * 4);
+          const amp = decay / h;
+          if (amp > 1e-8) s += Math.sin(h * phase) * amp;
+        }
+        break;
+      }
+      case 12: {
+        // Sync Sweep
+        const ratio = 1 + f * 7;
+        const slavePhase = ((i / N) * ratio) % 1;
+        s = Math.sin(2 * Math.PI * slavePhase);
+        break;
+      }
+      default:
+        // Generic: saw-like shape for remaining presets
         for (let h = 1; h <= numH; h++) s += Math.sin(h * phase) / h;
         break;
     }
@@ -174,7 +249,6 @@ function WaveformPreview({
     [waveformType, framePosition, customWaveform],
   );
 
-  // Render multiple ghost frames for 3D wavetable effect
   const ghostFrames = useMemo(() => {
     if (waveformType < 0 || (customWaveform && customWaveform.length > 1)) return [];
     const ghosts: { points: string; opacity: number; offsetY: number }[] = [];
@@ -236,12 +310,60 @@ function WaveformPreview({
   );
 }
 
+function PresetListPopup({
+  currentType,
+  onSelect,
+  onClose,
+}: {
+  currentType: number;
+  onSelect: (index: number) => void;
+  onClose: () => void;
+}) {
+  const popupRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (popupRef.current && !popupRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [onClose]);
+
+  return (
+    <div
+      ref={popupRef}
+      className="absolute z-50 mt-1 left-0 right-0 bg-bg-panel border border-border-default rounded shadow-lg max-h-48 overflow-y-auto"
+    >
+      {Array.from({ length: PRESET_COUNT }, (_, i) => (
+        <button
+          key={i}
+          type="button"
+          onClick={() => {
+            onSelect(i);
+            onClose();
+          }}
+          className={`w-full text-left px-2 py-1 text-[10px] cursor-pointer transition-colors ${
+            i === currentType
+              ? "text-text-primary bg-bg-darkest"
+              : "text-text-secondary hover:text-text-primary hover:bg-bg-surface"
+          }`}
+        >
+          {PRESET_NAMES[i]}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps) {
   const snap = useSnapshot(synthState);
   const data = snap.oscillators[osc];
   const state = synthState.oscillators[osc];
   const color = OSC_COLORS[osc];
   const targets = OSC_MOD_TARGETS[osc];
+  const [showPresetList, setShowPresetList] = useState(false);
 
   const modLevel = useModRoutes(targets.level);
   const modWarp = useModRoutes(targets.warp);
@@ -262,7 +384,6 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
     (dir: 1 | -1) => {
       const current = data.waveformType;
       if (current === -1) {
-        // From custom, go to first/last preset
         state.waveformType = dir === 1 ? 0 : PRESET_COUNT - 1;
       } else {
         const next = current + dir;
@@ -275,6 +396,16 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
       state.controlPoints = null;
     },
     [data.waveformType, state],
+  );
+
+  const selectPreset = useCallback(
+    (index: number) => {
+      state.waveformType = index;
+      state.waveformName = PRESET_NAMES[index] ?? "Custom";
+      state.customWaveform = null;
+      state.controlPoints = null;
+    },
+    [state],
   );
 
   return (
@@ -291,12 +422,11 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
           framePosition={data.framePosition}
           customWaveform={data.customWaveform}
           color={color}
-          onClick={onOpenWaveEditor}
         />
       </div>
 
       {/* Preset selector */}
-      <div className="flex items-center gap-1 mb-1">
+      <div className="relative flex items-center gap-1 mb-1">
         <button
           type="button"
           onClick={() => cyclePreset(-1)}
@@ -306,11 +436,19 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
         </button>
         <button
           type="button"
-          onClick={onOpenWaveEditor}
+          onClick={() => setShowPresetList(!showPresetList)}
           className="flex-1 px-2 py-0.5 text-[10px] text-text-secondary hover:text-text-primary bg-bg-surface border border-border-default rounded cursor-pointer transition-colors truncate text-center"
-          title="Edit waveform"
+          title="Select preset"
         >
           {presetName}
+        </button>
+        <button
+          type="button"
+          onClick={onOpenWaveEditor}
+          className="px-1 py-0.5 text-text-secondary hover:text-text-primary bg-bg-surface border border-border-default rounded cursor-pointer transition-colors"
+          title="Edit waveform"
+        >
+          <Pencil size={10} />
         </button>
         <button
           type="button"
@@ -319,6 +457,13 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
         >
           &gt;
         </button>
+        {showPresetList && (
+          <PresetListPopup
+            currentType={data.waveformType}
+            onSelect={selectPreset}
+            onClose={() => setShowPresetList(false)}
+          />
+        )}
       </div>
 
       {/* Frame position slider */}

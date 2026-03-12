@@ -87,7 +87,8 @@ function addCosHarmonic(
 ): void {
   const quarterPhase = Math.floor(tableSize / 4);
   for (let i = 0; i <= tableSize; i++) {
-    table[i] += amp * sineLut[((i * harmonic + quarterPhase) % tableSize + tableSize) % tableSize];
+    table[i] +=
+      amp * sineLut[(((i * harmonic + quarterPhase) % tableSize) + tableSize) % tableSize];
   }
 }
 
@@ -97,7 +98,8 @@ function generateInit(tableSize: number): Wavetable {
   const frames: Float32Array[] = [];
   for (let f = 0; f < NUM_FRAMES; f++) {
     const table = new Float32Array(tableSize + 1);
-    const numH = MIN_HARMONICS + Math.floor((f / (NUM_FRAMES - 1)) * (MAX_HARMONICS - MIN_HARMONICS));
+    const numH =
+      MIN_HARMONICS + Math.floor((f / (NUM_FRAMES - 1)) * (MAX_HARMONICS - MIN_HARMONICS));
     for (let h = 1; h <= numH; h++) {
       addHarmonic(table, sineLut, tableSize, h, 1 / h);
     }
@@ -453,7 +455,7 @@ function generateHarsh(tableSize: number): Wavetable {
       const numOvertones = 2 + Math.floor(t * 30);
       for (let h = 2; h <= numOvertones; h++) {
         const evenBoost = h % 2 === 0 ? 1.5 : 1;
-        s += (Math.sin(h * phase) * evenBoost) / Math.pow(h, 0.5 + (1 - t) * 0.8);
+        s += (Math.sin(h * phase) * evenBoost) / h ** (0.5 + (1 - t) * 0.8);
       }
       // Soft clipping that intensifies with frame position
       const clipAmount = 1 + t * 4;
@@ -490,7 +492,7 @@ function generateWarmPad(tableSize: number): Wavetable {
         if (h > 1 && h < numH) {
           const detuneAmt = 0.002 * t;
           for (let i = 0; i <= tableSize; i++) {
-            const detunePhase = ((i * (h + detuneAmt)) % tableSize);
+            const detunePhase = (i * (h + detuneAmt)) % tableSize;
             const idx = Math.floor(detunePhase) % tableSize;
             table[i] += amp * 0.3 * sineLut[idx];
           }
@@ -556,12 +558,12 @@ function generateNoiseShape(tableSize: number): Wavetable {
     for (let h = 1; h <= MAX_HARMONICS; h++) {
       // Low-pass shaped noise
       const lpGain = h < cutoff ? 1 : Math.exp(-(h - cutoff) * 0.5);
-      const amp = randAmps[h] * lpGain / Math.sqrt(h);
+      const amp = (randAmps[h] * lpGain) / Math.sqrt(h);
       if (amp > 1e-8) {
         // Use random phase offset
         const phaseOff = Math.floor(randPhases[h]);
         for (let i = 0; i <= tableSize; i++) {
-          table[i] += amp * sineLut[((i * h + phaseOff) % tableSize + tableSize) % tableSize];
+          table[i] += amp * sineLut[(((i * h + phaseOff) % tableSize) + tableSize) % tableSize];
         }
       }
     }

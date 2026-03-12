@@ -6,7 +6,7 @@ describe("wavetablePresets", () => {
 
   it("PRESET_COUNT matches PRESET_NAMES entries", () => {
     expect(PRESET_COUNT).toBe(Object.keys(PRESET_NAMES).length);
-    expect(PRESET_COUNT).toBe(12);
+    expect(PRESET_COUNT).toBe(16);
   });
 
   it("every preset has a name", () => {
@@ -25,6 +25,14 @@ describe("wavetablePresets", () => {
     WavetablePreset.DIGITAL,
     WavetablePreset.PLUCK,
     WavetablePreset.ORGAN,
+    WavetablePreset.VOWEL,
+    WavetablePreset.METALLIC,
+    WavetablePreset.HARSH,
+    WavetablePreset.WARM_PAD,
+    WavetablePreset.SYNC_SWEEP,
+    WavetablePreset.NOISE_SHAPE,
+    WavetablePreset.BELL,
+    WavetablePreset.CHOIR,
   ];
 
   for (const preset of presetCases) {
