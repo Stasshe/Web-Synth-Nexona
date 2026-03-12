@@ -6,8 +6,11 @@ import type { SpectralMorphType } from "../dsp/spectralMorph/spectralMorphTypes"
 import { NoiseType } from "../dsp/utils/noise";
 import { ParamSmoother } from "../dsp/utils/smoothing";
 import { WarpType } from "../dsp/warp/warpTypes";
-import { type Wavetable, generateWavetableByIndex } from "../dsp/wavetable/wavetableEngine";
-import { PRESET_COUNT } from "../dsp/wavetable/wavetablePresets";
+import {
+  type Wavetable,
+  generatePreset,
+  PRESET_COUNT,
+} from "../dsp/wavetable/wavetablePresets";
 import { SabParam, getParam } from "../sab/layout";
 import type { VoiceParams } from "./voice";
 import { VoiceManager } from "./voiceManager";
@@ -173,10 +176,10 @@ export class SynthEngine {
     this.voiceManager = new VoiceManager(sampleRate);
     this.effectsChain = new EffectsChain(sampleRate);
     this.masterVolume = new ParamSmoother(0.8);
-    this.sourceWtA = generateWavetableByIndex(0, 2048);
-    this.sourceWtB = generateWavetableByIndex(0, 2048);
-    this.sourceWtC = generateWavetableByIndex(0, 2048);
-    const subFullTable = generateWavetableByIndex(0, 2048);
+    this.sourceWtA = generatePreset(0, 2048);
+    this.sourceWtB = generatePreset(0, 2048);
+    this.sourceWtC = generatePreset(0, 2048);
+    const subFullTable = generatePreset(0, 2048);
     this.wavetableSub = { frames: [subFullTable.frames[0]], tableSize: 2048, numFrames: 1 };
     this.lfo1 = new LFO(sampleRate, BLOCK_SIZE);
     this.lfo2 = new LFO(sampleRate, BLOCK_SIZE);
@@ -294,7 +297,7 @@ export class SynthEngine {
     if (newWtTypeA !== this.wtTypeA) {
       this.wtTypeA = newWtTypeA;
       if (newWtTypeA >= 0 && newWtTypeA < PRESET_COUNT) {
-        this.setWavetableA(generateWavetableByIndex(newWtTypeA, 2048));
+        this.setWavetableA(generatePreset(newWtTypeA, 2048));
       }
     }
 
@@ -331,7 +334,7 @@ export class SynthEngine {
     if (newWtTypeB !== this.wtTypeB) {
       this.wtTypeB = newWtTypeB;
       if (newWtTypeB >= 0 && newWtTypeB < PRESET_COUNT) {
-        this.setWavetableB(generateWavetableByIndex(newWtTypeB, 2048));
+        this.setWavetableB(generatePreset(newWtTypeB, 2048));
       }
     }
 
@@ -368,7 +371,7 @@ export class SynthEngine {
     if (newWtTypeC !== this.wtTypeC) {
       this.wtTypeC = newWtTypeC;
       if (newWtTypeC >= 0 && newWtTypeC < PRESET_COUNT) {
-        this.setWavetableC(generateWavetableByIndex(newWtTypeC, 2048));
+        this.setWavetableC(generatePreset(newWtTypeC, 2048));
       }
     }
 

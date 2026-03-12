@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateWavetableByIndex } from "../../wavetable/wavetableEngine";
+import { generatePreset } from "../../wavetable/wavetablePresets";
 import { Oscillator } from "../oscillator";
 
 describe("Oscillator", () => {
@@ -12,7 +12,7 @@ describe("Oscillator", () => {
 
   it("outputs bounded waveform with wavetable loaded", () => {
     const osc = new Oscillator(SR);
-    osc.setWavetable(generateWavetableByIndex(0, 2048));
+    osc.setWavetable(generatePreset(0, 2048));
     osc.setFrequency(440);
 
     const samples: number[] = [];
@@ -33,7 +33,7 @@ describe("Oscillator", () => {
 
   it("produces correct frequency", () => {
     const osc = new Oscillator(SR);
-    osc.setWavetable(generateWavetableByIndex(0, 2048));
+    osc.setWavetable(generatePreset(0, 2048));
     osc.setFrequency(1000);
 
     // Count zero crossings in 1 second

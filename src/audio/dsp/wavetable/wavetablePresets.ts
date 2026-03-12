@@ -1,4 +1,8 @@
-import type { Wavetable } from "./wavetableEngine";
+export interface Wavetable {
+  frames: Float32Array[];
+  tableSize: number;
+  numFrames: number;
+}
 
 const NUM_FRAMES = 64;
 const MAX_HARMONICS = 128;
