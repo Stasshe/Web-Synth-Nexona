@@ -1,5 +1,5 @@
 import { generatePreset } from "./wavetablePresets";
-import type { Wavetable } from "./wavetableEngine";
+import type { Wavetable } from "./wavetablePresets";
 
 const PREVIEW_SIZE = 128;
 

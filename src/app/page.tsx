@@ -1,7 +1,7 @@
 "use client";
 
 import type { ModRoute } from "@/audio/dsp/modulation/modMatrix";
-import type { Wavetable } from "@/audio/dsp/wavetable/wavetableEngine";
+import type { Wavetable } from "@/audio/dsp/wavetable/wavetablePresets";
 import { type SynthNode, createSynthNode } from "@/audio/worklet/node";
 import { DndProvider } from "@/components/DndProvider";
 import { EffectsPage } from "@/components/EffectsPage";

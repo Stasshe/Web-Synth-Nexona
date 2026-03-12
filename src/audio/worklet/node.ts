@@ -1,5 +1,5 @@
 import type { ModRoute } from "../dsp/modulation/modMatrix";
-import type { Wavetable } from "../dsp/wavetable/wavetableEngine";
+import type { Wavetable } from "../dsp/wavetable/wavetablePresets";
 import { createSAB } from "../sab/init";
 
 export interface SynthNode {

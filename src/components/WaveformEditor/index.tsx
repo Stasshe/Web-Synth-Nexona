@@ -1,6 +1,6 @@
 "use client";
 
-import type { Wavetable } from "@/audio/dsp/wavetable/wavetableEngine";
+import type { Wavetable } from "@/audio/dsp/wavetable/wavetablePresets";
 import { synthState } from "@/state/synthState";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {

@@ -158,7 +158,7 @@ AudioEngine
  ├ VoiceManager
  │   └ Voice[]
  ├ ModulationEngine
- ├ WavetableEngine
+ ├ wavetablePresets
  ├ EffectsChain
  └ Output
 ```
@@ -779,7 +779,7 @@ src/
        oscillator.ts
        unisonEngine.ts
      wavetable/
-       wavetableEngine.ts
+       wavetablePresets.ts
        bandlimit.ts
        cache.ts
      warp/

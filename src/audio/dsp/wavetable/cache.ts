@@ -1,5 +1,5 @@
 import { bandLimit, pitchBand } from "./bandlimit";
-import type { Wavetable } from "./wavetableEngine";
+import type { Wavetable } from "./wavetablePresets";
 
 const DEFAULT_MAX_ENTRIES = 128;
 

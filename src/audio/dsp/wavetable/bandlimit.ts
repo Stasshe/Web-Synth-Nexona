@@ -1,5 +1,5 @@
 import { fft, ifft } from "../utils/fft";
-import type { Wavetable } from "./wavetableEngine";
+import type { Wavetable } from "./wavetablePresets";
 
 /**
  * Generate a band-limited version of a wavetable for a given MIDI note.

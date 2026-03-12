@@ -1,5 +1,5 @@
 import { lerp } from "../utils/interpolation";
-import type { Wavetable } from "../wavetable/wavetableEngine";
+import type { Wavetable } from "../wavetable/wavetablePresets";
 
 export class Oscillator {
   private phase = 0;

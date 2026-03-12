@@ -1,6 +1,6 @@
 import { lerp } from "../utils/interpolation";
 import { midiToFreq } from "../utils/math";
-import type { Wavetable } from "../wavetable/wavetableEngine";
+import type { Wavetable } from "../wavetable/wavetablePresets";
 
 export class SubOscillator {
   private phase = 0;

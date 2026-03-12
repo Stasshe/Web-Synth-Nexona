@@ -2,7 +2,7 @@ import { lerp } from "../utils/interpolation";
 import { centsToRatio } from "../utils/math";
 import { WarpProcessor } from "../warp/warpProcessor";
 import type { WarpType } from "../warp/warpTypes";
-import type { Wavetable } from "../wavetable/wavetableEngine";
+import type { Wavetable } from "../wavetable/wavetablePresets";
 
 interface UnisonVoice {
   phase: number;

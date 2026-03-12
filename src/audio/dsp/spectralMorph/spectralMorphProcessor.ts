@@ -1,5 +1,5 @@
 import { fft, ifft } from "../utils/fft";
-import type { Wavetable } from "../wavetable/wavetableEngine";
+import type { Wavetable } from "../wavetable/wavetablePresets";
 import { SpectralMorphType } from "./spectralMorphTypes";
 
 /** Deterministic pseudo-random based on index (mulberry32) */
