@@ -2,10 +2,7 @@
 import { ModTarget } from "@/audio/dsp/modulation/modMatrix";
 import { SPECTRAL_MORPH_NAMES } from "@/audio/dsp/spectralMorph/spectralMorphTypes";
 import { PRESET_COUNT, PRESET_NAMES } from "@/audio/dsp/wavetable/wavetablePresets";
-import {
-  computeMorphedPreviewSamples,
-  computePreviewSamples,
-} from "@/audio/dsp/wavetable/wavetablePreview";
+import { computeMorphedPreviewSamples } from "@/audio/dsp/wavetable/wavetablePreview";
 import { Knob } from "@/components/ui/Knob";
 import { Panel } from "@/components/ui/Panel";
 import { Select } from "@/components/ui/Select";

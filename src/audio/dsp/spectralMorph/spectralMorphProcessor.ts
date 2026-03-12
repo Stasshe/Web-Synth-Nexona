@@ -414,7 +414,7 @@ export class SpectralMorphProcessor {
     for (let i = 1; i < halfSize; i++) {
       // Quadratic dispersion: harmonics further from center get more rotation
       const dist = i - CENTER;
-      const phaseOffset = dist * dist * phaseShift / (halfSize * halfSize) * 100 + offset;
+      const phaseOffset = (dist * dist * phaseShift / (halfSize * halfSize)) * 100 + offset;
 
       // Apply via complex multiplication (rotation)
       const cos = Math.cos(phaseOffset);
