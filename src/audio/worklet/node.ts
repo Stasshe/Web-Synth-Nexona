@@ -32,7 +32,6 @@ export async function createSynthNode(ctx: AudioContext): Promise<SynthNode> {
   });
 
   node.port.postMessage({ type: "init", sab });
-  node.connect(ctx.destination);
 
   let waveformCallback: ((data: Float32Array) => void) | null = null;
   let modFeedbackCallback: ((feedback: ModFeedback) => void) | null = null;

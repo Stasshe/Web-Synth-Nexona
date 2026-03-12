@@ -2,6 +2,8 @@
 
 import type { ModRoute } from "@/audio/dsp/modulation/modMatrix";
 import type { Wavetable } from "@/audio/dsp/wavetable/wavetablePresets";
+import { AudioRecorder, type RecordingResult } from "@/audio/export/audioRecorder";
+import { type ExportFormat, exportAudio } from "@/audio/export/exportAudio";
 import { type SynthNode, createSynthNode } from "@/audio/worklet/node";
 import { DndProvider } from "@/components/DndProvider";
 import { EffectsPage } from "@/components/EffectsPage";
@@ -18,7 +20,7 @@ import { loadPatchIntoState, urlToPatch } from "@/patch/loader";
 import { patchToUrl, stateToPatch } from "@/patch/serializer";
 import { updateModFeedback } from "@/state/modFeedback";
 import { bindStateToSAB, synthState } from "@/state/synthState";
-import { Code, Download, Power, Share2, Upload, Volume2 } from "lucide-react";
+import { Circle, Code, Download, Power, Share2, Square, Upload, Volume2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { subscribe } from "valtio";
 import { useSnapshot } from "valtio";
@@ -26,9 +28,17 @@ import { useSnapshot } from "valtio";
 export default function Home() {
   const [started, setStarted] = useState(false);
   const synthRef = useRef<SynthNode | null>(null);
+  const recorderRef = useRef<AudioRecorder | null>(null);
+  const ctxRef = useRef<AudioContext | null>(null);
   const [waveformData, setWaveformData] = useState<Float32Array | null>(null);
   const [paramEditorOpen, setParamEditorOpen] = useState(false);
   const [waveEditorOsc, setWaveEditorOsc] = useState<"a" | "b" | "c" | null>(null);
+  const [recState, setRecState] = useState<"idle" | "recording" | "done">("idle");
+  const [recElapsed, setRecElapsed] = useState(0);
+  const [recResult, setRecResult] = useState<RecordingResult | null>(null);
+  const [exportFormat, setExportFormat] = useState<ExportFormat>("wav");
+  const [exporting, setExporting] = useState(false);
+  const recTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const snap = useSnapshot(synthState);
   useGlobalScrollLock();
 
@@ -77,8 +87,17 @@ export default function Home() {
   const handleStart = useCallback(async () => {
     if (started) return;
     const ctx = new AudioContext({ sampleRate: 48000 });
+    ctxRef.current = ctx;
     const synth = await createSynthNode(ctx);
     synthRef.current = synth;
+
+    // Set up recorder in the audio graph: synth → recorder → destination
+    const recorder = new AudioRecorder(ctx);
+    await recorder.init();
+    recorderRef.current = recorder;
+    synth.node.connect(recorder.getNode());
+    recorder.getNode().connect(ctx.destination);
+
     bindStateToSAB(synth.sabView);
     synth.onWaveformData(setWaveformData);
     synth.onModFeedback(updateModFeedback);
@@ -100,6 +119,40 @@ export default function Home() {
     const url = `${window.location.origin}${window.location.pathname}#${encoded}`;
     await navigator.clipboard.writeText(url);
     window.location.hash = encoded;
+  }, []);
+
+  const handleRecStart = useCallback(() => {
+    if (!recorderRef.current) return;
+    recorderRef.current.start();
+    setRecState("recording");
+    setRecElapsed(0);
+    const start = Date.now();
+    recTimerRef.current = setInterval(() => {
+      setRecElapsed(Math.floor((Date.now() - start) / 1000));
+    }, 200);
+  }, []);
+
+  const handleRecStop = useCallback(async () => {
+    if (!recorderRef.current) return;
+    if (recTimerRef.current) {
+      clearInterval(recTimerRef.current);
+      recTimerRef.current = null;
+    }
+    const result = await recorderRef.current.stop();
+    setRecResult(result);
+    setRecState("done");
+  }, []);
+
+  const handleExport = useCallback(async () => {
+    if (!recResult) return;
+    setExporting(true);
+    await exportAudio(recResult, exportFormat);
+    setExporting(false);
+  }, [recResult, exportFormat]);
+
+  const handleRecDiscard = useCallback(() => {
+    setRecResult(null);
+    setRecState("idle");
   }, []);
 
   const handleSave = useCallback(() => {
@@ -203,6 +256,60 @@ export default function Home() {
               >
                 <Code size={11} /> Edit
               </button>
+            </div>
+            {/* Recording controls */}
+            <div className="flex items-center gap-1">
+              {recState === "idle" && (
+                <button
+                  type="button"
+                  onClick={handleRecStart}
+                  className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-text-muted hover:text-red-400 bg-bg-surface border border-border-default rounded transition-colors cursor-pointer"
+                  title="Start recording"
+                >
+                  <Circle size={9} fill="currentColor" /> Rec
+                </button>
+              )}
+              {recState === "recording" && (
+                <button
+                  type="button"
+                  onClick={handleRecStop}
+                  className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-red-400 bg-bg-surface border border-red-500/50 rounded transition-colors cursor-pointer animate-pulse"
+                  title="Stop recording"
+                >
+                  <Square size={9} fill="currentColor" /> {Math.floor(recElapsed / 60)}:
+                  {(recElapsed % 60).toString().padStart(2, "0")}
+                </button>
+              )}
+              {recState === "done" && (
+                <>
+                  <select
+                    value={exportFormat}
+                    onChange={(e) => setExportFormat(e.target.value as ExportFormat)}
+                    className="px-1 py-0.5 text-[10px] bg-bg-surface border border-border-default rounded text-text-primary cursor-pointer"
+                  >
+                    <option value="wav">WAV</option>
+                    <option value="mp3">MP3</option>
+                    <option value="m4a">M4A</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={handleExport}
+                    disabled={exporting}
+                    className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-accent-green hover:text-text-primary bg-bg-surface border border-border-default rounded transition-colors cursor-pointer disabled:opacity-50"
+                    title="Export recording"
+                  >
+                    <Download size={11} /> {exporting ? "..." : "Export"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleRecDiscard}
+                    className="flex items-center px-1 py-0.5 text-[10px] text-text-muted hover:text-red-400 bg-bg-surface border border-border-default rounded transition-colors cursor-pointer"
+                    title="Discard recording"
+                  >
+                    <X size={11} />
+                  </button>
+                </>
+              )}
             </div>
             <div className="flex items-center gap-1.5">
               <Volume2 size={13} className="text-text-muted" />
