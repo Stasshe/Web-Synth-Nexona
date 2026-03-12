@@ -105,14 +105,36 @@ describe("EffectsChain", () => {
   it("processes signal through all effects", () => {
     const chain = new EffectsChain(SR);
     chain.setParams({
+      distortionDrive: 1,
+      distortionTone: 0.5,
+      distortionMix: 0,
+      distortionMode: 0,
+      compThreshold: -12,
+      compRatio: 4,
+      compAttack: 0.01,
+      compRelease: 0.1,
+      compMakeup: 0,
+      compMix: 0,
       chorusRate: 1,
       chorusDepth: 0.3,
       chorusMix: 0.3,
+      flangerRate: 0.5,
+      flangerDepth: 0.5,
+      flangerFeedback: 0.5,
+      flangerMix: 0,
+      phaserRate: 0.5,
+      phaserDepth: 0.5,
+      phaserFeedback: 0.5,
+      phaserMix: 0,
       delayTime: 0.3,
       delayFeedback: 0.3,
       delayMix: 0.3,
       reverbDecay: 0.5,
       reverbMix: 0.3,
+      eqLowGain: 0,
+      eqMidGain: 0,
+      eqHighGain: 0,
+      eqMix: 0,
     });
 
     // Should not throw, should return stereo

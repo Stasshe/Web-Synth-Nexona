@@ -1,3 +1,5 @@
+import { generatePreset } from "./wavetablePresets";
+
 export interface Wavetable {
   frames: Float32Array[];
   tableSize: number;
@@ -135,4 +137,14 @@ export function generateTable(type: WavetableType, tableSize: number): Wavetable
     case WavetableType.TRIANGLE:
       return generateTriangleTable(tableSize);
   }
+}
+
+export { WavetablePreset, PRESET_NAMES, PRESET_COUNT } from "./wavetablePresets";
+
+/** Unified dispatcher: indices 0-3 use basic generators, 4+ use preset generators */
+export function generateWavetableByIndex(index: number, tableSize: number): Wavetable {
+  if (index >= 0 && index <= 3) {
+    return generateTable(index as WavetableType, tableSize);
+  }
+  return generatePreset(index, tableSize);
 }

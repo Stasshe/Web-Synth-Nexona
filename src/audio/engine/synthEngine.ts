@@ -1,10 +1,18 @@
 import { EffectsChain, type EffectsParams } from "../dsp/effects/effectsChain";
 import { LFO, type LfoShape } from "../dsp/lfo/lfo";
 import type { ModRoute } from "../dsp/modulation/modMatrix";
+import { SpectralMorphProcessor } from "../dsp/spectralMorph/spectralMorphProcessor";
+import { SpectralMorphType } from "../dsp/spectralMorph/spectralMorphTypes";
 import { NoiseType } from "../dsp/utils/noise";
 import { ParamSmoother } from "../dsp/utils/smoothing";
 import { WarpType } from "../dsp/warp/warpTypes";
-import { type Wavetable, WavetableType, generateTable } from "../dsp/wavetable/wavetableEngine";
+import {
+  type Wavetable,
+  WavetableType,
+  generateTable,
+  generateWavetableByIndex,
+} from "../dsp/wavetable/wavetableEngine";
+import { PRESET_COUNT } from "../dsp/wavetable/wavetablePresets";
 import { SabParam, getParam } from "../sab/layout";
 import type { VoiceParams } from "./voice";
 import { VoiceManager } from "./voiceManager";
@@ -17,13 +25,27 @@ export class SynthEngine {
   private sab: Int32Array | null = null;
   private sampleRate: number;
   private masterVolume: ParamSmoother;
-  private wavetableA: Wavetable;
-  private wavetableB: Wavetable;
-  private wavetableC: Wavetable;
+
+  // Source wavetables (before spectral morph)
+  private sourceWtA: Wavetable;
+  private sourceWtB: Wavetable;
+  private sourceWtC: Wavetable;
+  private wavetableSub: Wavetable;
   private wtTypeA = 0;
   private wtTypeB = 0;
   private wtTypeC = 0;
-  private wavetableSub: Wavetable;
+
+  // Spectral morph processors
+  private spectralMorphA = new SpectralMorphProcessor();
+  private spectralMorphB = new SpectralMorphProcessor();
+  private spectralMorphC = new SpectralMorphProcessor();
+  private prevMorphTypeA = 0;
+  private prevMorphAmountA = -1;
+  private prevMorphTypeB = 0;
+  private prevMorphAmountB = -1;
+  private prevMorphTypeC = 0;
+  private prevMorphAmountC = -1;
+
   private lfo1: LFO;
   private lfo2: LFO;
   private macros = [0, 0, 0, 0];
@@ -33,6 +55,10 @@ export class SynthEngine {
     oscALevel: 0.8,
     oscAFramePosition: 0,
     oscADetune: 0,
+    oscAOctave: 0,
+    oscASemitone: 0,
+    oscAPhaseOffset: 0,
+    oscARandomPhase: 1,
     oscAUnisonVoices: 1,
     oscAUnisonDetune: 20,
     oscAUnisonSpread: 0.5,
@@ -45,6 +71,10 @@ export class SynthEngine {
     oscBLevel: 0.8,
     oscBFramePosition: 0,
     oscBDetune: 0,
+    oscBOctave: 0,
+    oscBSemitone: 0,
+    oscBPhaseOffset: 0,
+    oscBRandomPhase: 1,
     oscBUnisonVoices: 1,
     oscBUnisonDetune: 20,
     oscBUnisonSpread: 0.5,
@@ -57,6 +87,10 @@ export class SynthEngine {
     oscCLevel: 0.8,
     oscCFramePosition: 0,
     oscCDetune: 0,
+    oscCOctave: 0,
+    oscCSemitone: 0,
+    oscCPhaseOffset: 0,
+    oscCRandomPhase: 1,
     oscCUnisonVoices: 1,
     oscCUnisonDetune: 20,
     oscCUnisonSpread: 0.5,
@@ -144,18 +178,21 @@ export class SynthEngine {
     this.voiceManager = new VoiceManager(sampleRate);
     this.effectsChain = new EffectsChain(sampleRate);
     this.masterVolume = new ParamSmoother(0.8);
-    this.wavetableA = generateTable(0, 2048);
-    this.wavetableB = generateTable(0, 2048);
-    this.wavetableC = generateTable(0, 2048);
-    // Default sub wavetable: single-frame sine (pure sine from frame 0)
+    this.sourceWtA = generateTable(0, 2048);
+    this.sourceWtB = generateTable(0, 2048);
+    this.sourceWtC = generateTable(0, 2048);
     const subFullTable = generateTable(WavetableType.SINE, 2048);
     this.wavetableSub = { frames: [subFullTable.frames[0]], tableSize: 2048, numFrames: 1 };
     this.lfo1 = new LFO(sampleRate, BLOCK_SIZE);
     this.lfo2 = new LFO(sampleRate, BLOCK_SIZE);
 
-    this.voiceManager.setWavetableA(this.wavetableA);
-    this.voiceManager.setWavetableB(this.wavetableB);
-    this.voiceManager.setWavetableC(this.wavetableC);
+    this.spectralMorphA.setSource(this.sourceWtA);
+    this.spectralMorphB.setSource(this.sourceWtB);
+    this.spectralMorphC.setSource(this.sourceWtC);
+
+    this.voiceManager.setWavetableA(this.sourceWtA);
+    this.voiceManager.setWavetableB(this.sourceWtB);
+    this.voiceManager.setWavetableC(this.sourceWtC);
     this.voiceManager.setWavetableSub(this.wavetableSub);
   }
 
@@ -164,18 +201,33 @@ export class SynthEngine {
   }
 
   setWavetableA(wt: Wavetable): void {
-    this.wavetableA = wt;
-    this.voiceManager.setWavetableA(wt);
+    this.sourceWtA = wt;
+    this.spectralMorphA.setSource(wt);
+    const morphed = this.spectralMorphA.getMorphed(
+      this.prevMorphTypeA as SpectralMorphType,
+      this.prevMorphAmountA < 0 ? 0 : this.prevMorphAmountA,
+    );
+    this.voiceManager.setWavetableA(morphed ?? wt);
   }
 
   setWavetableB(wt: Wavetable): void {
-    this.wavetableB = wt;
-    this.voiceManager.setWavetableB(wt);
+    this.sourceWtB = wt;
+    this.spectralMorphB.setSource(wt);
+    const morphed = this.spectralMorphB.getMorphed(
+      this.prevMorphTypeB as SpectralMorphType,
+      this.prevMorphAmountB < 0 ? 0 : this.prevMorphAmountB,
+    );
+    this.voiceManager.setWavetableB(morphed ?? wt);
   }
 
   setWavetableC(wt: Wavetable): void {
-    this.wavetableC = wt;
-    this.voiceManager.setWavetableC(wt);
+    this.sourceWtC = wt;
+    this.spectralMorphC.setSource(wt);
+    const morphed = this.spectralMorphC.getMorphed(
+      this.prevMorphTypeC as SpectralMorphType,
+      this.prevMorphAmountC < 0 ? 0 : this.prevMorphAmountC,
+    );
+    this.voiceManager.setWavetableC(morphed ?? wt);
   }
 
   setWavetableSub(wt: Wavetable): void {
@@ -206,7 +258,6 @@ export class SynthEngine {
 
     this.readParams();
 
-    // Control-rate processing (once per block)
     const lfo1Val = this.lfo1.process();
     const lfo2Val = this.lfo2.process();
     this.voiceManager.setLfoValues(lfo1Val, lfo2Val, this.macros);
@@ -232,6 +283,10 @@ export class SynthEngine {
     this.voiceParams.oscALevel = getParam(this.sab, SabParam.OscALevel);
     this.voiceParams.oscAFramePosition = getParam(this.sab, SabParam.OscAFramePosition);
     this.voiceParams.oscADetune = getParam(this.sab, SabParam.OscADetune);
+    this.voiceParams.oscAOctave = Math.round(getParam(this.sab, SabParam.OscAOctave));
+    this.voiceParams.oscASemitone = Math.round(getParam(this.sab, SabParam.OscASemitone));
+    this.voiceParams.oscAPhaseOffset = getParam(this.sab, SabParam.OscAPhaseOffset);
+    this.voiceParams.oscARandomPhase = getParam(this.sab, SabParam.OscARandomPhase);
     this.voiceParams.oscAUnisonVoices = getParam(this.sab, SabParam.OscAUnisonVoices);
     this.voiceParams.oscAUnisonDetune = getParam(this.sab, SabParam.OscAUnisonDetune);
     this.voiceParams.oscAUnisonSpread = getParam(this.sab, SabParam.OscAUnisonSpread);
@@ -240,15 +295,21 @@ export class SynthEngine {
     this.voiceParams.oscAWarp2Type = getParam(this.sab, SabParam.OscAWarp2Type) as WarpType;
     this.voiceParams.oscAWarp2Amount = getParam(this.sab, SabParam.OscAWarp2Amount);
 
-    // Regenerate wavetable A when SAB type changes to a valid preset (0-3).
-    // Value -1 means a custom wavetable was loaded via postMessage — skip regen.
     const newWtTypeA = Math.round(getParam(this.sab, SabParam.OscAWavetableIndex));
     if (newWtTypeA !== this.wtTypeA) {
       this.wtTypeA = newWtTypeA;
-      if (newWtTypeA >= 0 && newWtTypeA <= 3) {
-        this.wavetableA = generateTable(newWtTypeA as WavetableType, 2048);
-        this.voiceManager.setWavetableA(this.wavetableA);
+      if (newWtTypeA >= 0 && newWtTypeA < PRESET_COUNT) {
+        this.setWavetableA(generateWavetableByIndex(newWtTypeA, 2048));
       }
+    }
+
+    const morphTypeA = Math.round(getParam(this.sab, SabParam.OscASpectralMorphType));
+    const morphAmountA = getParam(this.sab, SabParam.OscASpectralMorphAmount);
+    if (morphTypeA !== this.prevMorphTypeA || Math.abs(morphAmountA - this.prevMorphAmountA) > 0.007) {
+      this.prevMorphTypeA = morphTypeA;
+      this.prevMorphAmountA = morphAmountA;
+      const morphed = this.spectralMorphA.getMorphed(morphTypeA as SpectralMorphType, morphAmountA);
+      if (morphed) this.voiceManager.setWavetableA(morphed);
     }
 
     // Osc B
@@ -256,6 +317,10 @@ export class SynthEngine {
     this.voiceParams.oscBLevel = getParam(this.sab, SabParam.OscBLevel);
     this.voiceParams.oscBFramePosition = getParam(this.sab, SabParam.OscBFramePosition);
     this.voiceParams.oscBDetune = getParam(this.sab, SabParam.OscBDetune);
+    this.voiceParams.oscBOctave = Math.round(getParam(this.sab, SabParam.OscBOctave));
+    this.voiceParams.oscBSemitone = Math.round(getParam(this.sab, SabParam.OscBSemitone));
+    this.voiceParams.oscBPhaseOffset = getParam(this.sab, SabParam.OscBPhaseOffset);
+    this.voiceParams.oscBRandomPhase = getParam(this.sab, SabParam.OscBRandomPhase);
     this.voiceParams.oscBUnisonVoices = getParam(this.sab, SabParam.OscBUnisonVoices);
     this.voiceParams.oscBUnisonDetune = getParam(this.sab, SabParam.OscBUnisonDetune);
     this.voiceParams.oscBUnisonSpread = getParam(this.sab, SabParam.OscBUnisonSpread);
@@ -264,14 +329,21 @@ export class SynthEngine {
     this.voiceParams.oscBWarp2Type = getParam(this.sab, SabParam.OscBWarp2Type) as WarpType;
     this.voiceParams.oscBWarp2Amount = getParam(this.sab, SabParam.OscBWarp2Amount);
 
-    // Regenerate wavetable B when SAB type changes to a valid preset (0-3).
     const newWtTypeB = Math.round(getParam(this.sab, SabParam.OscBWavetableIndex));
     if (newWtTypeB !== this.wtTypeB) {
       this.wtTypeB = newWtTypeB;
-      if (newWtTypeB >= 0 && newWtTypeB <= 3) {
-        this.wavetableB = generateTable(newWtTypeB as WavetableType, 2048);
-        this.voiceManager.setWavetableB(this.wavetableB);
+      if (newWtTypeB >= 0 && newWtTypeB < PRESET_COUNT) {
+        this.setWavetableB(generateWavetableByIndex(newWtTypeB, 2048));
       }
+    }
+
+    const morphTypeB = Math.round(getParam(this.sab, SabParam.OscBSpectralMorphType));
+    const morphAmountB = getParam(this.sab, SabParam.OscBSpectralMorphAmount);
+    if (morphTypeB !== this.prevMorphTypeB || Math.abs(morphAmountB - this.prevMorphAmountB) > 0.007) {
+      this.prevMorphTypeB = morphTypeB;
+      this.prevMorphAmountB = morphAmountB;
+      const morphed = this.spectralMorphB.getMorphed(morphTypeB as SpectralMorphType, morphAmountB);
+      if (morphed) this.voiceManager.setWavetableB(morphed);
     }
 
     // Osc C
@@ -279,6 +351,10 @@ export class SynthEngine {
     this.voiceParams.oscCLevel = getParam(this.sab, SabParam.OscCLevel);
     this.voiceParams.oscCFramePosition = getParam(this.sab, SabParam.OscCFramePosition);
     this.voiceParams.oscCDetune = getParam(this.sab, SabParam.OscCDetune);
+    this.voiceParams.oscCOctave = Math.round(getParam(this.sab, SabParam.OscCOctave));
+    this.voiceParams.oscCSemitone = Math.round(getParam(this.sab, SabParam.OscCSemitone));
+    this.voiceParams.oscCPhaseOffset = getParam(this.sab, SabParam.OscCPhaseOffset);
+    this.voiceParams.oscCRandomPhase = getParam(this.sab, SabParam.OscCRandomPhase);
     this.voiceParams.oscCUnisonVoices = getParam(this.sab, SabParam.OscCUnisonVoices);
     this.voiceParams.oscCUnisonDetune = getParam(this.sab, SabParam.OscCUnisonDetune);
     this.voiceParams.oscCUnisonSpread = getParam(this.sab, SabParam.OscCUnisonSpread);
@@ -287,14 +363,21 @@ export class SynthEngine {
     this.voiceParams.oscCWarp2Type = getParam(this.sab, SabParam.OscCWarp2Type) as WarpType;
     this.voiceParams.oscCWarp2Amount = getParam(this.sab, SabParam.OscCWarp2Amount);
 
-    // Regenerate wavetable C when SAB type changes to a valid preset (0-3).
     const newWtTypeC = Math.round(getParam(this.sab, SabParam.OscCWavetableIndex));
     if (newWtTypeC !== this.wtTypeC) {
       this.wtTypeC = newWtTypeC;
-      if (newWtTypeC >= 0 && newWtTypeC <= 3) {
-        this.wavetableC = generateTable(newWtTypeC as WavetableType, 2048);
-        this.voiceManager.setWavetableC(this.wavetableC);
+      if (newWtTypeC >= 0 && newWtTypeC < PRESET_COUNT) {
+        this.setWavetableC(generateWavetableByIndex(newWtTypeC, 2048));
       }
+    }
+
+    const morphTypeC = Math.round(getParam(this.sab, SabParam.OscCSpectralMorphType));
+    const morphAmountC = getParam(this.sab, SabParam.OscCSpectralMorphAmount);
+    if (morphTypeC !== this.prevMorphTypeC || Math.abs(morphAmountC - this.prevMorphAmountC) > 0.007) {
+      this.prevMorphTypeC = morphTypeC;
+      this.prevMorphAmountC = morphAmountC;
+      const morphed = this.spectralMorphC.getMorphed(morphTypeC as SpectralMorphType, morphAmountC);
+      if (morphed) this.voiceManager.setWavetableC(morphed);
     }
 
     // Sub + Noise
@@ -320,13 +403,11 @@ export class SynthEngine {
     this.voiceParams.filter2EnvAmount = getParam(this.sab, SabParam.Filter2EnvAmount);
     this.voiceParams.filter2On = getParam(this.sab, SabParam.Filter2On) >= 0.5;
 
-    // Amp Envelope
+    // Envelopes
     this.voiceParams.ampAttack = getParam(this.sab, SabParam.AmpEnvAttack);
     this.voiceParams.ampDecay = getParam(this.sab, SabParam.AmpEnvDecay);
     this.voiceParams.ampSustain = getParam(this.sab, SabParam.AmpEnvSustain);
     this.voiceParams.ampRelease = getParam(this.sab, SabParam.AmpEnvRelease);
-
-    // Filter Envelope
     this.voiceParams.filterEnvAttack = getParam(this.sab, SabParam.FilterEnvAttack);
     this.voiceParams.filterEnvDecay = getParam(this.sab, SabParam.FilterEnvDecay);
     this.voiceParams.filterEnvSustain = getParam(this.sab, SabParam.FilterEnvSustain);

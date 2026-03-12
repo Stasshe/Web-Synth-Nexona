@@ -18,6 +18,8 @@ export class UnisonEngine {
   private sampleRate: number;
   private framePosition = 0;
   private cachedWarpAmounts: [number, number] = [0, 0];
+  private phaseOffset = 0;
+  private randomPhaseAmount = 1;
 
   constructor(sampleRate: number) {
     this.sampleRate = sampleRate;
@@ -39,6 +41,11 @@ export class UnisonEngine {
 
   setWarp(type1: WarpType, amount1: number, type2: WarpType, amount2: number): void {
     this.warp.setParams(type1, amount1, type2, amount2);
+  }
+
+  setPhaseParams(offset: number, randomAmount: number): void {
+    this.phaseOffset = offset;
+    this.randomPhaseAmount = randomAmount;
   }
 
   setUnisonCount(count: number, detuneCents: number, spread: number): void {
@@ -73,7 +80,7 @@ export class UnisonEngine {
 
   resetPhases(): void {
     for (const v of this.voices) {
-      v.phase = Math.random();
+      v.phase = (this.phaseOffset + Math.random() * this.randomPhaseAmount) % 1.0;
     }
     this.warp.reset();
   }

@@ -12,6 +12,8 @@ export const synthState = proxy({
       controlPoints: null as unknown[] | null,
       level: 0.8,
       framePosition: 0,
+      octave: 0,
+      semitone: 0,
       detune: 0,
       unisonVoices: 1,
       unisonDetune: 20,
@@ -21,6 +23,10 @@ export const synthState = proxy({
       warpAmount: 0,
       warp2Type: 0,
       warp2Amount: 0,
+      spectralMorphType: 0,
+      spectralMorphAmount: 0,
+      phaseOffset: 0,
+      randomPhase: 1,
     },
     b: {
       on: false,
@@ -30,6 +36,8 @@ export const synthState = proxy({
       controlPoints: null as unknown[] | null,
       level: 0.8,
       framePosition: 0,
+      octave: 0,
+      semitone: 0,
       detune: 0,
       unisonVoices: 1,
       unisonDetune: 20,
@@ -39,6 +47,10 @@ export const synthState = proxy({
       warpAmount: 0,
       warp2Type: 0,
       warp2Amount: 0,
+      spectralMorphType: 0,
+      spectralMorphAmount: 0,
+      phaseOffset: 0,
+      randomPhase: 1,
     },
     c: {
       on: false,
@@ -48,6 +60,8 @@ export const synthState = proxy({
       controlPoints: null as unknown[] | null,
       level: 0.8,
       framePosition: 0,
+      octave: 0,
+      semitone: 0,
       detune: 0,
       unisonVoices: 1,
       unisonDetune: 20,
@@ -57,6 +71,10 @@ export const synthState = proxy({
       warpAmount: 0,
       warp2Type: 0,
       warp2Amount: 0,
+      spectralMorphType: 0,
+      spectralMorphAmount: 0,
+      phaseOffset: 0,
+      randomPhase: 1,
     },
     sub: {
       on: false,
@@ -132,6 +150,8 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
     setParam(sabView, SabParam.OscALevel, a.level);
     setParam(sabView, SabParam.OscAFramePosition, a.framePosition);
     setParam(sabView, SabParam.OscADetune, a.detune);
+    setParam(sabView, SabParam.OscAOctave, a.octave);
+    setParam(sabView, SabParam.OscASemitone, a.semitone);
     setParam(sabView, SabParam.OscAUnisonVoices, a.unisonVoices);
     setParam(sabView, SabParam.OscAUnisonDetune, a.unisonDetune);
     setParam(sabView, SabParam.OscAUnisonSpread, a.unisonSpread);
@@ -140,6 +160,10 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
     setParam(sabView, SabParam.OscAWarpAmount, a.warpAmount);
     setParam(sabView, SabParam.OscAWarp2Type, a.warp2Type);
     setParam(sabView, SabParam.OscAWarp2Amount, a.warp2Amount);
+    setParam(sabView, SabParam.OscASpectralMorphType, a.spectralMorphType);
+    setParam(sabView, SabParam.OscASpectralMorphAmount, a.spectralMorphAmount);
+    setParam(sabView, SabParam.OscAPhaseOffset, a.phaseOffset);
+    setParam(sabView, SabParam.OscARandomPhase, a.randomPhase);
   };
 
   const syncOscB = () => {
@@ -149,6 +173,8 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
     setParam(sabView, SabParam.OscBLevel, b.level);
     setParam(sabView, SabParam.OscBFramePosition, b.framePosition);
     setParam(sabView, SabParam.OscBDetune, b.detune);
+    setParam(sabView, SabParam.OscBOctave, b.octave);
+    setParam(sabView, SabParam.OscBSemitone, b.semitone);
     setParam(sabView, SabParam.OscBUnisonVoices, b.unisonVoices);
     setParam(sabView, SabParam.OscBUnisonDetune, b.unisonDetune);
     setParam(sabView, SabParam.OscBUnisonSpread, b.unisonSpread);
@@ -157,6 +183,10 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
     setParam(sabView, SabParam.OscBWarpAmount, b.warpAmount);
     setParam(sabView, SabParam.OscBWarp2Type, b.warp2Type);
     setParam(sabView, SabParam.OscBWarp2Amount, b.warp2Amount);
+    setParam(sabView, SabParam.OscBSpectralMorphType, b.spectralMorphType);
+    setParam(sabView, SabParam.OscBSpectralMorphAmount, b.spectralMorphAmount);
+    setParam(sabView, SabParam.OscBPhaseOffset, b.phaseOffset);
+    setParam(sabView, SabParam.OscBRandomPhase, b.randomPhase);
   };
 
   const syncOscC = () => {
@@ -166,6 +196,8 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
     setParam(sabView, SabParam.OscCLevel, c.level);
     setParam(sabView, SabParam.OscCFramePosition, c.framePosition);
     setParam(sabView, SabParam.OscCDetune, c.detune);
+    setParam(sabView, SabParam.OscCOctave, c.octave);
+    setParam(sabView, SabParam.OscCSemitone, c.semitone);
     setParam(sabView, SabParam.OscCUnisonVoices, c.unisonVoices);
     setParam(sabView, SabParam.OscCUnisonDetune, c.unisonDetune);
     setParam(sabView, SabParam.OscCUnisonSpread, c.unisonSpread);
@@ -174,6 +206,10 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
     setParam(sabView, SabParam.OscCWarpAmount, c.warpAmount);
     setParam(sabView, SabParam.OscCWarp2Type, c.warp2Type);
     setParam(sabView, SabParam.OscCWarp2Amount, c.warp2Amount);
+    setParam(sabView, SabParam.OscCSpectralMorphType, c.spectralMorphType);
+    setParam(sabView, SabParam.OscCSpectralMorphAmount, c.spectralMorphAmount);
+    setParam(sabView, SabParam.OscCPhaseOffset, c.phaseOffset);
+    setParam(sabView, SabParam.OscCRandomPhase, c.randomPhase);
   };
 
   const syncSub = () => {
@@ -288,8 +324,7 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
   unsubs.push(subscribe(synthState.effects, syncEffects));
   unsubs.push(subscribe(synthState, syncMisc));
 
-  // Initial sync: write current state to SAB immediately
-  // (needed when state was modified before binding, e.g. patch loaded from URL)
+  // Initial sync
   syncMaster();
   syncOscA();
   syncOscB();

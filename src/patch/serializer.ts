@@ -10,70 +10,43 @@ function serializeControlPoints(
   }));
 }
 
+function serializeOsc(osc: typeof synthState.oscillators.a) {
+  return {
+    on: osc.on,
+    waveformType: osc.waveformType,
+    waveformName: osc.waveformName,
+    customWaveform: osc.customWaveform ? [...osc.customWaveform] : null,
+    controlPoints: serializeControlPoints(osc.controlPoints),
+    level: osc.level,
+    framePosition: osc.framePosition,
+    detune: osc.detune,
+    unisonVoices: osc.unisonVoices,
+    unisonDetune: osc.unisonDetune,
+    unisonSpread: osc.unisonSpread,
+    pan: osc.pan,
+    warpType: osc.warpType,
+    warpAmount: osc.warpAmount,
+    warp2Type: osc.warp2Type,
+    warp2Amount: osc.warp2Amount,
+    octave: osc.octave,
+    semitone: osc.semitone,
+    spectralMorphType: osc.spectralMorphType,
+    spectralMorphAmount: osc.spectralMorphAmount,
+    phaseOffset: osc.phaseOffset,
+    randomPhase: osc.randomPhase,
+  };
+}
+
 export function stateToPatch(name = "Init"): PatchData {
   const s = synthState;
-  const a = s.oscillators.a;
-  const b = s.oscillators.b;
-  const c = s.oscillators.c;
   const sub = s.oscillators.sub;
   return {
-    version: 1,
+    version: 2,
     name,
     oscillators: {
-      a: {
-        on: a.on,
-        waveformType: a.waveformType,
-        waveformName: a.waveformName,
-        customWaveform: a.customWaveform ? [...a.customWaveform] : null,
-        controlPoints: serializeControlPoints(a.controlPoints),
-        level: a.level,
-        framePosition: a.framePosition,
-        detune: a.detune,
-        unisonVoices: a.unisonVoices,
-        unisonDetune: a.unisonDetune,
-        unisonSpread: a.unisonSpread,
-        pan: a.pan,
-        warpType: a.warpType,
-        warpAmount: a.warpAmount,
-        warp2Type: a.warp2Type,
-        warp2Amount: a.warp2Amount,
-      },
-      b: {
-        on: b.on,
-        waveformType: b.waveformType,
-        waveformName: b.waveformName,
-        customWaveform: b.customWaveform ? [...b.customWaveform] : null,
-        controlPoints: serializeControlPoints(b.controlPoints),
-        level: b.level,
-        framePosition: b.framePosition,
-        detune: b.detune,
-        unisonVoices: b.unisonVoices,
-        unisonDetune: b.unisonDetune,
-        unisonSpread: b.unisonSpread,
-        pan: b.pan,
-        warpType: b.warpType,
-        warpAmount: b.warpAmount,
-        warp2Type: b.warp2Type,
-        warp2Amount: b.warp2Amount,
-      },
-      c: {
-        on: c.on,
-        waveformType: c.waveformType,
-        waveformName: c.waveformName,
-        customWaveform: c.customWaveform ? [...c.customWaveform] : null,
-        controlPoints: serializeControlPoints(c.controlPoints),
-        level: c.level,
-        framePosition: c.framePosition,
-        detune: c.detune,
-        unisonVoices: c.unisonVoices,
-        unisonDetune: c.unisonDetune,
-        unisonSpread: c.unisonSpread,
-        pan: c.pan,
-        warpType: c.warpType,
-        warpAmount: c.warpAmount,
-        warp2Type: c.warp2Type,
-        warp2Amount: c.warp2Amount,
-      },
+      a: serializeOsc(s.oscillators.a),
+      b: serializeOsc(s.oscillators.b),
+      c: serializeOsc(s.oscillators.c),
       sub: {
         on: sub.on,
         octave: sub.octave,

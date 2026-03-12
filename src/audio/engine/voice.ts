@@ -16,6 +16,10 @@ export interface VoiceParams {
   oscALevel: number;
   oscAFramePosition: number;
   oscADetune: number;
+  oscAOctave: number;
+  oscASemitone: number;
+  oscAPhaseOffset: number;
+  oscARandomPhase: number;
   oscAUnisonVoices: number;
   oscAUnisonDetune: number;
   oscAUnisonSpread: number;
@@ -28,6 +32,10 @@ export interface VoiceParams {
   oscBLevel: number;
   oscBFramePosition: number;
   oscBDetune: number;
+  oscBOctave: number;
+  oscBSemitone: number;
+  oscBPhaseOffset: number;
+  oscBRandomPhase: number;
   oscBUnisonVoices: number;
   oscBUnisonDetune: number;
   oscBUnisonSpread: number;
@@ -40,6 +48,10 @@ export interface VoiceParams {
   oscCLevel: number;
   oscCFramePosition: number;
   oscCDetune: number;
+  oscCOctave: number;
+  oscCSemitone: number;
+  oscCPhaseOffset: number;
+  oscCRandomPhase: number;
   oscCUnisonVoices: number;
   oscCUnisonDetune: number;
   oscCUnisonSpread: number;
@@ -58,14 +70,14 @@ export interface VoiceParams {
   filterCutoff: number;
   filterResonance: number;
   filterDrive: number;
-  filterType: number; // index into FILTER_REGISTRY
+  filterType: number;
   filterEnvAmount: number;
   filterOn: boolean;
 
   filter2Cutoff: number;
   filter2Resonance: number;
   filter2Drive: number;
-  filter2Type: number; // index into FILTER_REGISTRY
+  filter2Type: number;
   filter2EnvAmount: number;
   filter2On: boolean;
 
@@ -191,6 +203,10 @@ export class Voice {
     this.oscB.setUnisonCount(p.oscBUnisonVoices, p.oscBUnisonDetune, p.oscBUnisonSpread);
     this.oscC.setUnisonCount(p.oscCUnisonVoices, p.oscCUnisonDetune, p.oscCUnisonSpread);
 
+    this.oscA.setPhaseParams(p.oscAPhaseOffset, p.oscARandomPhase);
+    this.oscB.setPhaseParams(p.oscBPhaseOffset, p.oscBRandomPhase);
+    this.oscC.setPhaseParams(p.oscCPhaseOffset, p.oscCRandomPhase);
+
     if (this.note >= 0) this.sub.setNote(this.note, p.subOctave);
 
     // Swap filter instances when type changes
@@ -254,8 +270,8 @@ export class Voice {
     let mixR = 0;
 
     if (p.oscAOn) {
-      const detuneTotal = p.oscADetune / 100 + modOscAPitch;
-      const freq = midiToFreq(this.note + detuneTotal);
+      const pitchOffset = p.oscAOctave * 12 + p.oscASemitone + p.oscADetune / 100 + modOscAPitch;
+      const freq = midiToFreq(this.note + pitchOffset);
       this.oscA.setFrequency(freq * (p.driftAmount > 0 ? this.drift.getFreqMultiplier() : 1));
       this.oscA.setFramePosition(clamp(p.oscAFramePosition + modOscAFrame, 0, 1));
       this.oscA.setWarp(
@@ -271,8 +287,8 @@ export class Voice {
     }
 
     if (p.oscBOn) {
-      const detuneTotal = p.oscBDetune / 100 + modOscBPitch;
-      const freq = midiToFreq(this.note + detuneTotal);
+      const pitchOffset = p.oscBOctave * 12 + p.oscBSemitone + p.oscBDetune / 100 + modOscBPitch;
+      const freq = midiToFreq(this.note + pitchOffset);
       this.oscB.setFrequency(freq * (p.driftAmount > 0 ? this.drift.getFreqMultiplier() : 1));
       this.oscB.setFramePosition(clamp(p.oscBFramePosition + modOscBFrame, 0, 1));
       this.oscB.setWarp(
@@ -288,8 +304,8 @@ export class Voice {
     }
 
     if (p.oscCOn) {
-      const detuneTotal = p.oscCDetune / 100 + modOscCPitch;
-      const freq = midiToFreq(this.note + detuneTotal);
+      const pitchOffset = p.oscCOctave * 12 + p.oscCSemitone + p.oscCDetune / 100 + modOscCPitch;
+      const freq = midiToFreq(this.note + pitchOffset);
       this.oscC.setFrequency(freq * (p.driftAmount > 0 ? this.drift.getFreqMultiplier() : 1));
       this.oscC.setFramePosition(clamp(p.oscCFramePosition + modOscCFrame, 0, 1));
       this.oscC.setWarp(

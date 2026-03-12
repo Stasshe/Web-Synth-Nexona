@@ -6,6 +6,9 @@ export enum WarpType {
   MIRROR = 4,
   QUANTIZE = 5,
   FM = 6,
+  FORMANT = 7,
+  SQUEEZE = 8,
+  PULSE_WIDTH = 9,
 }
 
 /** Warp phase before wavetable lookup. Input/output in [0, 1). */
@@ -54,6 +57,32 @@ export function applyWarp(phase: number, type: WarpType, amount: number, fmSigna
       p = p - Math.floor(p);
       if (p < 0) p += 1;
       return p;
+    }
+
+    case WarpType.FORMANT: {
+      // Hard sync with half-sine window — creates formant-like spectral peak
+      const syncP = phase * (1 + amount * 8);
+      const wrapped = syncP - Math.floor(syncP);
+      // Apply half-sine window to emphasize fundamental pitch
+      return wrapped * Math.sin(Math.PI * phase);
+    }
+
+    case WarpType.SQUEEZE: {
+      // Asymmetric phase compression — squeezes first half, stretches second
+      const threshold = 0.1 + amount * 0.4; // crossover point moves with amount
+      if (phase < 0.5) {
+        return (phase / 0.5) * threshold;
+      }
+      return threshold + ((phase - 0.5) / 0.5) * (1 - threshold);
+    }
+
+    case WarpType.PULSE_WIDTH: {
+      // Remap phase to create PWM effect on any waveform
+      const pw = 0.1 + amount * 0.8; // pulse width 10%-90%
+      if (phase < pw) {
+        return (phase / pw) * 0.5;
+      }
+      return 0.5 + ((phase - pw) / (1 - pw)) * 0.5;
     }
   }
 }

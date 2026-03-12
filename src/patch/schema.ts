@@ -1,31 +1,32 @@
 import type { ModRoute } from "@/audio/dsp/modulation/modMatrix";
 
 export interface PatchData {
-  version: 1;
+  version: 2;
   name: string;
   oscillators: {
     a: OscPatch;
     b: OscPatch;
-    c?: OscPatch;
+    c: OscPatch;
     sub: {
       on: boolean;
       octave: number;
-      shape?: number;
       level: number;
-      waveformName?: string;
-      customWaveform?: number[] | null;
-      controlPoints?: ControlPointPatch[] | null;
+      waveformName: string;
+      customWaveform: number[] | null;
+      controlPoints: ControlPointPatch[] | null;
     };
   };
   noise: { type: number; level: number };
   filter: {
+    on: boolean;
     cutoff: number;
     resonance: number;
     drive: number;
     type: number;
     envAmount: number;
   };
-  filter2?: {
+  filter2: {
+    on: boolean;
     cutoff: number;
     resonance: number;
     drive: number;
@@ -54,9 +55,9 @@ export interface PatchData {
 interface OscPatch {
   on: boolean;
   waveformType: number;
-  waveformName?: string;
-  customWaveform?: number[] | null;
-  controlPoints?: ControlPointPatch[] | null;
+  waveformName: string;
+  customWaveform: number[] | null;
+  controlPoints: ControlPointPatch[] | null;
   level: number;
   framePosition: number;
   detune: number;
@@ -68,6 +69,12 @@ interface OscPatch {
   warpAmount: number;
   warp2Type: number;
   warp2Amount: number;
+  octave: number;
+  semitone: number;
+  spectralMorphType: number;
+  spectralMorphAmount: number;
+  phaseOffset: number;
+  randomPhase: number;
 }
 
 interface ControlPointPatch {
@@ -87,5 +94,7 @@ interface EnvPatch {
 export function validatePatch(data: unknown): data is PatchData {
   if (typeof data !== "object" || data === null) return false;
   const d = data as Record<string, unknown>;
-  return d.version === 1 && typeof d.name === "string" && typeof d.oscillators === "object";
+  return (
+    d.version === 2 && typeof d.name === "string" && typeof d.oscillators === "object"
+  );
 }

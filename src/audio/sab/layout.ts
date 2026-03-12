@@ -19,6 +19,12 @@ export enum SabParam {
   OscAWarpAmount = 21,
   OscAWarp2Type = 22,
   OscAWarp2Amount = 23,
+  OscAOctave = 24,
+  OscASemitone = 25,
+  OscAPhaseOffset = 26,
+  OscARandomPhase = 27,
+  OscASpectralMorphType = 28,
+  OscASpectralMorphAmount = 29,
 
   // Oscillator B: 30-49
   OscBOn = 30,
@@ -35,6 +41,12 @@ export enum SabParam {
   OscBWarpAmount = 41,
   OscBWarp2Type = 42,
   OscBWarp2Amount = 43,
+  OscBOctave = 44,
+  OscBSemitone = 45,
+  OscBPhaseOffset = 46,
+  OscBRandomPhase = 47,
+  OscBSpectralMorphType = 48,
+  OscBSpectralMorphAmount = 49,
 
   // Sub + Noise: 50-59
   SubOn = 50,
@@ -101,6 +113,12 @@ export enum SabParam {
   OscCWarpAmount = 141,
   OscCWarp2Type = 142,
   OscCWarp2Amount = 143,
+  OscCOctave = 144,
+  OscCSemitone = 145,
+  OscCPhaseOffset = 146,
+  OscCRandomPhase = 147,
+  OscCSpectralMorphType = 148,
+  OscCSpectralMorphAmount = 149,
 
   // Filter 2: 150-154
   Filter2Cutoff = 150,

@@ -21,6 +21,12 @@ export function createSAB(): SharedArrayBuffer {
   setParam(view, SabParam.OscAWarpAmount, 0);
   setParam(view, SabParam.OscAWarp2Type, 0);
   setParam(view, SabParam.OscAWarp2Amount, 0);
+  setParam(view, SabParam.OscAOctave, 0);
+  setParam(view, SabParam.OscASemitone, 0);
+  setParam(view, SabParam.OscAPhaseOffset, 0);
+  setParam(view, SabParam.OscARandomPhase, 1);
+  setParam(view, SabParam.OscASpectralMorphType, 0);
+  setParam(view, SabParam.OscASpectralMorphAmount, 0);
 
   // Osc B defaults (off)
   setParam(view, SabParam.OscBOn, 0);
@@ -36,6 +42,12 @@ export function createSAB(): SharedArrayBuffer {
   setParam(view, SabParam.OscBWarpAmount, 0);
   setParam(view, SabParam.OscBWarp2Type, 0);
   setParam(view, SabParam.OscBWarp2Amount, 0);
+  setParam(view, SabParam.OscBOctave, 0);
+  setParam(view, SabParam.OscBSemitone, 0);
+  setParam(view, SabParam.OscBPhaseOffset, 0);
+  setParam(view, SabParam.OscBRandomPhase, 1);
+  setParam(view, SabParam.OscBSpectralMorphType, 0);
+  setParam(view, SabParam.OscBSpectralMorphAmount, 0);
 
   // Sub + Noise defaults (off)
   setParam(view, SabParam.SubOn, 0);
@@ -94,6 +106,12 @@ export function createSAB(): SharedArrayBuffer {
   setParam(view, SabParam.OscCWarpAmount, 0);
   setParam(view, SabParam.OscCWarp2Type, 0);
   setParam(view, SabParam.OscCWarp2Amount, 0);
+  setParam(view, SabParam.OscCOctave, 0);
+  setParam(view, SabParam.OscCSemitone, 0);
+  setParam(view, SabParam.OscCPhaseOffset, 0);
+  setParam(view, SabParam.OscCRandomPhase, 1);
+  setParam(view, SabParam.OscCSpectralMorphType, 0);
+  setParam(view, SabParam.OscCSpectralMorphAmount, 0);
 
   // Filter 2 defaults (passthrough)
   setParam(view, SabParam.Filter2Cutoff, 20000);

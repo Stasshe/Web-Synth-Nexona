@@ -30,6 +30,9 @@ export enum ModTarget {
   OSC_C_LEVEL = 15,
   FILTER2_CUTOFF = 16,
   FILTER2_RESONANCE = 17,
+  OSC_A_SPECTRAL_MORPH = 18,
+  OSC_B_SPECTRAL_MORPH = 19,
+  OSC_C_SPECTRAL_MORPH = 20,
 }
 
 export interface ModRoute {
