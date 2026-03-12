@@ -8,8 +8,6 @@ import { ParamSmoother } from "../dsp/utils/smoothing";
 import { WarpType } from "../dsp/warp/warpTypes";
 import {
   type Wavetable,
-  WavetableType,
-  generateTable,
   generateWavetableByIndex,
 } from "../dsp/wavetable/wavetableEngine";
 import { PRESET_COUNT } from "../dsp/wavetable/wavetablePresets";
@@ -178,10 +176,10 @@ export class SynthEngine {
     this.voiceManager = new VoiceManager(sampleRate);
     this.effectsChain = new EffectsChain(sampleRate);
     this.masterVolume = new ParamSmoother(0.8);
-    this.sourceWtA = generateTable(0, 2048);
-    this.sourceWtB = generateTable(0, 2048);
-    this.sourceWtC = generateTable(0, 2048);
-    const subFullTable = generateTable(WavetableType.SINE, 2048);
+    this.sourceWtA = generateWavetableByIndex(0, 2048);
+    this.sourceWtB = generateWavetableByIndex(0, 2048);
+    this.sourceWtC = generateWavetableByIndex(0, 2048);
+    const subFullTable = generateWavetableByIndex(0, 2048);
     this.wavetableSub = { frames: [subFullTable.frames[0]], tableSize: 2048, numFrames: 1 };
     this.lfo1 = new LFO(sampleRate, BLOCK_SIZE);
     this.lfo2 = new LFO(sampleRate, BLOCK_SIZE);
