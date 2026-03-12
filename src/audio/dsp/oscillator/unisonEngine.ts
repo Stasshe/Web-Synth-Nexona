@@ -14,6 +14,10 @@ export class UnisonEngine {
   private voices: UnisonVoice[] = [];
   private warp: WarpProcessor;
   private wavetable: Wavetable | null = null;
+  private prevWavetable: Wavetable | null = null;
+  private crossfadePos = 0; // 0 = fully old, 1 = fully new (done)
+  private crossfadeInc = 0;
+  private static readonly CROSSFADE_SAMPLES = 256; // ~5.8ms at 44100
   private baseFrequency = 440;
   private sampleRate: number;
   private framePosition = 0;
@@ -28,6 +32,11 @@ export class UnisonEngine {
   }
 
   setWavetable(wt: Wavetable): void {
+    if (this.wavetable && this.wavetable !== wt) {
+      this.prevWavetable = this.wavetable;
+      this.crossfadePos = 0;
+      this.crossfadeInc = 1 / UnisonEngine.CROSSFADE_SAMPLES;
+    }
     this.wavetable = wt;
   }
 
@@ -89,6 +98,8 @@ export class UnisonEngine {
   process(fmSignal = 0): [number, number] {
     if (!this.wavetable) return [0, 0];
 
+    const isCrossfading = this.prevWavetable && this.crossfadePos < 1;
+
     let sumL = 0;
     let sumR = 0;
     const gain = 1 / Math.sqrt(this.voices.length);
@@ -103,7 +114,15 @@ export class UnisonEngine {
         this.cachedWarpAmounts,
         fmSignal,
       );
-      const sample = this.lookupWavetable(warpedPhase);
+
+      let sample: number;
+      if (isCrossfading) {
+        const newSample = this.lookupWavetableFrom(this.wavetable, warpedPhase);
+        const oldSample = this.lookupWavetableFrom(this.prevWavetable!, warpedPhase);
+        sample = oldSample * (1 - this.crossfadePos) + newSample * this.crossfadePos;
+      } else {
+        sample = this.lookupWavetableFrom(this.wavetable, warpedPhase);
+      }
 
       // Pan law (equal power approximation)
       const panR = (voice.pan + 1) * 0.5;
@@ -116,11 +135,19 @@ export class UnisonEngine {
       if (voice.phase >= 1.0) voice.phase -= 1.0;
     }
 
+    // Advance crossfade
+    if (isCrossfading) {
+      this.crossfadePos += this.crossfadeInc;
+      if (this.crossfadePos >= 1) {
+        this.crossfadePos = 1;
+        this.prevWavetable = null;
+      }
+    }
+
     return [sumL, sumR];
   }
 
-  private lookupWavetable(phase: number): number {
-    const wt = this.wavetable!;
+  private lookupWavetableFrom(wt: Wavetable, phase: number): number {
     const size = wt.tableSize;
 
     // Clamp phase to [0, 1) to prevent out-of-bounds access
