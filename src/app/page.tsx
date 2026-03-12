@@ -133,17 +133,6 @@ export default function Home() {
     setStarted(true);
   }, [started, applyCustomWavetables]);
 
-  // Auto-start audio engine after a brief delay to allow state restoration
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!started) {
-        handleStart();
-      }
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, [started, handleStart]);
-
   const handleNoteOn = useCallback((note: number, velocity: number) => {
     synthRef.current?.noteOn(note, velocity);
   }, []);
@@ -231,13 +220,18 @@ export default function Home() {
   if (!started) {
     return (
       <main className="flex items-center justify-center min-h-[100dvh]">
-        <div className="flex items-center gap-3 px-8 py-4 bg-bg-surface border border-border-default rounded-xl text-text-primary">
-          <Power size={24} className="text-accent-green animate-pulse" />
+        <button
+          type="button"
+          onClick={handleStart}
+          className="flex items-center gap-3 px-8 py-4 bg-bg-surface border border-border-default rounded-xl
+                     hover:border-accent-blue hover:bg-bg-hover transition-all cursor-pointer text-text-primary"
+        >
+          <Power size={24} className="text-accent-blue" />
           <div className="text-left">
             <div className="text-lg font-medium">Web Synth - Nexona</div>
-            <div className="text-xs text-text-muted">Initializing audio engine...</div>
+            <div className="text-xs text-text-muted">Click to start audio engine</div>
           </div>
-        </div>
+        </button>
       </main>
     );
   }
