@@ -1,6 +1,6 @@
 import { EffectsChain, type EffectsParams } from "../dsp/effects/effectsChain";
 import { LFO, type LfoShape } from "../dsp/lfo/lfo";
-import type { ModRoute } from "../dsp/modulation/modMatrix";
+import { type ModRoute, ModSource, ModTarget, ModulationMatrix } from "../dsp/modulation/modMatrix";
 import { SmoothRandom } from "../dsp/modulation/smoothRandom";
 import { SpectralMorphProcessor } from "../dsp/spectralMorph/spectralMorphProcessor";
 import type { SpectralMorphType } from "../dsp/spectralMorph/spectralMorphTypes";
@@ -57,6 +57,7 @@ export class SynthEngine {
   private lfo2: LFO;
   private smoothRandom: SmoothRandom;
   private macros = [0, 0, 0, 0];
+  private engineModMatrix = new ModulationMatrix();
 
   private voiceParams: VoiceParams = {
     oscAOn: true,
@@ -249,6 +250,7 @@ export class SynthEngine {
 
   setModRoutes(routes: ModRoute[]): void {
     this.voiceManager.setModRoutes(routes);
+    this.engineModMatrix.setRoutes(routes);
   }
 
   setMacros(macros: number[]): void {
@@ -275,6 +277,20 @@ export class SynthEngine {
     const randomVal = this.smoothRandom.process();
     this.voiceManager.setLfoValues(lfo1Val, lfo2Val, this.macros, randomVal);
     this.voiceManager.setParams(this.voiceParams);
+
+    // Set engine-level mod source values for effects modulation
+    this.engineModMatrix.setSourceValue(ModSource.LFO1, lfo1Val);
+    this.engineModMatrix.setSourceValue(ModSource.LFO2, lfo2Val);
+    this.engineModMatrix.setSourceValue(ModSource.RANDOM, randomVal);
+    for (let i = 0; i < 4; i++) {
+      this.engineModMatrix.setSourceValue(ModSource.MACRO1 + i, this.macros[i]);
+    }
+    const envState = this.voiceManager.getActiveEnvelopeState();
+    this.engineModMatrix.setSourceValue(ModSource.AMP_ENV, envState.ampLevel);
+    this.engineModMatrix.setSourceValue(ModSource.FILTER_ENV, envState.filterLevel);
+
+    // Apply modulation to effects params
+    this.applyEffectsModulation();
     this.effectsChain.setParams(this.effectsParams);
 
     for (let i = 0; i < blockSize; i++) {
@@ -299,6 +315,107 @@ export class SynthEngine {
       envFilterLevel: voiceEnv.filterLevel,
       envFilterState: voiceEnv.filterState,
     };
+  }
+
+  private applyEffectsModulation(): void {
+    const mm = this.engineModMatrix;
+
+    this.effectsParams.distortionDrive = Math.max(
+      1,
+      this.effectsParams.distortionDrive + mm.getModulation(ModTarget.DIST_DRIVE) * 19,
+    );
+    this.effectsParams.distortionMix = Math.max(
+      0,
+      Math.min(1, this.effectsParams.distortionMix + mm.getModulation(ModTarget.DIST_MIX)),
+    );
+    this.effectsParams.chorusRate = Math.max(
+      0.1,
+      this.effectsParams.chorusRate + mm.getModulation(ModTarget.CHORUS_RATE) * 5,
+    );
+    this.effectsParams.chorusDepth = Math.max(
+      0,
+      Math.min(1, this.effectsParams.chorusDepth + mm.getModulation(ModTarget.CHORUS_DEPTH)),
+    );
+    this.effectsParams.chorusMix = Math.max(
+      0,
+      Math.min(1, this.effectsParams.chorusMix + mm.getModulation(ModTarget.CHORUS_MIX)),
+    );
+    this.effectsParams.flangerRate = Math.max(
+      0.01,
+      this.effectsParams.flangerRate + mm.getModulation(ModTarget.FLANGER_RATE) * 10,
+    );
+    this.effectsParams.flangerDepth = Math.max(
+      0,
+      Math.min(1, this.effectsParams.flangerDepth + mm.getModulation(ModTarget.FLANGER_DEPTH)),
+    );
+    this.effectsParams.flangerFeedback = Math.max(
+      0,
+      Math.min(
+        0.95,
+        this.effectsParams.flangerFeedback + mm.getModulation(ModTarget.FLANGER_FEEDBACK) * 0.95,
+      ),
+    );
+    this.effectsParams.flangerMix = Math.max(
+      0,
+      Math.min(1, this.effectsParams.flangerMix + mm.getModulation(ModTarget.FLANGER_MIX)),
+    );
+    this.effectsParams.phaserRate = Math.max(
+      0.01,
+      this.effectsParams.phaserRate + mm.getModulation(ModTarget.PHASER_RATE) * 10,
+    );
+    this.effectsParams.phaserDepth = Math.max(
+      0,
+      Math.min(1, this.effectsParams.phaserDepth + mm.getModulation(ModTarget.PHASER_DEPTH)),
+    );
+    this.effectsParams.phaserFeedback = Math.max(
+      0,
+      Math.min(
+        0.95,
+        this.effectsParams.phaserFeedback + mm.getModulation(ModTarget.PHASER_FEEDBACK) * 0.95,
+      ),
+    );
+    this.effectsParams.phaserMix = Math.max(
+      0,
+      Math.min(1, this.effectsParams.phaserMix + mm.getModulation(ModTarget.PHASER_MIX)),
+    );
+    this.effectsParams.delayTime = Math.max(
+      0.01,
+      Math.min(2, this.effectsParams.delayTime + mm.getModulation(ModTarget.DELAY_TIME) * 2),
+    );
+    this.effectsParams.delayFeedback = Math.max(
+      0,
+      Math.min(
+        0.95,
+        this.effectsParams.delayFeedback + mm.getModulation(ModTarget.DELAY_FEEDBACK) * 0.95,
+      ),
+    );
+    this.effectsParams.delayMix = Math.max(
+      0,
+      Math.min(1, this.effectsParams.delayMix + mm.getModulation(ModTarget.DELAY_MIX)),
+    );
+    this.effectsParams.reverbDecay = Math.max(
+      0.1,
+      Math.min(
+        0.99,
+        this.effectsParams.reverbDecay + mm.getModulation(ModTarget.REVERB_DECAY) * 0.99,
+      ),
+    );
+    this.effectsParams.reverbMix = Math.max(
+      0,
+      Math.min(1, this.effectsParams.reverbMix + mm.getModulation(ModTarget.REVERB_MIX)),
+    );
+    this.effectsParams.eqLowGain = Math.max(
+      -12,
+      Math.min(12, this.effectsParams.eqLowGain + mm.getModulation(ModTarget.EQ_LOW) * 12),
+    );
+    this.effectsParams.eqMidGain = Math.max(
+      -12,
+      Math.min(12, this.effectsParams.eqMidGain + mm.getModulation(ModTarget.EQ_MID) * 12),
+    );
+    this.effectsParams.eqHighGain = Math.max(
+      -12,
+      Math.min(12, this.effectsParams.eqHighGain + mm.getModulation(ModTarget.EQ_HIGH) * 12),
+    );
   }
 
   private readParams(): void {
