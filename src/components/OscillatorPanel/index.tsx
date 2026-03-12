@@ -2,7 +2,10 @@
 import { ModTarget } from "@/audio/dsp/modulation/modMatrix";
 import { SPECTRAL_MORPH_NAMES } from "@/audio/dsp/spectralMorph/spectralMorphTypes";
 import { PRESET_COUNT, PRESET_NAMES } from "@/audio/dsp/wavetable/wavetablePresets";
-import { computePreviewSamples } from "@/audio/dsp/wavetable/wavetablePreview";
+import {
+  computeMorphedPreviewSamples,
+  computePreviewSamples,
+} from "@/audio/dsp/wavetable/wavetablePreview";
 import { Knob } from "@/components/ui/Knob";
 import { Panel } from "@/components/ui/Panel";
 import { Select } from "@/components/ui/Select";
@@ -96,17 +99,28 @@ function WaveformPreview({
   framePosition,
   customWaveform,
   color,
+  spectralMorphType,
+  spectralMorphAmount,
   onClick,
 }: {
   waveformType: number;
   framePosition: number;
   customWaveform: readonly number[] | null;
   color: string;
+  spectralMorphType: number;
+  spectralMorphAmount: number;
   onClick?: () => void;
 }) {
   const samples = useMemo(
-    () => computePreviewSamples(waveformType, framePosition, customWaveform),
-    [waveformType, framePosition, customWaveform],
+    () =>
+      computeMorphedPreviewSamples(
+        waveformType,
+        framePosition,
+        customWaveform,
+        spectralMorphType,
+        spectralMorphAmount,
+      ),
+    [waveformType, framePosition, customWaveform, spectralMorphType, spectralMorphAmount],
   );
 
   const ghostFrames = useMemo(() => {
@@ -115,7 +129,13 @@ function WaveformPreview({
     const offsets = [-0.15, -0.08, 0.08, 0.15];
     for (const off of offsets) {
       const fp = Math.max(0, Math.min(1, framePosition + off));
-      const s = computePreviewSamples(waveformType, fp, null);
+      const s = computeMorphedPreviewSamples(
+        waveformType,
+        fp,
+        null,
+        spectralMorphType,
+        spectralMorphAmount,
+      );
       const ghostH = 64;
       const pts: string[] = [];
       for (let i = 0; i < s.length; i++) {
@@ -124,7 +144,7 @@ function WaveformPreview({
       ghosts.push({ points: pts.join(" "), opacity: 0.15, offsetY: off * 20 });
     }
     return ghosts;
-  }, [waveformType, framePosition, customWaveform]);
+  }, [waveformType, framePosition, customWaveform, spectralMorphType, spectralMorphAmount]);
 
   const W = 128;
   const H = 80;
@@ -287,6 +307,8 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
           framePosition={data.framePosition}
           customWaveform={data.customWaveform}
           color={color}
+          spectralMorphType={data.spectralMorphType}
+          spectralMorphAmount={data.spectralMorphAmount}
         />
       </div>
 
