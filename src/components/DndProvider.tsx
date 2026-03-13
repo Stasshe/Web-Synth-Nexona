@@ -24,7 +24,7 @@ export function DndProvider({ children }: DndProviderProps) {
   return (
     <ReactDndProvider
       backend={isTouch ? TouchBackend : HTML5Backend}
-      options={isTouch ? { enableMouseEvents: true, delay: 0, delayTouchStart: 0 } : undefined}
+      options={isTouch ? { enableMouseEvents: true, delayTouchStart: 250, ignoreContextMenu: true } : undefined}
     >
       {children}
     </ReactDndProvider>
