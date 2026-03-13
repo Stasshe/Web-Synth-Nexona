@@ -1,20 +1,29 @@
-/** Simple RMS compressor with lookahead-free design. */
+/** Compressor with soft knee, linked stereo, and coefficient caching. */
 export class Compressor {
-  private threshold = -12; // dBFS
+  private threshold = -12;
   private ratio = 4;
   private attack = 0.01;
   private release = 0.1;
   private makeupGain = 1;
   private mix = 0;
 
-  private envL = 0;
-  private envR = 0;
-  private gainL = 1;
-  private gainR = 1;
+  private env = 0; // linked stereo envelope
+  private gain = 1;
   private sampleRate: number;
+
+  // Cached coefficients (computed once per setParams, not per sample)
+  private attackCoeff = 0;
+  private releaseCoeff = 0;
+  private kneeWidth = 6; // 6dB soft knee
 
   constructor(sampleRate: number) {
     this.sampleRate = sampleRate;
+    this.updateCoefficients();
+  }
+
+  private updateCoefficients(): void {
+    this.attackCoeff = Math.exp(-1 / (this.attack * this.sampleRate));
+    this.releaseCoeff = Math.exp(-1 / (this.release * this.sampleRate));
   }
 
   setParams(
@@ -27,46 +36,65 @@ export class Compressor {
   ): void {
     this.threshold = threshold;
     this.ratio = Math.max(1, ratio);
-    this.attack = attack;
-    this.release = release;
+    if (this.attack !== attack || this.release !== release) {
+      this.attack = attack;
+      this.release = release;
+      this.updateCoefficients();
+    }
     this.makeupGain = makeupGain;
     this.mix = mix;
   }
 
-  private computeGain(rmsDb: number): number {
-    if (rmsDb <= this.threshold) return 1;
-    const excess = rmsDb - this.threshold;
-    const reduction = excess * (1 - 1 / this.ratio);
-    return 10 ** (-reduction / 20);
-  }
+  private computeGain(inputDb: number): number {
+    const t = this.threshold;
+    const r = this.ratio;
+    const k = this.kneeWidth;
+    const halfKnee = k * 0.5;
 
-  private processChannel(input: number, env: number, gain: number): [number, number, number] {
-    const sr = this.sampleRate;
-    // RMS envelope
-    const sq = input * input;
-    const attackCoeff = Math.exp(-1 / (this.attack * sr));
-    const releaseCoeff = Math.exp(-1 / (this.release * sr));
-    const newEnv =
-      sq > env
-        ? sq * (1 - attackCoeff) + env * attackCoeff
-        : sq * (1 - releaseCoeff) + env * releaseCoeff;
-    const rms = Math.sqrt(Math.max(newEnv, 1e-10));
-    const rmsDb = 20 * Math.log10(rms);
-    const targetGain = this.computeGain(rmsDb);
-    // Smooth gain changes
-    const coeff = targetGain < gain ? 1 - attackCoeff : 1 - releaseCoeff;
-    const newGain = gain + (targetGain - gain) * coeff;
-    return [input * newGain * this.makeupGain, newEnv, newGain];
+    if (inputDb <= t - halfKnee) {
+      // Below knee — no compression
+      return 1;
+    }
+
+    let reductionDb: number;
+    if (inputDb >= t + halfKnee) {
+      // Above knee — full compression
+      const excess = inputDb - t;
+      reductionDb = excess * (1 - 1 / r);
+    } else {
+      // In the knee region — soft transition
+      const x = inputDb - t + halfKnee;
+      reductionDb = ((1 - 1 / r) * x * x) / (2 * k);
+    }
+
+    return 10 ** (-reductionDb / 20);
   }
 
   process(inL: number, inR: number): [number, number] {
     if (this.mix === 0) return [inL, inR];
-    const [outL, envL, gainL] = this.processChannel(inL, this.envL, this.gainL);
-    const [outR, envR, gainR] = this.processChannel(inR, this.envR, this.gainR);
-    this.envL = envL;
-    this.gainL = gainL;
-    this.envR = envR;
-    this.gainR = gainR;
+
+    // Linked stereo: use max of L/R for envelope
+    const peak = Math.max(Math.abs(inL), Math.abs(inR));
+    const sq = peak * peak;
+
+    // Envelope follower
+    const coeff = sq > this.env ? this.attackCoeff : this.releaseCoeff;
+    this.env = sq * (1 - coeff) + this.env * coeff;
+
+    // Convert to dB
+    const rms = Math.sqrt(Math.max(this.env, 1e-10));
+    const inputDb = 20 * Math.log10(rms);
+
+    // Compute target gain with soft knee
+    const targetGain = this.computeGain(inputDb);
+
+    // Smooth gain changes
+    const gainCoeff = targetGain < this.gain ? 1 - this.attackCoeff : 1 - this.releaseCoeff;
+    this.gain += (targetGain - this.gain) * gainCoeff;
+
+    const outL = inL * this.gain * this.makeupGain;
+    const outR = inR * this.gain * this.makeupGain;
+
     const m = this.mix;
     return [inL * (1 - m) + outL * m, inR * (1 - m) + outR * m];
   }

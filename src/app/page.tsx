@@ -246,7 +246,7 @@ export default function Home() {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-accent-green animate-pulse" />
-              <span className="text-xs font-medium tracking-wider">Web Synth -Nexona</span>
+              <span className="text-xs font-medium tracking-wider">Nexona</span>
             </div>
             <Visualizer waveformData={waveformData} />
           </div>
