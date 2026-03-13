@@ -97,6 +97,7 @@ export const synthState = proxy({
     drive: 1,
     type: 0,
     envAmount: 0,
+    input: 0b1111, // bitmask: bit0=oscA, bit1=oscB, bit2=oscC, bit3=noise
   },
   filter2: {
     on: true,
@@ -105,6 +106,7 @@ export const synthState = proxy({
     drive: 1,
     type: 0,
     envAmount: 0,
+    input: 0b10000, // bitmask: bit4=filter1
   },
   envelopes: {
     amp: { attack: 0.01, decay: 0.1, sustain: 0.7, release: 0.3 },
@@ -125,6 +127,7 @@ export const synthState = proxy({
     reverb: { decay: 0.7, mix: 0 },
     eq: { lowGain: 0, midGain: 0, highGain: 0, mix: 0 },
   },
+  effectsOrder: ["distortion", "compressor", "chorus", "flanger", "phaser", "delay", "reverb", "eq"] as string[],
   master: {
     volume: 0.8,
   },
@@ -233,6 +236,7 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
     setParam(sabView, SabParam.FilterDrive, f.drive);
     setParam(sabView, SabParam.FilterType, f.type);
     setParam(sabView, SabParam.FilterEnvAmount, f.envAmount);
+    setParam(sabView, SabParam.Filter1Input, f.input);
   };
 
   const syncFilter2 = () => {
@@ -243,6 +247,7 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
     setParam(sabView, SabParam.Filter2Drive, f.drive);
     setParam(sabView, SabParam.Filter2Type, f.type);
     setParam(sabView, SabParam.Filter2EnvAmount, f.envAmount);
+    setParam(sabView, SabParam.Filter2Input, f.input);
   };
 
   const syncAmpEnv = () => {
@@ -302,6 +307,19 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
     setParam(sabView, SabParam.EqMix, fx.eq.mix);
   };
 
+  const EFFECT_NAME_TO_INDEX: Record<string, number> = {
+    distortion: 0, compressor: 1, chorus: 2, flanger: 3,
+    phaser: 4, delay: 5, reverb: 6, eq: 7,
+  };
+
+  const syncEffectsOrder = () => {
+    const order = synthState.effectsOrder;
+    for (let i = 0; i < 8; i++) {
+      const idx = EFFECT_NAME_TO_INDEX[order[i]] ?? i;
+      setParam(sabView, SabParam.EffectsOrder0 + i, idx);
+    }
+  };
+
   const syncMisc = () => {
     setParam(sabView, SabParam.DriftAmount, synthState.drift);
     setParam(sabView, SabParam.Macro1, synthState.macros[0]);
@@ -323,7 +341,10 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
   unsubs.push(subscribe(synthState.envelopes.filter, syncFilterEnv));
   unsubs.push(subscribe(synthState.lfos, syncLfos));
   unsubs.push(subscribe(synthState.effects, syncEffects));
-  unsubs.push(subscribe(synthState, syncMisc));
+  unsubs.push(subscribe(synthState, () => {
+    syncEffectsOrder();
+    syncMisc();
+  }));
 
   // Initial sync
   syncMaster();
@@ -338,6 +359,7 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
   syncFilterEnv();
   syncLfos();
   syncEffects();
+  syncEffectsOrder();
   syncMisc();
 
   return () => {
@@ -411,6 +433,9 @@ export function restoreStateFromSavedData(data: unknown): void {
   if (Array.isArray(saved.macros)) {
     synthState.macros = [...saved.macros];
   }
+  if (Array.isArray(saved.effectsOrder) && saved.effectsOrder.length === 8) {
+    synthState.effectsOrder = [...saved.effectsOrder] as string[];
+  }
 }
 
 /**
@@ -453,6 +478,7 @@ export function setupAutoSave(): () => void {
       master: { ...synthState.master },
       drift: synthState.drift,
       macros: [...synthState.macros],
+      effectsOrder: [...synthState.effectsOrder],
     };
 
     await saveState(stateCopy);

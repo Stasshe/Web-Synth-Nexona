@@ -82,12 +82,24 @@ class SynthProcessor extends AudioWorkletProcessor {
     if (this.blockCount >= 8) {
       this.blockCount = 0;
       const left = outputs[0][0];
+      const right = outputs[0][1];
       const feedback = this.engine.getModFeedback();
       if (left) {
+        // Compute peak levels for L/R
+        let peakL = 0;
+        let peakR = 0;
+        for (let i = 0; i < left.length; i++) {
+          const absL = Math.abs(left[i]);
+          const absR = right ? Math.abs(right[i]) : absL;
+          if (absL > peakL) peakL = absL;
+          if (absR > peakR) peakR = absR;
+        }
+
         this.waveformBuffer.set(left);
-        this.port.postMessage({ type: "waveform", data: this.waveformBuffer, feedback }, [
-          this.waveformBuffer.buffer,
-        ]);
+        this.port.postMessage(
+          { type: "waveform", data: this.waveformBuffer, feedback, peakL, peakR },
+          [this.waveformBuffer.buffer],
+        );
         this.waveformBuffer = new Float32Array(128);
       }
     }

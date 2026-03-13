@@ -76,6 +76,7 @@ export interface VoiceParams {
   filterType: number;
   filterEnvAmount: number;
   filterOn: boolean;
+  filter1Input: number; // bitmask: bit0=oscA, bit1=oscB, bit2=oscC, bit3=noise (default 0b1111=all)
 
   filter2Cutoff: number;
   filter2Resonance: number;
@@ -83,6 +84,7 @@ export interface VoiceParams {
   filter2Type: number;
   filter2EnvAmount: number;
   filter2On: boolean;
+  filter2Input: number; // bitmask: bit0=oscA, bit1=oscB, bit2=oscC, bit3=noise, bit4=filter1 (default 0b10000)
 
   ampAttack: number;
   ampDecay: number;
@@ -290,6 +292,16 @@ export class Voice {
     let mixL = 0;
     let mixR = 0;
 
+    // Individual source outputs for filter routing
+    let oscAL = 0;
+    let oscAR = 0;
+    let oscBL = 0;
+    let oscBR = 0;
+    let oscCL = 0;
+    let oscCR = 0;
+    let noiseL = 0;
+    let noiseR = 0;
+
     if (p.oscAOn) {
       const pitchOffset = p.oscAOctave * 12 + p.oscASemitone + p.oscADetune / 100 + modOscAPitch;
       const freq = midiToFreq(this.note + pitchOffset);
@@ -311,8 +323,8 @@ export class Voice {
       const aPan = clamp(p.oscAPan + modOscAPan, -1, 1);
       const aPanR = 0.5 + aPan * 0.5;
       const aPanL = 1 - aPanR;
-      mixL += al * aLevel * aPanL * 2;
-      mixR += ar * aLevel * aPanR * 2;
+      oscAL = al * aLevel * aPanL * 2;
+      oscAR = ar * aLevel * aPanR * 2;
     }
 
     if (p.oscBOn) {
@@ -336,8 +348,8 @@ export class Voice {
       const bPan = clamp(p.oscBPan + modOscBPan, -1, 1);
       const bPanR = 0.5 + bPan * 0.5;
       const bPanL = 1 - bPanR;
-      mixL += bl * bLevel * bPanL * 2;
-      mixR += br * bLevel * bPanR * 2;
+      oscBL = bl * bLevel * bPanL * 2;
+      oscBR = br * bLevel * bPanR * 2;
     }
 
     if (p.oscCOn) {
@@ -361,30 +373,53 @@ export class Voice {
       const cPan = clamp(p.oscCPan + modOscCPan, -1, 1);
       const cPanR = 0.5 + cPan * 0.5;
       const cPanL = 1 - cPanR;
-      mixL += cl * cLevel * cPanL * 2;
-      mixR += cr * cLevel * cPanR * 2;
+      oscCL = cl * cLevel * cPanL * 2;
+      oscCR = cr * cLevel * cPanR * 2;
     }
 
+    let subL = 0;
+    let subR = 0;
     if (p.subOn) {
       const subLvl = clamp(p.subLevel + modSubLevel, 0, 1);
       const s = this.sub.process() * subLvl;
-      mixL += s;
-      mixR += s;
+      subL = s;
+      subR = s;
     }
 
     if (p.noiseLevel > 0 || modNoiseLevel > 0) {
       const noiseLvl = clamp(p.noiseLevel + modNoiseLevel, 0, 1);
       const n = this.noise.process(p.noiseType) * noiseLvl;
-      mixL += n;
-      mixR += n;
+      noiseL = n;
+      noiseR = n;
     }
+
+    // Filter routing with bitmask-based input selection
+    const f1in = p.filter1Input;
+    const f2in = p.filter2Input;
+    let f1outL = 0;
+    let f1outR = 0;
+    let f2outL = 0;
+    let f2outR = 0;
+
+    // Track which sources are routed to any filter
+    const oscARouted = (p.filterOn && (f1in & 1)) || (p.filter2On && (f2in & 1));
+    const oscBRouted = (p.filterOn && (f1in & 2)) || (p.filter2On && (f2in & 2));
+    const oscCRouted = (p.filterOn && (f1in & 4)) || (p.filter2On && (f2in & 4));
+    const noiseRouted = (p.filterOn && (f1in & 8)) || (p.filter2On && (f2in & 8));
 
     // Filter 1
     if (p.filterOn) {
+      let f1L = 0;
+      let f1R = 0;
+      if (f1in & 1) { f1L += oscAL; f1R += oscAR; }
+      if (f1in & 2) { f1L += oscBL; f1R += oscBR; }
+      if (f1in & 4) { f1L += oscCL; f1R += oscCR; }
+      if (f1in & 8) { f1L += noiseL; f1R += noiseR; }
+
       const drive = clamp(p.filterDrive + modFilterDrive * 9, 1, 10);
       if (drive > 1) {
-        mixL = Math.tanh(mixL * drive) / drive;
-        mixR = Math.tanh(mixR * drive) / drive;
+        f1L = Math.tanh(f1L * drive) / drive;
+        f1R = Math.tanh(f1R * drive) / drive;
       }
       const baseCutoff = this.cutoffSmoother.tick();
       const envAmt = clamp(p.filterEnvAmount + modFilterEnvAmt, -1, 1);
@@ -397,16 +432,24 @@ export class Voice {
       const reso = clamp(p.filterResonance + modFilterReso * 0.99, 0, 0.99);
       this.filterL.setParams(cutoff, reso, this.sampleRate);
       this.filterR.setParams(cutoff, reso, this.sampleRate);
-      mixL = this.filterL.process(mixL);
-      mixR = this.filterR.process(mixR);
+      f1outL = this.filterL.process(f1L);
+      f1outR = this.filterR.process(f1R);
     }
 
-    // Filter 2 (series)
+    // Filter 2
     if (p.filter2On) {
+      let f2L = 0;
+      let f2R = 0;
+      if (f2in & 1) { f2L += oscAL; f2R += oscAR; }
+      if (f2in & 2) { f2L += oscBL; f2R += oscBR; }
+      if (f2in & 4) { f2L += oscCL; f2R += oscCR; }
+      if (f2in & 8) { f2L += noiseL; f2R += noiseR; }
+      if (f2in & 16) { f2L += f1outL; f2R += f1outR; } // filter1 output
+
       const drive2 = clamp(p.filter2Drive + modFilter2Drive * 9, 1, 10);
       if (drive2 > 1) {
-        mixL = Math.tanh(mixL * drive2) / drive2;
-        mixR = Math.tanh(mixR * drive2) / drive2;
+        f2L = Math.tanh(f2L * drive2) / drive2;
+        f2R = Math.tanh(f2R * drive2) / drive2;
       }
       const baseCutoff2 = this.cutoff2Smoother.tick();
       const envAmt2 = clamp(p.filter2EnvAmount + modFilter2EnvAmt, -1, 1);
@@ -419,9 +462,23 @@ export class Voice {
       const reso2 = clamp(p.filter2Resonance + modFilter2Reso * 0.99, 0, 0.99);
       this.filter2L.setParams(cutoff2, reso2, this.sampleRate);
       this.filter2R.setParams(cutoff2, reso2, this.sampleRate);
-      mixL = this.filter2L.process(mixL);
-      mixR = this.filter2R.process(mixR);
+      f2outL = this.filter2L.process(f2L);
+      f2outR = this.filter2R.process(f2R);
     }
+
+    // Sum: filtered outputs + unrouted sources (bypass direct to mix)
+    mixL = f1outL + f2outL;
+    mixR = f1outR + f2outR;
+
+    // Add sub (always unfiltered)
+    mixL += subL;
+    mixR += subR;
+
+    // Add unrouted sources directly
+    if (!oscARouted) { mixL += oscAL; mixR += oscAR; }
+    if (!oscBRouted) { mixL += oscBL; mixR += oscBR; }
+    if (!oscCRouted) { mixL += oscCL; mixR += oscCR; }
+    if (!noiseRouted) { mixL += noiseL; mixR += noiseR; }
 
     // Amp
     const level = this.levelSmoother.tick();

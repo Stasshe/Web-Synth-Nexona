@@ -48,6 +48,23 @@ export interface EffectsParams {
   eqMix: number;
 }
 
+interface Effect {
+  process(inL: number, inR: number): [number, number];
+}
+
+// Effect index constants matching SAB encoding
+export const EFFECT_COUNT = 8;
+export const EFFECT_NAMES = [
+  "distortion",
+  "compressor",
+  "chorus",
+  "flanger",
+  "phaser",
+  "delay",
+  "reverb",
+  "eq",
+] as const;
+
 export class EffectsChain {
   private distortion: Distortion;
   private compressor: Compressor;
@@ -59,6 +76,10 @@ export class EffectsChain {
   private eq: EQ;
   private limiter: Limiter;
 
+  // Indexed array for dynamic ordering
+  private effects: Effect[];
+  private order: number[] = [0, 1, 2, 3, 4, 5, 6, 7];
+
   constructor(sampleRate: number) {
     this.distortion = new Distortion();
     this.compressor = new Compressor(sampleRate);
@@ -69,6 +90,23 @@ export class EffectsChain {
     this.reverb = new Reverb(sampleRate);
     this.eq = new EQ(sampleRate);
     this.limiter = new Limiter(sampleRate);
+
+    this.effects = [
+      this.distortion,
+      this.compressor,
+      this.chorus,
+      this.flanger,
+      this.phaser,
+      this.delay,
+      this.reverb,
+      this.eq,
+    ];
+  }
+
+  setOrder(order: number[]): void {
+    if (order.length === EFFECT_COUNT) {
+      this.order = order;
+    }
   }
 
   setParams(p: EffectsParams): void {
@@ -95,14 +133,18 @@ export class EffectsChain {
   }
 
   process(inL: number, inR: number): [number, number] {
-    let [l, r] = this.distortion.process(inL, inR);
-    [l, r] = this.compressor.process(l, r);
-    [l, r] = this.chorus.process(l, r);
-    [l, r] = this.flanger.process(l, r);
-    [l, r] = this.phaser.process(l, r);
-    [l, r] = this.delay.process(l, r);
-    [l, r] = this.reverb.process(l, r);
-    [l, r] = this.eq.process(l, r);
+    let l = inL;
+    let r = inR;
+
+    // Process effects in user-defined order
+    for (let i = 0; i < this.order.length; i++) {
+      const idx = this.order[i];
+      if (idx >= 0 && idx < this.effects.length) {
+        [l, r] = this.effects[idx].process(l, r);
+      }
+    }
+
+    // Limiter always last (safety)
     [l, r] = this.limiter.process(l, r);
     return [l, r];
   }

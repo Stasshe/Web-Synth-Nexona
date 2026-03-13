@@ -162,6 +162,20 @@ export enum SabParam {
   EqMidGain = 179,
   EqHighGain = 180,
   EqMix = 181,
+
+  // Effects order: 190-197 (value = effect index: 0=dist,1=comp,2=chorus,3=flanger,4=phaser,5=delay,6=reverb,7=eq)
+  EffectsOrder0 = 190,
+  EffectsOrder1 = 191,
+  EffectsOrder2 = 192,
+  EffectsOrder3 = 193,
+  EffectsOrder4 = 194,
+  EffectsOrder5 = 195,
+  EffectsOrder6 = 196,
+  EffectsOrder7 = 197,
+
+  // Filter input bitmasks: 198-199
+  Filter1Input = 198,
+  Filter2Input = 199,
 }
 
 const f32Buf = new ArrayBuffer(4);

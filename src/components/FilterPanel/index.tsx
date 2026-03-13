@@ -52,6 +52,37 @@ export function FilterPanel({ filter = 1 }: FilterPanelProps) {
       onToggle={() => (state.on = !state.on)}
       enabled={f.on}
     >
+      {/* Input source selection */}
+      <div className="flex gap-0.5 mb-1">
+        <span className="text-[8px] text-text-muted mr-1 self-center">IN</span>
+        {([
+          { label: "A", bit: 0 },
+          { label: "B", bit: 1 },
+          { label: "C", bit: 2 },
+          { label: "N", bit: 3 },
+          ...(filter === 2 ? [{ label: "F1", bit: 4 }] : []),
+        ] as const).map(({ label, bit }) => {
+          const isActive = (f.input & (1 << bit)) !== 0;
+          return (
+            <button
+              key={label}
+              type="button"
+              onClick={() => (state.input = f.input ^ (1 << bit))}
+              className="px-1.5 py-0.5 text-[8px] rounded border transition-colors cursor-pointer font-mono"
+              style={{
+                borderColor: isActive ? color : "var(--border)",
+                color: isActive ? color : "var(--text-muted)",
+                backgroundColor: isActive
+                  ? `color-mix(in srgb, ${color} 25%, transparent)`
+                  : "transparent",
+              }}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Category tabs */}
       <div className="flex gap-0.5 mb-1">
         {categories.map((cat) => {

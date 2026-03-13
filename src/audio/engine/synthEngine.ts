@@ -124,6 +124,7 @@ export class SynthEngine {
     filterType: 0,
     filterEnvAmount: 0,
     filterOn: true,
+    filter1Input: 0b1111, // all sources
 
     filter2Cutoff: 20000,
     filter2Resonance: 0,
@@ -131,6 +132,7 @@ export class SynthEngine {
     filter2Type: 0,
     filter2EnvAmount: 0,
     filter2On: true,
+    filter2Input: 0b10000, // filter1 only
 
     ampAttack: 0.01,
     ampDecay: 0.1,
@@ -551,6 +553,7 @@ export class SynthEngine {
     this.voiceParams.filterType = Math.round(getParam(this.sab, SabParam.FilterType));
     this.voiceParams.filterEnvAmount = getParam(this.sab, SabParam.FilterEnvAmount);
     this.voiceParams.filterOn = getParam(this.sab, SabParam.FilterOn) >= 0.5;
+    this.voiceParams.filter1Input = Math.round(getParam(this.sab, SabParam.Filter1Input)) || 0b1111;
 
     // Filter 2
     this.voiceParams.filter2Cutoff = getParam(this.sab, SabParam.Filter2Cutoff);
@@ -559,6 +562,7 @@ export class SynthEngine {
     this.voiceParams.filter2Type = Math.round(getParam(this.sab, SabParam.Filter2Type));
     this.voiceParams.filter2EnvAmount = getParam(this.sab, SabParam.Filter2EnvAmount);
     this.voiceParams.filter2On = getParam(this.sab, SabParam.Filter2On) >= 0.5;
+    this.voiceParams.filter2Input = Math.round(getParam(this.sab, SabParam.Filter2Input)) || 0b10000;
 
     // Envelopes
     this.voiceParams.ampAttack = getParam(this.sab, SabParam.AmpEnvAttack);
@@ -611,6 +615,13 @@ export class SynthEngine {
     this.effectsParams.eqMidGain = getParam(this.sab, SabParam.EqMidGain);
     this.effectsParams.eqHighGain = getParam(this.sab, SabParam.EqHighGain);
     this.effectsParams.eqMix = getParam(this.sab, SabParam.EqMix);
+
+    // Effects order
+    const order: number[] = [];
+    for (let i = 0; i < 8; i++) {
+      order.push(Math.round(getParam(this.sab, SabParam.EffectsOrder0 + i)));
+    }
+    this.effectsChain.setOrder(order);
 
     // Misc
     this.voiceParams.driftAmount = getParam(this.sab, SabParam.DriftAmount);

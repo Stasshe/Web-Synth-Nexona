@@ -11,6 +11,7 @@ import { Keyboard } from "@/components/Keyboard";
 import { MacroStrip } from "@/components/MacroPanel";
 import { ModulatorSidebar } from "@/components/ModulatorSidebar";
 import { ParamEditor } from "@/components/ParamEditor";
+import { LevelMeter } from "@/components/LevelMeter";
 import { Visualizer } from "@/components/Visualizer";
 import { VoicePage } from "@/components/VoicePage";
 import { WaveformEditor } from "@/components/WaveformEditor";
@@ -32,6 +33,7 @@ export default function Home() {
   const recorderRef = useRef<AudioRecorder | null>(null);
   const ctxRef = useRef<AudioContext | null>(null);
   const [waveformData, setWaveformData] = useState<Float32Array | null>(null);
+  const [levelData, setLevelData] = useState({ peakL: 0, peakR: 0 });
   const [paramEditorOpen, setParamEditorOpen] = useState(false);
   const [waveEditorOsc, setWaveEditorOsc] = useState<"a" | "b" | "c" | null>(null);
   const [recState, setRecState] = useState<"idle" | "recording" | "done">("idle");
@@ -129,6 +131,7 @@ export default function Home() {
     bindStateToSAB(synth.sabView);
     synth.onWaveformData(setWaveformData);
     synth.onModFeedback(updateModFeedback);
+    synth.onLevelData((peakL, peakR) => setLevelData({ peakL, peakR }));
     applyCustomWavetables(synth);
     setStarted(true);
   }, [started, applyCustomWavetables]);
@@ -249,6 +252,7 @@ export default function Home() {
               <span className="text-xs font-medium tracking-wider">Nexona</span>
             </div>
             <Visualizer waveformData={waveformData} />
+            <LevelMeter peakL={levelData.peakL} peakR={levelData.peakR} />
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1">
