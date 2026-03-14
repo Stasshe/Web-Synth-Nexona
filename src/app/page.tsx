@@ -20,6 +20,7 @@ import { useGlobalScrollLock } from "@/hooks/scrollLock";
 import { loadPatchIntoState, urlToPatch } from "@/patch/loader";
 import { patchToUrl, stateToPatch } from "@/patch/serializer";
 import { updateModFeedback } from "@/state/modFeedback";
+import { audioFeedback } from "@/state/audioFeedback";
 import { bindStateToSAB, synthState, restoreStateFromSavedData, setupAutoSave } from "@/state/synthState";
 import { initIndexedDB, loadState } from "@/storage/indexeddb";
 import { Circle, Code, Download, Power, Share2, Square, Upload, Volume2, X } from "lucide-react";
@@ -132,6 +133,9 @@ export default function Home() {
     synth.onWaveformData(setWaveformData);
     synth.onModFeedback(updateModFeedback);
     synth.onLevelData((peakL, peakR) => setLevelData({ peakL, peakR }));
+    synth.onCompGRData((gr) => {
+      audioFeedback.compGR = gr;
+    });
     applyCustomWavetables(synth);
     setStarted(true);
   }, [started, applyCustomWavetables]);
@@ -251,8 +255,14 @@ export default function Home() {
               <div className="w-2 h-2 rounded-full bg-accent-green animate-pulse" />
               <span className="text-xs font-medium tracking-wider">Nexona</span>
             </div>
-            <Visualizer waveformData={waveformData} />
-            <LevelMeter peakL={levelData.peakL} peakR={levelData.peakR} />
+            <div className="flex items-center gap-1.5">
+              <span className="text-[8px] text-text-muted uppercase tracking-wider">Scope</span>
+              <Visualizer waveformData={waveformData} />
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-[8px] text-text-muted uppercase tracking-wider">Out</span>
+              <LevelMeter peakL={levelData.peakL} peakR={levelData.peakR} />
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1">

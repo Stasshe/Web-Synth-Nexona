@@ -11,6 +11,7 @@ export const modFeedbackState = proxy<ModFeedback>({
   envAmpState: 0,
   envFilterLevel: 0,
   envFilterState: 0,
+  compGainReduction: 0,
 });
 
 export function updateModFeedback(fb: ModFeedback): void {
@@ -23,4 +24,5 @@ export function updateModFeedback(fb: ModFeedback): void {
   modFeedbackState.envAmpState = fb.envAmpState;
   modFeedbackState.envFilterLevel = fb.envFilterLevel;
   modFeedbackState.envFilterState = fb.envFilterState;
+  modFeedbackState.compGainReduction = fb.compGainReduction;
 }

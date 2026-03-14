@@ -119,7 +119,7 @@ export const synthState = proxy({
   modulations: [] as ModRoute[],
   effects: {
     distortion: { drive: 1, tone: 0.5, mix: 0, mode: 0 },
-    compressor: { threshold: -12, ratio: 4, attack: 0.01, release: 0.1, makeup: 0, mix: 0 },
+    compressor: { threshold: -12, ratio: 4, attack: 0.01, release: 0.1, makeup: 0, mix: 0, knee: 6 },
     chorus: { rate: 0.5, depth: 0.3, mix: 0 },
     flanger: { rate: 0.5, depth: 0.5, feedback: 0.5, mix: 0 },
     phaser: { rate: 0.5, depth: 0.5, feedback: 0.5, mix: 0 },
@@ -285,6 +285,7 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
     setParam(sabView, SabParam.CompRelease, fx.compressor.release);
     setParam(sabView, SabParam.CompMakeup, fx.compressor.makeup);
     setParam(sabView, SabParam.CompMix, fx.compressor.mix);
+    setParam(sabView, SabParam.CompKnee, fx.compressor.knee);
     setParam(sabView, SabParam.ChorusRate, fx.chorus.rate);
     setParam(sabView, SabParam.ChorusDepth, fx.chorus.depth);
     setParam(sabView, SabParam.ChorusMix, fx.chorus.mix);

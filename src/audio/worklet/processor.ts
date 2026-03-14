@@ -97,7 +97,7 @@ class SynthProcessor extends AudioWorkletProcessor {
 
         this.waveformBuffer.set(left);
         this.port.postMessage(
-          { type: "waveform", data: this.waveformBuffer, feedback, peakL, peakR },
+          { type: "waveform", data: this.waveformBuffer, feedback, peakL, peakR, compGR: this.engine.getCompGR() },
           [this.waveformBuffer.buffer],
         );
         this.waveformBuffer = new Float32Array(128);

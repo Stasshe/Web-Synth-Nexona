@@ -24,6 +24,7 @@ export interface ModFeedback {
   envAmpState: number;
   envFilterLevel: number;
   envFilterState: number;
+  compGainReduction: number;
 }
 
 export class SynthEngine {
@@ -159,6 +160,7 @@ export class SynthEngine {
     compRelease: 0.1,
     compMakeup: 0,
     compMix: 0,
+    compKnee: 6,
 
     chorusRate: 0.5,
     chorusDepth: 0.3,
@@ -304,6 +306,10 @@ export class SynthEngine {
     }
   }
 
+  getCompGR(): number {
+    return this.effectsChain.getCompGR();
+  }
+
   getModFeedback(): ModFeedback {
     const voiceEnv = this.voiceManager.getActiveEnvelopeState();
     return {
@@ -316,6 +322,7 @@ export class SynthEngine {
       envAmpState: voiceEnv.ampState,
       envFilterLevel: voiceEnv.filterLevel,
       envFilterState: voiceEnv.filterState,
+      compGainReduction: this.effectsChain.getCompGR(),
     };
   }
 
@@ -595,6 +602,7 @@ export class SynthEngine {
     this.effectsParams.compRelease = getParam(this.sab, SabParam.CompRelease);
     this.effectsParams.compMakeup = getParam(this.sab, SabParam.CompMakeup);
     this.effectsParams.compMix = getParam(this.sab, SabParam.CompMix);
+    this.effectsParams.compKnee = getParam(this.sab, SabParam.CompKnee);
     this.effectsParams.chorusRate = getParam(this.sab, SabParam.ChorusRate);
     this.effectsParams.chorusDepth = getParam(this.sab, SabParam.ChorusDepth);
     this.effectsParams.chorusMix = getParam(this.sab, SabParam.ChorusMix);

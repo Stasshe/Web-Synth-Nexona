@@ -6,6 +6,7 @@ export class Compressor {
   private release = 0.1;
   private makeupGain = 1;
   private mix = 0;
+  private kneeWidth = 6;
 
   private env = 0; // linked stereo envelope
   private gain = 1;
@@ -14,7 +15,6 @@ export class Compressor {
   // Cached coefficients (computed once per setParams, not per sample)
   private attackCoeff = 0;
   private releaseCoeff = 0;
-  private kneeWidth = 6; // 6dB soft knee
 
   constructor(sampleRate: number) {
     this.sampleRate = sampleRate;
@@ -33,9 +33,11 @@ export class Compressor {
     release: number,
     makeupGain: number,
     mix: number,
+    knee: number,
   ): void {
     this.threshold = threshold;
     this.ratio = Math.max(1, ratio);
+    this.kneeWidth = Math.max(0, knee);
     if (this.attack !== attack || this.release !== release) {
       this.attack = attack;
       this.release = release;
@@ -45,10 +47,23 @@ export class Compressor {
     this.mix = mix;
   }
 
+  /** Gain reduction in dB (positive = reducing gain). */
+  getGainReductionDb(): number {
+    return this.gain < 1 ? -20 * Math.log10(Math.max(this.gain, 1e-6)) : 0;
+  }
+
   private computeGain(inputDb: number): number {
     const t = this.threshold;
     const r = this.ratio;
     const k = this.kneeWidth;
+
+    if (k < 0.1) {
+      // Hard knee
+      if (inputDb <= t) return 1;
+      const excess = inputDb - t;
+      return 10 ** (-(excess * (1 - 1 / r)) / 20);
+    }
+
     const halfKnee = k * 0.5;
 
     if (inputDb <= t - halfKnee) {

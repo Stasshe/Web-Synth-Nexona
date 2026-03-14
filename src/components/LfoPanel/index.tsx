@@ -49,7 +49,8 @@ export function LfoPanel({ index }: LfoPanelProps) {
 
     const w = canvas.width;
     const h = canvas.height;
-    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = "#0d0d14";
+    ctx.fillRect(0, 0, w, h);
 
     // Center line
     ctx.strokeStyle = "#2a2a45";

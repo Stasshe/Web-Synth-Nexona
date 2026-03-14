@@ -20,6 +20,7 @@ export interface EffectsParams {
   compRelease: number;
   compMakeup: number;
   compMix: number;
+  compKnee: number;
 
   chorusRate: number;
   chorusDepth: number;
@@ -52,7 +53,6 @@ interface Effect {
   process(inL: number, inR: number): [number, number];
 }
 
-// Effect index constants matching SAB encoding
 export const EFFECT_COUNT = 8;
 export const EFFECT_NAMES = [
   "distortion",
@@ -76,7 +76,6 @@ export class EffectsChain {
   private eq: EQ;
   private limiter: Limiter;
 
-  // Indexed array for dynamic ordering
   private effects: Effect[];
   private order: number[] = [0, 1, 2, 3, 4, 5, 6, 7];
 
@@ -109,6 +108,10 @@ export class EffectsChain {
     }
   }
 
+  getCompGR(): number {
+    return this.compressor.getGainReductionDb();
+  }
+
   setParams(p: EffectsParams): void {
     this.distortion.setParams(
       p.distortionDrive,
@@ -123,6 +126,7 @@ export class EffectsChain {
       p.compRelease,
       10 ** (p.compMakeup / 20),
       p.compMix,
+      p.compKnee,
     );
     this.chorus.setParams(p.chorusRate, p.chorusDepth, p.chorusMix);
     this.flanger.setParams(p.flangerRate, p.flangerDepth, p.flangerFeedback, p.flangerMix);
@@ -136,7 +140,6 @@ export class EffectsChain {
     let l = inL;
     let r = inR;
 
-    // Process effects in user-defined order
     for (let i = 0; i < this.order.length; i++) {
       const idx = this.order[i];
       if (idx >= 0 && idx < this.effects.length) {
@@ -144,7 +147,6 @@ export class EffectsChain {
       }
     }
 
-    // Limiter always last (safety)
     [l, r] = this.limiter.process(l, r);
     return [l, r];
   }

@@ -17,6 +17,7 @@ export interface SynthNode {
   onWaveformData: (callback: (data: Float32Array) => void) => void;
   onModFeedback: (callback: (feedback: ModFeedback) => void) => void;
   onLevelData: (callback: (peakL: number, peakR: number) => void) => void;
+  onCompGRData: (callback: (gr: number) => void) => void;
   disconnect: () => void;
 }
 
@@ -37,12 +38,14 @@ export async function createSynthNode(ctx: AudioContext): Promise<SynthNode> {
   let waveformCallback: ((data: Float32Array) => void) | null = null;
   let modFeedbackCallback: ((feedback: ModFeedback) => void) | null = null;
   let levelCallback: ((peakL: number, peakR: number) => void) | null = null;
+  let compGRCallback: ((gr: number) => void) | null = null;
 
   node.port.onmessage = (e: MessageEvent) => {
     if (e.data.type === "waveform") {
       if (waveformCallback) waveformCallback(e.data.data);
       if (modFeedbackCallback && e.data.feedback) modFeedbackCallback(e.data.feedback);
       if (levelCallback) levelCallback(e.data.peakL ?? 0, e.data.peakR ?? 0);
+      if (compGRCallback) compGRCallback(e.data.compGR ?? 0);
     }
   };
 
@@ -80,6 +83,9 @@ export async function createSynthNode(ctx: AudioContext): Promise<SynthNode> {
     },
     onLevelData(callback: (peakL: number, peakR: number) => void) {
       levelCallback = callback;
+    },
+    onCompGRData(callback: (gr: number) => void) {
+      compGRCallback = callback;
     },
     disconnect() {
       node.disconnect();
