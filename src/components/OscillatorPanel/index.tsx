@@ -9,7 +9,7 @@ import { Panel } from "@/components/ui/Panel";
 import { SelectPopup } from "@/components/ui/SelectPopup";
 import { SelectWithArrows } from "@/components/ui/SelectWithArrows";
 import { UnisonViewer } from "@/components/OscillatorPanel/UnisonViewer";
-import { Wavetable2dViewer } from "@/components/OscillatorPanel/Wavetable2dViewer";
+import { Wavetable2dViewer } from "@/components/OscillatorPanel/WavetableViewer";
 import type { ModSourceDragItem } from "@/dnd/types";
 import { useModRoutes } from "@/hooks/useModAmount";
 import { synthState } from "@/state/synthState";
