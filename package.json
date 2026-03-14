@@ -8,7 +8,6 @@
     "build": "npm run build:presets && npm run build:worklet && next build",
     "build:worklet": "node scripts/build-worklet.mjs",
     "build:presets": "node scripts/build-presets.mjs",
-    "start": "npx serve out -s -l 3000",
     "test": "vitest",
     "lint": "biome check .",
     "format": "biome format . --write"
