@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 export type WavetableViewMode = "2d" | "spectrum";
 
-interface Wavetable3dViewerProps {
+interface Wavetable2dViewerProps {
   waveformType: number;
   framePosition: number;
   customWaveform: readonly number[] | null;
@@ -31,7 +31,7 @@ function computeSpectrum(samples: ReturnType<typeof computeMorphedPreviewSamples
   return result;
 }
 
-export function Wavetable3dViewer({
+export function Wavetable2dViewer({
   waveformType,
   framePosition,
   customWaveform,
@@ -39,7 +39,7 @@ export function Wavetable3dViewer({
   spectralMorphType,
   spectralMorphAmount,
   onClick,
-}: Wavetable3dViewerProps) {
+}: Wavetable2dViewerProps) {
   const [mode, setMode] = useState<WavetableViewMode>("2d");
   const canvasRef = useRef<HTMLCanvasElement>(null);
 

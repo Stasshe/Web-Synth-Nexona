@@ -9,7 +9,7 @@ import { Panel } from "@/components/ui/Panel";
 import { SelectPopup } from "@/components/ui/SelectPopup";
 import { SelectWithArrows } from "@/components/ui/SelectWithArrows";
 import { UnisonViewer } from "@/components/OscillatorPanel/UnisonViewer";
-import { Wavetable3dViewer } from "@/components/OscillatorPanel/WavetablePreview";
+import { Wavetable2dViewer } from "@/components/OscillatorPanel/Wavetable2dViewer";
 import type { ModSourceDragItem } from "@/dnd/types";
 import { useModRoutes } from "@/hooks/useModAmount";
 import { synthState } from "@/state/synthState";
@@ -169,48 +169,15 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
             />
           </div>
 
-          <div className="flex gap-1.5">
-            <div className="flex-1 min-w-0">
-              <Wavetable3dViewer
-                waveformType={data.waveformType}
-                framePosition={data.framePosition}
-                customWaveform={data.customWaveform}
-                color={color}
-                spectralMorphType={data.spectralMorphType}
-                spectralMorphAmount={data.spectralMorphAmount}
-                onClick={onOpenWaveEditor}
-              />
-            </div>
-            <div className="flex flex-col justify-between">
-              <Knob
-                label="Level"
-                value={data.level}
-                min={0}
-                max={1}
-                onChange={(v) => (state.level = v)}
-                color={color}
-                modRoutes={modLevel}
-                onModDrop={handleModDrop(targets.level)}
-                modTarget={targets.level}
-                size={26}
-              />
-              <Knob
-                label="Pan"
-                value={data.pan}
-                min={-1}
-                max={1}
-                onChange={(v) => (state.pan = v)}
-                color={color}
-                modRoutes={modPan}
-                onModDrop={handleModDrop(targets.pan)}
-                modTarget={targets.pan}
-                formatValue={(v) =>
-                  Math.abs(v) < 0.01 ? "C" : v < 0 ? `L${Math.abs(Math.round(v * 100))}` : `R${Math.round(v * 100)}`
-                }
-                size={26}
-              />
-            </div>
-          </div>
+          <Wavetable2dViewer
+            waveformType={data.waveformType}
+            framePosition={data.framePosition}
+            customWaveform={data.customWaveform}
+            color={color}
+            spectralMorphType={data.spectralMorphType}
+            spectralMorphAmount={data.spectralMorphAmount}
+            onClick={onOpenWaveEditor}
+          />
 
           <div className="flex items-center gap-1.5 mt-2 px-0.5">
             <Knob
@@ -238,6 +205,36 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
                 background: `linear-gradient(to right, ${color} ${data.framePosition * 100}%, var(--bg-darkest) ${data.framePosition * 100}%)`,
                 accentColor: color,
               }}
+            />
+          </div>
+
+          <div className="flex justify-center gap-6 mt-1.5 px-0.5">
+            <Knob
+              label="Level"
+              value={data.level}
+              min={0}
+              max={1}
+              onChange={(v) => (state.level = v)}
+              color={color}
+              modRoutes={modLevel}
+              onModDrop={handleModDrop(targets.level)}
+              modTarget={targets.level}
+              size={26}
+            />
+            <Knob
+              label="Pan"
+              value={data.pan}
+              min={-1}
+              max={1}
+              onChange={(v) => (state.pan = v)}
+              color={color}
+              modRoutes={modPan}
+              onModDrop={handleModDrop(targets.pan)}
+              modTarget={targets.pan}
+              formatValue={(v) =>
+                Math.abs(v) < 0.01 ? "C" : v < 0 ? `L${Math.abs(Math.round(v * 100))}` : `R${Math.round(v * 100)}`
+              }
+              size={26}
             />
           </div>
         </div>
