@@ -193,11 +193,6 @@ export function CompressorGraph({ threshold, ratio, knee, gainReduction }: Compr
   }, [draw]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={92}
-      height={68}
-      className="w-[92px] h-[68px] rounded shrink-0"
-    />
+    <canvas ref={canvasRef} width={92} height={68} className="w-[92px] h-[68px] rounded shrink-0" />
   );
 }

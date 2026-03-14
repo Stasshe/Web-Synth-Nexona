@@ -84,10 +84,17 @@
     }
   },
   "noise": { "type": 0, "level": 0 },
-  "filter": { "on": true, "cutoff": 7000, "resonance": 0.05, "drive": 0, "type": 0, "envAmount": 0 },
+  "filter": {
+    "on": true,
+    "cutoff": 7000,
+    "resonance": 0.05,
+    "drive": 0,
+    "type": 0,
+    "envAmount": 0
+  },
   "filter2": { "on": false, "cutoff": 8000, "resonance": 0, "drive": 0, "type": 0, "envAmount": 0 },
   "envelopes": {
-    "amp":    { "attack": 0.008, "decay": 0.0, "sustain": 1.0, "release": 0.06 },
+    "amp": { "attack": 0.008, "decay": 0.0, "sustain": 1.0, "release": 0.06 },
     "filter": { "attack": 0.002, "decay": 0.2, "sustain": 0.5, "release": 0.3 }
   },
   "lfos": {
@@ -97,7 +104,7 @@
   "modulations": [],
   "effects": {
     "chorus": { "rate": 0.6, "depth": 0.25, "mix": 0.18 },
-    "delay":  { "time": 0.25, "feedback": 0.3, "mix": 0 },
+    "delay": { "time": 0.25, "feedback": 0.3, "mix": 0 },
     "reverb": { "decay": 0.35, "mix": 0.12 }
   },
   "master": { "volume": 0.8 },

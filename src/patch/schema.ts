@@ -96,7 +96,5 @@ interface EnvPatch {
 export function validatePatch(data: unknown): data is PatchData {
   if (typeof data !== "object" || data === null) return false;
   const d = data as Record<string, unknown>;
-  return (
-    d.version === 2 && typeof d.name === "string" && typeof d.oscillators === "object"
-  );
+  return d.version === 2 && typeof d.name === "string" && typeof d.oscillators === "object";
 }

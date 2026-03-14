@@ -34,8 +34,7 @@ export function generateNoiseShape(tableSize: number): Wavetable {
         // Use random phase offset
         const phaseOff = Math.floor(randPhases[h]);
         for (let i = 0; i <= tableSize; i++) {
-          table[i] += amp *
-            sineLut[(((i * h + phaseOff) % tableSize) + tableSize) % tableSize];
+          table[i] += amp * sineLut[(((i * h + phaseOff) % tableSize) + tableSize) % tableSize];
         }
       }
     }

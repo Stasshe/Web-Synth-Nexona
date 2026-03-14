@@ -402,19 +402,31 @@ export class Voice {
     let f2outR = 0;
 
     // Track which sources are routed to any filter
-    const oscARouted = (p.filterOn && (f1in & 1)) || (p.filter2On && (f2in & 1));
-    const oscBRouted = (p.filterOn && (f1in & 2)) || (p.filter2On && (f2in & 2));
-    const oscCRouted = (p.filterOn && (f1in & 4)) || (p.filter2On && (f2in & 4));
-    const noiseRouted = (p.filterOn && (f1in & 8)) || (p.filter2On && (f2in & 8));
+    const oscARouted = (p.filterOn && f1in & 1) || (p.filter2On && f2in & 1);
+    const oscBRouted = (p.filterOn && f1in & 2) || (p.filter2On && f2in & 2);
+    const oscCRouted = (p.filterOn && f1in & 4) || (p.filter2On && f2in & 4);
+    const noiseRouted = (p.filterOn && f1in & 8) || (p.filter2On && f2in & 8);
 
     // Filter 1
     if (p.filterOn) {
       let f1L = 0;
       let f1R = 0;
-      if (f1in & 1) { f1L += oscAL; f1R += oscAR; }
-      if (f1in & 2) { f1L += oscBL; f1R += oscBR; }
-      if (f1in & 4) { f1L += oscCL; f1R += oscCR; }
-      if (f1in & 8) { f1L += noiseL; f1R += noiseR; }
+      if (f1in & 1) {
+        f1L += oscAL;
+        f1R += oscAR;
+      }
+      if (f1in & 2) {
+        f1L += oscBL;
+        f1R += oscBR;
+      }
+      if (f1in & 4) {
+        f1L += oscCL;
+        f1R += oscCR;
+      }
+      if (f1in & 8) {
+        f1L += noiseL;
+        f1R += noiseR;
+      }
 
       const drive = clamp(p.filterDrive + modFilterDrive * 9, 1, 10);
       if (drive > 1) {
@@ -440,11 +452,26 @@ export class Voice {
     if (p.filter2On) {
       let f2L = 0;
       let f2R = 0;
-      if (f2in & 1) { f2L += oscAL; f2R += oscAR; }
-      if (f2in & 2) { f2L += oscBL; f2R += oscBR; }
-      if (f2in & 4) { f2L += oscCL; f2R += oscCR; }
-      if (f2in & 8) { f2L += noiseL; f2R += noiseR; }
-      if (f2in & 16) { f2L += f1outL; f2R += f1outR; } // filter1 output
+      if (f2in & 1) {
+        f2L += oscAL;
+        f2R += oscAR;
+      }
+      if (f2in & 2) {
+        f2L += oscBL;
+        f2R += oscBR;
+      }
+      if (f2in & 4) {
+        f2L += oscCL;
+        f2R += oscCR;
+      }
+      if (f2in & 8) {
+        f2L += noiseL;
+        f2R += noiseR;
+      }
+      if (f2in & 16) {
+        f2L += f1outL;
+        f2R += f1outR;
+      } // filter1 output
 
       const drive2 = clamp(p.filter2Drive + modFilter2Drive * 9, 1, 10);
       if (drive2 > 1) {
@@ -475,10 +502,22 @@ export class Voice {
     mixR += subR;
 
     // Add unrouted sources directly
-    if (!oscARouted) { mixL += oscAL; mixR += oscAR; }
-    if (!oscBRouted) { mixL += oscBL; mixR += oscBR; }
-    if (!oscCRouted) { mixL += oscCL; mixR += oscCR; }
-    if (!noiseRouted) { mixL += noiseL; mixR += noiseR; }
+    if (!oscARouted) {
+      mixL += oscAL;
+      mixR += oscAR;
+    }
+    if (!oscBRouted) {
+      mixL += oscBL;
+      mixR += oscBR;
+    }
+    if (!oscCRouted) {
+      mixL += oscCL;
+      mixR += oscCR;
+    }
+    if (!noiseRouted) {
+      mixL += noiseL;
+      mixR += noiseR;
+    }
 
     // Amp
     const level = this.levelSmoother.tick();

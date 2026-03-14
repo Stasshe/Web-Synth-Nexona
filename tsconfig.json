@@ -29,5 +29,9 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules", "src/audio/worklet/processor.ts", "src/audio/worklet/recorderProcessor.ts"]
+  "exclude": [
+    "node_modules",
+    "src/audio/worklet/processor.ts",
+    "src/audio/worklet/recorderProcessor.ts"
+  ]
 }

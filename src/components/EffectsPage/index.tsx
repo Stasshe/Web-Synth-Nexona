@@ -180,8 +180,7 @@ function CompGRMeter() {
     }
 
     const target = audioFeedback.compGR;
-    smoothGR.current +=
-      (target > smoothGR.current ? 0.5 : 0.05) * (target - smoothGR.current);
+    smoothGR.current += (target > smoothGR.current ? 0.5 : 0.05) * (target - smoothGR.current);
 
     const w = canvas.width;
     const h = canvas.height;

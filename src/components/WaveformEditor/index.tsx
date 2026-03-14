@@ -497,8 +497,8 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
         </div>
 
         <div className="px-4 py-1.5 text-[10px] text-text-muted border-t border-border-default">
-          Click empty space to add point. Drag to move. Tap existing point to delete. Select a
-          point to change its curve type.
+          Click empty space to add point. Drag to move. Tap existing point to delete. Select a point
+          to change its curve type.
         </div>
       </div>
     </div>

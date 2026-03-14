@@ -52,6 +52,4 @@ export const FACTORY_PRESETS: PatchData[] = ${JSON.stringify(presets, null, 2)};
 `;
 
 writeFileSync(outputFile, output, "utf-8");
-console.log(
-  `[build-presets] ${presets.length} presets → src/data/presets.generated.ts`,
-);
+console.log(`[build-presets] ${presets.length} presets → src/data/presets.generated.ts`);

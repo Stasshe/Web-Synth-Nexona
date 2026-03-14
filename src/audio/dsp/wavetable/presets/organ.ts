@@ -1,5 +1,11 @@
 import type { Wavetable } from "../wavetableTypes";
-import { NUM_FRAMES, buildSineLookup, normalize, addHarmonic, addCosHarmonic } from "../wavetableCommon";
+import {
+  NUM_FRAMES,
+  buildSineLookup,
+  normalize,
+  addHarmonic,
+  addCosHarmonic,
+} from "../wavetableCommon";
 
 export function generateOrgan(tableSize: number): Wavetable {
   const sineLut = buildSineLookup(tableSize);

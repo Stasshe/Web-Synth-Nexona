@@ -51,8 +51,14 @@ export function LevelMeter({ peakL, peakR }: LevelMeterProps) {
     if (smoothR.current < 0.0001) smoothR.current = 0;
 
     // Peak hold
-    if (smoothL.current > peakHoldL.current) { peakHoldL.current = smoothL.current; peakDecayL.current = 40; }
-    if (smoothR.current > peakHoldR.current) { peakHoldR.current = smoothR.current; peakDecayR.current = 40; }
+    if (smoothL.current > peakHoldL.current) {
+      peakHoldL.current = smoothL.current;
+      peakDecayL.current = 40;
+    }
+    if (smoothR.current > peakHoldR.current) {
+      peakHoldR.current = smoothR.current;
+      peakDecayR.current = 40;
+    }
     peakDecayL.current--;
     peakDecayR.current--;
     if (peakDecayL.current <= 0) peakHoldL.current *= 0.92;

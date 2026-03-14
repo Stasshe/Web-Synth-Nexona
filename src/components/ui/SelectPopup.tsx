@@ -30,7 +30,7 @@ export function SelectPopup({
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const currentLabel =
-    displayLabel ?? (options.find((o) => String(o.value) === String(value))?.label ?? String(value));
+    displayLabel ?? options.find((o) => String(o.value) === String(value))?.label ?? String(value);
 
   useEffect(() => {
     if (!open) return;
@@ -55,9 +55,7 @@ export function SelectPopup({
   const filteredOptions = options.filter((o) => {
     const q = query.trim().toLowerCase();
     if (!q) return true;
-    return (
-      o.label.toLowerCase().includes(q) || String(o.value).toLowerCase().includes(q)
-    );
+    return o.label.toLowerCase().includes(q) || String(o.value).toLowerCase().includes(q);
   });
 
   return (

@@ -1,5 +1,11 @@
 import type { Wavetable } from "../wavetableTypes";
-import { NUM_FRAMES, MAX_HARMONICS, buildSineLookup, normalize, addHarmonic } from "../wavetableCommon";
+import {
+  NUM_FRAMES,
+  MAX_HARMONICS,
+  buildSineLookup,
+  normalize,
+  addHarmonic,
+} from "../wavetableCommon";
 
 export function generateAdditive(tableSize: number): Wavetable {
   const sineLut = buildSineLookup(tableSize);

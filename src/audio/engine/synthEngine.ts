@@ -569,7 +569,8 @@ export class SynthEngine {
     this.voiceParams.filter2Type = Math.round(getParam(this.sab, SabParam.Filter2Type));
     this.voiceParams.filter2EnvAmount = getParam(this.sab, SabParam.Filter2EnvAmount);
     this.voiceParams.filter2On = getParam(this.sab, SabParam.Filter2On) >= 0.5;
-    this.voiceParams.filter2Input = Math.round(getParam(this.sab, SabParam.Filter2Input)) || 0b10000;
+    this.voiceParams.filter2Input =
+      Math.round(getParam(this.sab, SabParam.Filter2Input)) || 0b10000;
 
     // Envelopes
     this.voiceParams.ampAttack = getParam(this.sab, SabParam.AmpEnvAttack);

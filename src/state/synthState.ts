@@ -119,7 +119,15 @@ export const synthState = proxy({
   modulations: [] as ModRoute[],
   effects: {
     distortion: { drive: 1, tone: 0.5, mix: 0, mode: 0 },
-    compressor: { threshold: -12, ratio: 4, attack: 0.01, release: 0.1, makeup: 0, mix: 0, knee: 6 },
+    compressor: {
+      threshold: -12,
+      ratio: 4,
+      attack: 0.01,
+      release: 0.1,
+      makeup: 0,
+      mix: 0,
+      knee: 6,
+    },
     chorus: { rate: 0.5, depth: 0.3, mix: 0 },
     flanger: { rate: 0.5, depth: 0.5, feedback: 0.5, mix: 0 },
     phaser: { rate: 0.5, depth: 0.5, feedback: 0.5, mix: 0 },
@@ -127,7 +135,16 @@ export const synthState = proxy({
     reverb: { decay: 0.7, mix: 0 },
     eq: { lowGain: 0, midGain: 0, highGain: 0, mix: 0 },
   },
-  effectsOrder: ["distortion", "compressor", "chorus", "flanger", "phaser", "delay", "reverb", "eq"] as string[],
+  effectsOrder: [
+    "distortion",
+    "compressor",
+    "chorus",
+    "flanger",
+    "phaser",
+    "delay",
+    "reverb",
+    "eq",
+  ] as string[],
   master: {
     volume: 0.8,
   },
@@ -309,8 +326,14 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
   };
 
   const EFFECT_NAME_TO_INDEX: Record<string, number> = {
-    distortion: 0, compressor: 1, chorus: 2, flanger: 3,
-    phaser: 4, delay: 5, reverb: 6, eq: 7,
+    distortion: 0,
+    compressor: 1,
+    chorus: 2,
+    flanger: 3,
+    phaser: 4,
+    delay: 5,
+    reverb: 6,
+    eq: 7,
   };
 
   const syncEffectsOrder = () => {
@@ -342,10 +365,12 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
   unsubs.push(subscribe(synthState.envelopes.filter, syncFilterEnv));
   unsubs.push(subscribe(synthState.lfos, syncLfos));
   unsubs.push(subscribe(synthState.effects, syncEffects));
-  unsubs.push(subscribe(synthState, () => {
-    syncEffectsOrder();
-    syncMisc();
-  }));
+  unsubs.push(
+    subscribe(synthState, () => {
+      syncEffectsOrder();
+      syncMisc();
+    }),
+  );
 
   // Initial sync
   syncMaster();
@@ -396,7 +421,7 @@ export function restoreStateFromSavedData(data: unknown): void {
   if (saved.filter && typeof saved.filter === "object") {
     Object.assign(synthState.filter, saved.filter);
   }
-  if (saved.filter2 && typeof saved.filter2=== "object") {
+  if (saved.filter2 && typeof saved.filter2 === "object") {
     Object.assign(synthState.filter2, saved.filter2);
   }
   if (saved.envelopes && typeof saved.envelopes === "object") {
@@ -419,7 +444,16 @@ export function restoreStateFromSavedData(data: unknown): void {
   }
   if (saved.effects && typeof saved.effects === "object") {
     const fxData = saved.effects as Record<string, unknown>;
-    for (const key of ["distortion", "compressor", "chorus", "flanger", "phaser", "delay", "reverb", "eq"] as const) {
+    for (const key of [
+      "distortion",
+      "compressor",
+      "chorus",
+      "flanger",
+      "phaser",
+      "delay",
+      "reverb",
+      "eq",
+    ] as const) {
       if (fxData[key] && typeof fxData[key] === "object") {
         Object.assign(synthState.effects[key], fxData[key]);
       }
@@ -503,7 +537,7 @@ export function setupAutoSave(): () => void {
   unsubs.push(
     subscribe(synthState, () => {
       if (synthState.drift || synthState.macros) debouncedSave();
-    })
+    }),
   );
 
   return () => {

@@ -1,5 +1,12 @@
 import type { Wavetable } from "../wavetableTypes";
-import { NUM_FRAMES, MAX_HARMONICS, buildSineLookup, normalize, addHarmonic, addCosHarmonic } from "../wavetableCommon";
+import {
+  NUM_FRAMES,
+  MAX_HARMONICS,
+  buildSineLookup,
+  normalize,
+  addHarmonic,
+  addCosHarmonic,
+} from "../wavetableCommon";
 
 export function generateChoir(tableSize: number): Wavetable {
   const sineLut = buildSineLookup(tableSize);

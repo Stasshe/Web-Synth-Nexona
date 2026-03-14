@@ -61,13 +61,15 @@ export function FilterPanel({ filter = 1 }: FilterPanelProps) {
       {/* Input source selection */}
       <div className="flex gap-0.5 mb-1">
         <span className="text-[8px] text-text-muted mr-1 self-center">IN</span>
-        {([
-          { label: "A", bit: 0 },
-          { label: "B", bit: 1 },
-          { label: "C", bit: 2 },
-          { label: "N", bit: 3 },
-          ...(filter === 2 ? [{ label: "F1", bit: 4 }] : []),
-        ] as const).map(({ label, bit }) => {
+        {(
+          [
+            { label: "A", bit: 0 },
+            { label: "B", bit: 1 },
+            { label: "C", bit: 2 },
+            { label: "N", bit: 3 },
+            ...(filter === 2 ? [{ label: "F1", bit: 4 }] : []),
+          ] as const
+        ).map(({ label, bit }) => {
           const isActive = (f.input & (1 << bit)) !== 0;
           return (
             <button

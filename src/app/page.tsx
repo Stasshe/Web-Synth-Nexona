@@ -23,7 +23,12 @@ import { loadPatchIntoState, urlToPatch } from "@/patch/loader";
 import { patchToUrl, stateToPatch } from "@/patch/serializer";
 import { updateModFeedback } from "@/state/modFeedback";
 import { audioFeedback } from "@/state/audioFeedback";
-import { bindStateToSAB, synthState, restoreStateFromSavedData, setupAutoSave } from "@/state/synthState";
+import {
+  bindStateToSAB,
+  synthState,
+  restoreStateFromSavedData,
+  setupAutoSave,
+} from "@/state/synthState";
 import { initIndexedDB, loadState } from "@/storage/indexeddb";
 import { Circle, Code, Download, Power, Share2, Square, Upload, Volume2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -87,7 +92,7 @@ export default function Home() {
           }));
           synthRef.current.setModRoutes(plain as ModRoute[]);
         }
-      })
+      }),
     );
 
     // Setup auto-save
