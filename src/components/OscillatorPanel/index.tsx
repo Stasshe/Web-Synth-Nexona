@@ -4,16 +4,17 @@ import { SPECTRAL_MORPH_NAMES } from "@/audio/dsp/spectralMorph/spectralMorphTyp
 import { UNISON_STACK_NAMES } from "@/audio/dsp/oscillator/unisonEngine";
 import { DISTORTION_NAMES, usesDistortionPhase } from "@/audio/dsp/warp/warpTypes";
 import { PRESET_COUNT, PRESET_NAMES } from "@/audio/dsp/wavetable/wavetablePresets";
-import { computeMorphedPreviewSamples } from "@/audio/dsp/wavetable/wavetablePreview";
 import { Knob } from "@/components/ui/Knob";
 import { Panel } from "@/components/ui/Panel";
 import { SelectPopup } from "@/components/ui/SelectPopup";
 import { SelectWithArrows } from "@/components/ui/SelectWithArrows";
+import { UnisonViewer } from "@/components/OscillatorPanel/UnisonViewer";
+import { Wavetable3dViewer } from "@/components/OscillatorPanel/Wavetable3dViewer";
 import type { ModSourceDragItem } from "@/dnd/types";
 import { useModRoutes } from "@/hooks/useModAmount";
 import { synthState } from "@/state/synthState";
 import { Pencil } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import { useSnapshot } from "valtio";
 
 const DISTORTION_OPTIONS = Object.entries(DISTORTION_NAMES).map(([value, label]) => ({
@@ -103,101 +104,6 @@ const OSC_MOD_TARGETS: Record<
   },
 };
 
-function WaveformPreview({
-  waveformType,
-  framePosition,
-  customWaveform,
-  color,
-  spectralMorphType,
-  spectralMorphAmount,
-  onClick,
-}: {
-  waveformType: number;
-  framePosition: number;
-  customWaveform: readonly number[] | null;
-  color: string;
-  spectralMorphType: number;
-  spectralMorphAmount: number;
-  onClick?: () => void;
-}) {
-  const samples = useMemo(
-    () =>
-      computeMorphedPreviewSamples(
-        waveformType,
-        framePosition,
-        customWaveform,
-        spectralMorphType,
-        spectralMorphAmount,
-      ),
-    [waveformType, framePosition, customWaveform, spectralMorphType, spectralMorphAmount],
-  );
-
-  const ghostFrames = useMemo(() => {
-    if (waveformType < 0 || (customWaveform && customWaveform.length > 1)) return [];
-    const ghosts: { points: string; opacity: number; offsetY: number }[] = [];
-    const offsets = [-0.15, -0.08, 0.08, 0.15];
-    for (const off of offsets) {
-      const fp = Math.max(0, Math.min(1, framePosition + off));
-      const s = computeMorphedPreviewSamples(
-        waveformType,
-        fp,
-        null,
-        spectralMorphType,
-        spectralMorphAmount,
-      );
-      const ghostH = 64;
-      const pts: string[] = [];
-      for (let i = 0; i < s.length; i++) {
-        pts.push(`${i},${((-s[i] + 1) * ghostH) / 2 + Math.abs(off) * 40}`);
-      }
-      ghosts.push({ points: pts.join(" "), opacity: 0.15, offsetY: off * 20 });
-    }
-    return ghosts;
-  }, [waveformType, framePosition, customWaveform, spectralMorphType, spectralMorphAmount]);
-
-  const W = 128;
-  const H = 80;
-  const pts: string[] = [];
-  for (let i = 0; i < samples.length; i++) {
-    pts.push(`${i},${((-samples[i] + 1) * (H - 16)) / 2 + 8}`);
-  }
-  const points = pts.join(" ");
-
-  return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents: SVG waveform preview acts as visual click target
-    <svg
-      viewBox={`0 0 ${W} ${H}`}
-      className="w-full cursor-pointer rounded"
-      style={{
-        height: 80,
-        background: "color-mix(in srgb, var(--bg-darkest) 60%, transparent)",
-      }}
-      onClick={onClick}
-    >
-      <title>Click to edit waveform</title>
-      {ghostFrames.map((g, idx) => (
-        <polyline
-          key={idx}
-          points={g.points}
-          fill="none"
-          stroke={color}
-          strokeWidth="0.8"
-          opacity={g.opacity}
-          transform={`translate(0,${g.offsetY})`}
-        />
-      ))}
-      <polyline
-        points={points}
-        fill="none"
-        stroke={color}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        opacity="0.9"
-      />
-    </svg>
-  );
-}
 
 export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps) {
   const snap = useSnapshot(synthState);
@@ -243,13 +149,14 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
 
       {/* Large waveform display */}
       <div className="mb-1">
-        <WaveformPreview
+        <Wavetable3dViewer
           waveformType={data.waveformType}
           framePosition={data.framePosition}
           customWaveform={data.customWaveform}
           color={color}
           spectralMorphType={data.spectralMorphType}
           spectralMorphAmount={data.spectralMorphAmount}
+          onClick={onOpenWaveEditor}
         />
       </div>
 
@@ -472,6 +379,18 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
             onChange={(v) => (state.unisonStackType = Number(v))}
           />
         </div>
+        {data.unisonVoices > 1 && (
+          <UnisonViewer
+            count={data.unisonVoices}
+            detune={data.unisonDetune}
+            blend={data.unisonBlend}
+            stackType={data.unisonStackType}
+            detunePower={data.unisonDetunePower}
+            detuneRange={data.unisonDetuneRange}
+            stereoSpread={data.unisonSpread}
+            color={color}
+          />
+        )}
       </div>
 
       {/* Phase + Level + Pan row */}
