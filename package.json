@@ -5,10 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "npm run build:presets && npm run build:worklet && next dev",
-    "build": "npm run build:presets && npm run build:worklet && next build",
+    "build": "npm run build:presets && npm run build:worklet && next build && next export",
     "build:worklet": "node scripts/build-worklet.mjs",
     "build:presets": "node scripts/build-presets.mjs",
-    "start": "next start",
+    "start": "npx serve out -s -l 3000",
     "test": "vitest",
     "lint": "biome check .",
     "format": "biome format . --write"
