@@ -1,6 +1,6 @@
 // @ts-check
 /**
- * Build script: reads all JSON files from /presets/ (sorted by filename)
+ * Build script: reads all JSON or JSONC files from /presets/ (sorted by filename)
  * and generates src/data/presets.generated.ts.
  *
  * Usage: node scripts/build-presets.mjs
@@ -19,9 +19,9 @@ const presetsDir = join(__dirname, "../presets");
 const outputDir = join(__dirname, "../src/data");
 const outputFile = join(outputDir, "presets.generated.ts");
 
-// Read and sort all JSON preset files (sorted by filename for stable ordering)
+// Read and sort all JSON / JSONC preset files (sorted by filename for stable ordering)
 const files = readdirSync(presetsDir)
-  .filter((f) => f.endsWith(".json"))
+  .filter((f) => f.endsWith(".json") || f.endsWith(".jsonc"))
   .sort();
 
 if (files.length === 0) {
@@ -32,7 +32,9 @@ if (files.length === 0) {
 const presets = files.map((filename) => {
   const content = readFileSync(join(presetsDir, filename), "utf-8");
   try {
-    return JSON.parse(content);
+    const stripJsonComments = (s) => s.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "");
+    const raw = filename.endsWith(".jsonc") ? stripJsonComments(content) : content;
+    return JSON.parse(raw);
   } catch (e) {
     console.error(`Failed to parse ${filename}:`, e.message);
     process.exit(1);
