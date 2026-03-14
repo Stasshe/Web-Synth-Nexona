@@ -110,8 +110,8 @@ export function LevelMeter({ peakL, peakR }: LevelMeterProps) {
     <canvas
       ref={canvasRef}
       width={48}
-      height={14}
-      className="w-[48px] h-[14px] rounded border border-border-default"
+      height={32}
+      className="w-[48px] h-[32px] rounded border border-border-default"
     />
   );
 }
