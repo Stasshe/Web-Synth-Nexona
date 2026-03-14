@@ -18,7 +18,7 @@ export function Panel({
   const dotColor = enabled ? color : "var(--text-muted)";
   return (
     <div
-      className={`bg-bg-panel rounded-lg border overflow-hidden transition-colors h-full flex flex-col ${
+      className={`bg-bg-panel rounded-lg border overflow-visible transition-colors h-full flex flex-col ${
         enabled ? "border-border-default" : "border-border-default"
       } ${className}`}
     >
