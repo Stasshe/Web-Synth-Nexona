@@ -263,90 +263,90 @@ export default function Home() {
     <DndProvider>
       <main className="h-[100dvh] bg-bg-darkest p-1.5 flex flex-col overflow-hidden gap-1">
         {/* Header */}
-        <header className="flex items-center justify-between px-4 py-2 bg-bg-panel rounded-lg border border-border-default shrink-0 shadow-sm">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 pr-2">
-              <div className="w-2 h-2 rounded-full bg-accent-green animate-pulse shadow-[0_0_8px_var(--accent-green)]" />
-              <span className="text-sm font-bold tracking-widest text-text-primary">NEXONA</span>
+        <header className="flex items-center justify-between px-2 py-1 bg-bg-panel rounded-lg border border-border-default shrink-0 shadow-sm relative overflow-hidden">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 pr-1">
+              <div className="w-1.5 h-1.5 rounded-full bg-accent-green animate-pulse shadow-[0_0_8px_var(--accent-green)]" />
+              <span className="text-[10px] font-bold tracking-widest text-text-primary">NEXONA</span>
             </div>
 
-            <div className="w-px h-6 bg-border-default mx-1" />
+            <div className="w-px h-4 bg-border-default mx-0.5" />
 
             <PresetSelector onLoad={handlePresetLoad} />
 
-            <div className="w-px h-6 bg-border-default mx-1" />
+            <div className="w-px h-4 bg-border-default mx-0.5" />
 
-            <div className="flex items-center gap-2">
-              <span className="text-[9px] text-text-muted uppercase tracking-wider font-medium">Scope</span>
+            <div className="flex items-center gap-1">
+              <span className="text-[8px] text-text-muted uppercase tracking-wider font-medium">Scope</span>
               <Visualizer waveformData={waveformData} />
             </div>
 
-            <div className="w-px h-6 bg-border-default mx-1" />
+            <div className="w-px h-4 bg-border-default mx-0.5" />
 
-            <div className="flex items-center gap-2">
-              <span className="text-[9px] text-text-muted uppercase tracking-wider font-medium">Out</span>
+            <div className="flex items-center gap-1">
+              <span className="text-[8px] text-text-muted uppercase tracking-wider font-medium">Out</span>
               <LevelMeter peakL={levelData.peakL} peakR={levelData.peakR} />
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2 pl-2">
+            <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={handleSave}
-                className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-text-muted hover:text-text-primary bg-bg-surface border border-border-default rounded flex-shrink-0 transition-colors cursor-pointer"
+                className="flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-medium text-text-muted hover:text-text-primary bg-bg-surface border border-border-default rounded flex-shrink-0 transition-colors cursor-pointer"
                 title="Save patch to file"
               >
-                <Download size={12} /> Save
+                <Download size={10} /> Save
               </button>
               <button
                 type="button"
                 onClick={handleLoad}
-                className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-text-muted hover:text-text-primary bg-bg-surface border border-border-default rounded flex-shrink-0 transition-colors cursor-pointer"
+                className="flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-medium text-text-muted hover:text-text-primary bg-bg-surface border border-border-default rounded flex-shrink-0 transition-colors cursor-pointer"
                 title="Load patch from file"
               >
-                <Upload size={12} /> Load
+                <Upload size={10} /> Load
               </button>
               <button
                 type="button"
                 onClick={handleShare}
-                className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-text-muted hover:text-accent-blue bg-bg-surface border border-border-default rounded flex-shrink-0 transition-colors cursor-pointer"
+                className="flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-medium text-text-muted hover:text-accent-blue bg-bg-surface border border-border-default rounded flex-shrink-0 transition-colors cursor-pointer"
                 title="Copy share URL to clipboard"
               >
-                <Share2 size={12} /> Share
+                <Share2 size={10} /> Share
               </button>
               <button
                 type="button"
                 onClick={() => setParamEditorOpen(true)}
-                className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-text-muted hover:text-accent-purple bg-bg-surface border border-border-default rounded flex-shrink-0 transition-colors cursor-pointer"
+                className="flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-medium text-text-muted hover:text-accent-purple bg-bg-surface border border-border-default rounded flex-shrink-0 transition-colors cursor-pointer"
                 title="Edit all parameters as JSON"
               >
-                <Code size={12} /> Edit
+                <Code size={10} /> Edit
               </button>
             </div>
 
-            <div className="w-px h-6 bg-border-default mx-1" />
+            <div className="w-px h-4 bg-border-default mx-0.5" />
 
             {/* Recording controls */}
-            <div className="flex items-center gap-1.5 min-w-[140px] justify-end">
+            <div className="flex items-center gap-1 justify-end">
               {recState === "idle" && (
                 <button
                   type="button"
                   onClick={handleRecStart}
-                  className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-text-muted hover:text-red-400 bg-bg-surface border border-border-default rounded flex-shrink-0 transition-colors cursor-pointer"
+                  className="flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-medium text-text-muted hover:text-red-400 bg-bg-surface border border-border-default rounded flex-shrink-0 transition-colors cursor-pointer"
                   title="Start recording"
                 >
-                  <Circle size={10} fill="currentColor" /> Rec
+                  <Circle size={9} fill="currentColor" /> Rec
                 </button>
               )}
               {recState === "recording" && (
                 <button
                   type="button"
                   onClick={handleRecStop}
-                  className="flex items-center gap-1.5 px-3 py-1 text-[11px] font-medium text-red-400 bg-bg-surface border border-red-500/50 rounded flex-shrink-0 transition-colors cursor-pointer animate-pulse"
+                  className="flex items-center gap-1 px-2 py-0.5 text-[9px] font-medium text-red-400 bg-bg-surface border border-red-500/50 rounded flex-shrink-0 transition-colors cursor-pointer animate-pulse"
                   title="Stop recording"
                 >
-                  <Square size={10} fill="currentColor" /> {Math.floor(recElapsed / 60)}:
+                  <Square size={9} fill="currentColor" /> {Math.floor(recElapsed / 60)}:
                   {(recElapsed % 60).toString().padStart(2, "0")}
                 </button>
               )}
@@ -360,40 +360,40 @@ export default function Home() {
                       { value: "m4a", label: "M4A" },
                     ]}
                     onChange={(v) => setExportFormat(v as ExportFormat)}
-                    className="w-[72px] !py-[3px] !text-[11px]"
+                    className="w-[60px] !py-[2px] !text-[9px]"
                   />
                   <button
                     type="button"
                     onClick={handleExport}
                     disabled={exporting}
-                    className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-accent-green hover:text-accent-green-hover bg-bg-surface border border-border-default rounded flex-shrink-0 shadow-[0_0_4px_rgba(var(--accent-green-rgb),0.2)] transition-colors cursor-pointer disabled:opacity-50"
+                    className="flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-medium text-accent-green hover:text-accent-green-hover bg-bg-surface border border-border-default rounded flex-shrink-0 shadow-[0_0_4px_rgba(var(--accent-green-rgb),0.2)] transition-colors cursor-pointer disabled:opacity-50"
                     title="Export recording"
                   >
-                    <Download size={12} /> {exporting ? "..." : "Export"}
+                    <Download size={10} /> {exporting ? "..." : "Exp"}
                   </button>
                   <button
                     type="button"
                     onClick={handleRecDiscard}
-                    className="flex items-center px-1.5 py-1 text-[11px] font-medium text-text-muted hover:text-red-400 bg-bg-surface border border-border-default rounded flex-shrink-0 transition-colors cursor-pointer"
+                    className="flex items-center px-1 py-0.5 text-[9px] font-medium text-text-muted hover:text-red-400 bg-bg-surface border border-border-default rounded flex-shrink-0 transition-colors cursor-pointer"
                     title="Discard recording"
                   >
-                    <X size={12} />
+                    <X size={10} />
                   </button>
                 </>
               )}
             </div>
 
-            <div className="w-px h-6 bg-border-default mx-1" />
+            <div className="w-px h-4 bg-border-default mx-0.5" />
 
-            <div className="flex items-center gap-2">
-              <Volume2 size={16} className="text-text-muted" />
+            <div className="flex items-center gap-1">
+              <Volume2 size={12} className="text-text-muted" />
               <Knob
                 label=""
                 value={snap.master.volume}
                 min={0}
                 max={1}
                 onChange={(v) => (synthState.master.volume = v)}
-                size={32}
+                size={24}
                 color="var(--accent-green)"
                 formatValue={(v) => `${(v * 100).toFixed(0)}%`}
               />
