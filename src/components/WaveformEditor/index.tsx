@@ -20,7 +20,10 @@ const CANVAS_W = 600;
 const CANVAS_H = 240;
 const POINT_RADIUS = 6;
 const HIT_RADIUS = 12;
-const MIN_GAP = 0.005;
+const GRID_X = 16; // horizontal snap divisions
+const GRID_Y = 8; // vertical snap divisions
+const MIN_GAP = 1 / GRID_X;
+const DRAG_THRESHOLD = 4; // pixels before a tap becomes a drag
 
 const EDITOR_PRESET_NAMES = ["Sine", "Saw", "Square", "Triangle"] as const;
 
@@ -62,6 +65,13 @@ function modelToCanvas(x: number, y: number): { cx: number; cy: number } {
   };
 }
 
+function snapToGrid(x: number, y: number): { x: number; y: number } {
+  return {
+    x: Math.round(x * GRID_X) / GRID_X,
+    y: Math.round(y * GRID_Y) / GRID_Y,
+  };
+}
+
 function canvasToModel(
   clientX: number,
   clientY: number,
@@ -70,9 +80,9 @@ function canvasToModel(
   const rect = canvas.getBoundingClientRect();
   const px = (clientX - rect.left) * (CANVAS_W / rect.width);
   const py = (clientY - rect.top) * (CANVAS_H / rect.height);
-  const x = Math.max(0, Math.min(1, px / CANVAS_W));
-  const y = Math.max(-1, Math.min(1, -((py - CANVAS_H / 2) / (CANVAS_H / 2 - 4))));
-  return { x, y };
+  const rawX = Math.max(0, Math.min(1, px / CANVAS_W));
+  const rawY = Math.max(-1, Math.min(1, -((py - CANVAS_H / 2) / (CANVAS_H / 2 - 4))));
+  return snapToGrid(rawX, rawY);
 }
 
 function findHitPoint(
@@ -107,6 +117,9 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
   const [currentName, setCurrentName] = useState<string>(() => loadExistingName(osc));
   const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
   const [draggingPointId, setDraggingPointId] = useState<string | null>(null);
+  const dragMovedRef = useRef(false);
+  const dragStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const hitExistingRef = useRef(false);
 
   const displayWaveform = useMemo(() => generateWaveformFromPoints(model, TABLE_SIZE), [model]);
 
@@ -131,22 +144,26 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
     ctx.fillStyle = "#0d0d14";
     ctx.fillRect(0, 0, w, h);
 
-    ctx.strokeStyle = "#1a1a2e";
+    // Vertical grid lines (GRID_X divisions)
     ctx.lineWidth = 0.5;
-    ctx.beginPath();
-    ctx.moveTo(0, h / 2);
-    ctx.lineTo(w, h / 2);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(0, h / 4);
-    ctx.lineTo(w, h / 4);
-    ctx.moveTo(0, (3 * h) / 4);
-    ctx.lineTo(w, (3 * h) / 4);
-    ctx.stroke();
-    for (let i = 1; i < 8; i++) {
+    for (let i = 1; i < GRID_X; i++) {
+      const x = (w * i) / GRID_X;
+      ctx.strokeStyle = i % (GRID_X / 4) === 0 ? "#252535" : "#181828";
       ctx.beginPath();
-      ctx.moveTo((w * i) / 8, 0);
-      ctx.lineTo((w * i) / 8, h);
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+    }
+
+    // Horizontal grid lines (GRID_Y divisions)
+    for (let j = 0; j <= GRID_Y; j++) {
+      const y = (h * j) / GRID_Y;
+      const isMid = j === GRID_Y / 2;
+      ctx.strokeStyle = isMid ? "#2a2a42" : "#181828";
+      ctx.lineWidth = isMid ? 1 : 0.5;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
       ctx.stroke();
     }
 
@@ -216,12 +233,17 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
       if (!canvas) return;
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
 
+      dragMovedRef.current = false;
+      dragStartRef.current = { x: e.clientX, y: e.clientY };
+
       const hitId = findHitPoint(e.clientX, e.clientY, canvas, model);
 
       if (hitId) {
+        hitExistingRef.current = true;
         setSelectedPointId(hitId);
         setDraggingPointId(hitId);
       } else {
+        hitExistingRef.current = false;
         const { x, y } = canvasToModel(e.clientX, e.clientY, canvas);
         const newPt: ControlPoint = {
           id: makePointId(),
@@ -246,6 +268,12 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
       if (!draggingPointId) return;
       const canvas = canvasRef.current;
       if (!canvas) return;
+
+      const dx = e.clientX - dragStartRef.current.x;
+      const dy = e.clientY - dragStartRef.current.y;
+      if (!dragMovedRef.current && Math.sqrt(dx * dx + dy * dy) > DRAG_THRESHOLD) {
+        dragMovedRef.current = true;
+      }
 
       const { x, y } = canvasToModel(e.clientX, e.clientY, canvas);
 
@@ -278,29 +306,18 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
   );
 
   const handlePointerUp = useCallback(() => {
-    setDraggingPointId(null);
-  }, []);
-
-  const handleContextMenu = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault();
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-
-      const hitId = findHitPoint(e.clientX, e.clientY, canvas, model);
-      if (!hitId) return;
-
-      const idx = model.points.findIndex((p) => p.id === hitId);
-      if (idx === 0 || idx === model.points.length - 1) return;
-
-      setModel((prev) => ({
-        points: prev.points.filter((p) => p.id !== hitId),
-      }));
-      if (selectedPointId === hitId) setSelectedPointId(null);
+    if (draggingPointId && !dragMovedRef.current && hitExistingRef.current) {
+      // Tap on existing point → delete (unless first or last)
+      setModel((prev) => {
+        const idx = prev.points.findIndex((p) => p.id === draggingPointId);
+        if (idx === 0 || idx === prev.points.length - 1) return prev;
+        return { points: prev.points.filter((p) => p.id !== draggingPointId) };
+      });
+      setSelectedPointId(null);
       setCurrentName("Custom");
-    },
-    [model, selectedPointId],
-  );
+    }
+    setDraggingPointId(null);
+  }, [draggingPointId]);
 
   const handleApply = useCallback(() => {
     const oscState = synthState.oscillators[osc] as Record<string, unknown>;
@@ -425,7 +442,6 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerLeave={handlePointerUp}
-            onContextMenu={handleContextMenu}
           />
         </div>
 
@@ -481,8 +497,8 @@ export function WaveformEditor({ open, onClose, onApply, osc }: WaveformEditorPr
         </div>
 
         <div className="px-4 py-1.5 text-[10px] text-text-muted border-t border-border-default">
-          Click to add points. Drag to move. Right-click to delete. Select a point to change its
-          curve type.
+          Click empty space to add point. Drag to move. Tap existing point to delete. Select a
+          point to change its curve type.
         </div>
       </div>
     </div>
