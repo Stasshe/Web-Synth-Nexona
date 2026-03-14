@@ -45,9 +45,23 @@ export interface PatchData {
   };
   modulations: ModRoute[];
   effects: {
+    distortion?: { drive: number; tone: number; mix: number; mode: number };
+    compressor?: {
+      threshold: number;
+      ratio: number;
+      attack: number;
+      release: number;
+      makeup: number;
+      mix: number;
+      knee: number;
+    };
     chorus: { rate: number; depth: number; mix: number };
+    flanger?: { rate: number; depth: number; feedback: number; mix: number };
+    phaser?: { rate: number; depth: number; feedback: number; mix: number };
     delay: { time: number; feedback: number; mix: number };
     reverb: { decay: number; mix: number };
+    eq?: { lowGain: number; midGain: number; highGain: number; mix: number };
+    effectsOrder?: string[];
   };
   master: { volume: number };
   drift: number;

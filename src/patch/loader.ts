@@ -31,9 +31,16 @@ export function loadPatchIntoState(patch: PatchData): void {
   Object.assign(s.lfos.lfo1, patch.lfos.lfo1);
   Object.assign(s.lfos.lfo2, patch.lfos.lfo2);
   s.modulations.splice(0, s.modulations.length, ...patch.modulations);
+  // Restore all effects where present in the patch
+  Object.assign(s.effects.distortion, patch.effects.distortion);
+  Object.assign(s.effects.compressor, patch.effects.compressor);
   Object.assign(s.effects.chorus, patch.effects.chorus);
+  Object.assign(s.effects.flanger, patch.effects.flanger);
+  Object.assign(s.effects.phaser, patch.effects.phaser);
   Object.assign(s.effects.delay, patch.effects.delay);
   Object.assign(s.effects.reverb, patch.effects.reverb);
+  Object.assign(s.effects.eq, patch.effects.eq);
+  if (patch.effects.effectsOrder) s.effectsOrder = [...patch.effects.effectsOrder];
   Object.assign(s.master, patch.master);
   s.drift = patch.drift;
   s.macros.splice(0, s.macros.length, ...patch.macros);
