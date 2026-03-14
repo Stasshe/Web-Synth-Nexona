@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "name": "Current",
+  "name": "Vowel",
   "oscillators": {
     "a": {
       "on": true,
