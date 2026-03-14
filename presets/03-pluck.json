@@ -103,9 +103,32 @@
   },
   "modulations": [],
   "effects": {
+    "distortion": { "drive": 1, "tone": 0.5, "mix": 0, "mode": 0 },
+    "compressor": {
+      "threshold": -12,
+      "ratio": 4,
+      "attack": 0.01,
+      "release": 0.1,
+      "makeup": 0,
+      "mix": 0,
+      "knee": 6
+    },
     "chorus": { "rate": 0.5, "depth": 0.3, "mix": 0 },
+    "flanger": { "rate": 0.5, "depth": 0.5, "feedback": 0.5, "mix": 0 },
+    "phaser": { "rate": 0.5, "depth": 0.5, "feedback": 0.5, "mix": 0 },
     "delay": { "time": 0.375, "feedback": 0.25, "mix": 0.2 },
-    "reverb": { "decay": 0.4, "mix": 0.15 }
+    "reverb": { "decay": 0.4, "mix": 0.15 },
+    "eq": { "lowGain": 0, "midGain": 0, "highGain": 0, "mix": 0 },
+    "effectsOrder": [
+      "distortion",
+      "compressor",
+      "chorus",
+      "flanger",
+      "phaser",
+      "delay",
+      "reverb",
+      "eq"
+    ]
   },
   "master": { "volume": 0.8 },
   "drift": 0,
