@@ -263,7 +263,7 @@ export default function Home() {
     <DndProvider>
       <main className="h-[100dvh] bg-bg-darkest p-1.5 flex flex-col overflow-hidden gap-1">
         {/* Header */}
-        <header className="flex items-center justify-between px-2 py-1 bg-bg-panel rounded-lg border border-border-default shrink-0 shadow-sm relative overflow-hidden">
+        <header className="flex items-center justify-between px-2 py-1 bg-bg-panel rounded-lg border border-border-default shrink-0 shadow-sm">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 pr-1">
               <div className="w-1.5 h-1.5 rounded-full bg-accent-green animate-pulse shadow-[0_0_8px_var(--accent-green)]" />
