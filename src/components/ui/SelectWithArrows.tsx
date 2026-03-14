@@ -49,6 +49,7 @@ export function SelectWithArrows({
         onChange={onChange}
         displayLabel={displayLabel}
         accentColor={accentColor}
+        compact={true}
         className="flex-1"
       />
       <button type="button" onClick={cycleNext} className={btnArrow} title="Next">

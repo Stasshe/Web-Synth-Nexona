@@ -1,6 +1,7 @@
 "use client";
 import { ModTarget } from "@/audio/dsp/modulation/modMatrix";
 import { Knob } from "@/components/ui/Knob";
+import { SelectWithArrows } from "@/components/ui/SelectWithArrows";
 import { DND_TYPES, type EffectSlotDragItem, type ModSourceDragItem } from "@/dnd/types";
 import { useModRoutes } from "@/hooks/useModAmount";
 import { audioFeedback } from "@/state/audioFeedback";
@@ -326,6 +327,7 @@ function EffectStrip({ name, index, enabled, onToggle, children }: EffectStripPr
 
 // ─── Individual effect controls ───────────────────────────────────────────────
 const DIST_MODES = ["Soft", "Hard", "Fold", "Bits", "Tube", "Scrm", "Rect", "Down"];
+const DIST_MODE_OPTIONS = DIST_MODES.map((m, i) => ({ value: String(i), label: m }));
 
 function DistortionControls() {
   const snap = useSnapshot(synthState);
@@ -335,26 +337,13 @@ function DistortionControls() {
   const modMix = useModRoutes(ModTarget.DIST_MIX);
   return (
     <>
-      <div className="flex gap-px mr-1 shrink-0">
-        {DIST_MODES.map((m, i) => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => (synthState.effects.distortion.mode = i)}
-            className="px-1 py-0.5 text-[7px] rounded border cursor-pointer"
-            style={{
-              borderColor: d.mode === i ? "var(--effects)" : "var(--border)",
-              color: d.mode === i ? "var(--effects)" : "var(--text-muted)",
-              backgroundColor:
-                d.mode === i
-                  ? "color-mix(in srgb, var(--effects) 15%, transparent)"
-                  : "transparent",
-            }}
-          >
-            {m}
-          </button>
-        ))}
-      </div>
+      <SelectWithArrows
+        value={String(d.mode)}
+        options={DIST_MODE_OPTIONS}
+        onChange={(v) => (synthState.effects.distortion.mode = Number(v))}
+        accentColor="var(--effects)"
+        className="mr-1 shrink-0 w-32"
+      />
       <Knob
         label="Drive"
         value={d.drive}

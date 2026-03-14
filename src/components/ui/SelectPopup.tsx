@@ -10,6 +10,8 @@ interface SelectPopupProps {
   displayLabel?: string;
   /** Accent color for selected item highlight in popup */
   accentColor?: string;
+  /** Reduce vertical padding to match arrow buttons */
+  compact?: boolean;
   className?: string;
 }
 
@@ -19,6 +21,7 @@ export function SelectPopup({
   onChange,
   displayLabel,
   accentColor,
+  compact = false,
   className = "",
 }: SelectPopupProps) {
   const [open, setOpen] = useState(false);
@@ -43,7 +46,9 @@ export function SelectPopup({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between gap-1 px-2 py-1 text-xs text-text-secondary hover:text-text-primary bg-bg-surface border border-border-default rounded cursor-pointer transition-colors"
+        className={`w-full flex items-center justify-between gap-1 px-2 text-xs text-text-secondary hover:text-text-primary bg-bg-surface border border-border-default rounded cursor-pointer transition-colors ${
+          compact ? "py-0.5" : "py-1"
+        }`}
       >
         <span className="truncate">{currentLabel}</span>
         <ChevronDown
