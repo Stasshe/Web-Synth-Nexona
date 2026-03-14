@@ -7,6 +7,7 @@ import { type ExportFormat, exportAudio } from "@/audio/export/exportAudio";
 import { type SynthNode, createSynthNode } from "@/audio/worklet/node";
 import { DndProvider } from "@/components/DndProvider";
 import { EffectsPage } from "@/components/EffectsPage";
+import { PresetSelector } from "@/components/PresetSelector";
 import { Keyboard } from "@/components/Keyboard";
 import { MacroStrip } from "@/components/MacroPanel";
 import { ModulatorSidebar } from "@/components/ModulatorSidebar";
@@ -225,6 +226,13 @@ export default function Home() {
     input.click();
   }, [applyCustomWavetables]);
 
+  const handlePresetLoad = useCallback(() => {
+    if (synthRef.current) {
+      synthRef.current.setModRoutes(synthState.modulations as ModRoute[]);
+      applyCustomWavetables(synthRef.current);
+    }
+  }, [applyCustomWavetables]);
+
   if (!started) {
     return (
       <main className="flex items-center justify-center min-h-[100dvh]">
@@ -256,6 +264,7 @@ export default function Home() {
               <div className="w-2 h-2 rounded-full bg-accent-green animate-pulse" />
               <span className="text-xs font-medium tracking-wider">Nexona</span>
             </div>
+            <PresetSelector onLoad={handlePresetLoad} />
             <div className="flex items-center gap-1.5">
               <span className="text-[8px] text-text-muted uppercase tracking-wider">Scope</span>
               <Visualizer waveformData={waveformData} />

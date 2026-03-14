@@ -10,3 +10,5 @@ public/worklet/
 memo
 memo.txt
 memo.md
+
+src/data/presets*.ts
