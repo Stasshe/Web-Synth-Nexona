@@ -21,10 +21,13 @@ const WARP_OPTIONS = [
   { value: "3", label: "PD" },
   { value: "4", label: "Mirror" },
   { value: "5", label: "Quantize" },
-  { value: "6", label: "FM" },
+  { value: "6", label: "FM 2:1" },
   { value: "7", label: "Formant" },
   { value: "8", label: "Squeeze" },
   { value: "9", label: "PW" },
+  { value: "10", label: "FM 1:1" },
+  { value: "11", label: "FM 3:1" },
+  { value: "12", label: "FM 4:1" },
 ];
 
 const SPECTRAL_MORPH_OPTIONS = Object.entries(SPECTRAL_MORPH_NAMES).map(([value, label]) => ({

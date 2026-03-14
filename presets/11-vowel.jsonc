@@ -15,7 +15,7 @@
       "unisonDetune": 20, // 0..100
       "unisonSpread": 0.5, // 0..1
       "pan": 0, // -1..1
-      "warpType": 6, // 0..6 (FM)
+      "warpType": 9, // 0..6 (FM)
       "warpAmount": 0.28, // 0..1
       "warp2Type": 0, // 0..6 (NONE)
       "warp2Amount": 0, // 0..1
