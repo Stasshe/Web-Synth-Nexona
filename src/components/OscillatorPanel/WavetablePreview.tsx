@@ -127,10 +127,11 @@ export function Wavetable3dViewer({
             key={m}
             type="button"
             onClick={(e) => { e.stopPropagation(); setMode(m); }}
-            className="text-[7px] uppercase px-1 py-0.5 rounded transition-colors"
+            className="text-[8px] font-bold px-1.5 py-0.5 rounded transition-all"
             style={{
-              background: mode === m ? color : "rgba(0,0,0,0.5)",
-              color: mode === m ? "#000" : "var(--color-text-secondary, #888)",
+              background: mode === m ? color : "rgba(0,0,0,0.4)",
+              color: mode === m ? "#000" : "var(--color-text-primary, #ddd)",
+              boxShadow: mode === m ? `0 0 6px ${color}40` : "none",
             }}
           >
             {m === "spectrum" ? "SP" : "2D"}
@@ -146,7 +147,7 @@ export function Wavetable3dViewer({
         style={{
           height: H,
           display: "block",
-          background: "color-mix(in srgb, var(--bg-darkest) 70%, transparent)",
+          background: "rgba(0,0,0,0.35)", // Matched with Filter graph
         }}
         onClick={onClick}
         title="Click to edit waveform"

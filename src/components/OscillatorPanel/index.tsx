@@ -136,49 +136,114 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
       onToggle={() => (state.on = !state.on)}
       enabled={data.on}
     >
-      {/* ── Row 1: waveform preview + Level/Pan/Trans/Tune ── */}
-      <div className="flex gap-1.5 mb-1 items-stretch">
-        {/* Waveform preview */}
-        <div className="flex-1 min-w-0">
-          <Wavetable3dViewer
-            waveformType={data.waveformType}
-            framePosition={data.framePosition}
-            customWaveform={data.customWaveform}
-            color={color}
-            spectralMorphType={data.spectralMorphType}
-            spectralMorphAmount={data.spectralMorphAmount}
-            onClick={onOpenWaveEditor}
-          />
+      <div className="flex flex-col gap-1.5 mt-0.5">
+        {/* ── WAVEFORM SECTION ── */}
+        <div className="bg-black/20 p-1.5 pb-2 rounded border border-white/5">
+          <div className="flex items-center gap-1 mb-1.5">
+            <SelectWithArrows
+              value={String(data.waveformType)}
+              displayLabel={data.waveformType === -1 ? "Custom" : undefined}
+              options={PRESET_OPTIONS}
+              onChange={(v) => {
+                const idx = Number(v);
+                state.waveformType = idx;
+                state.waveformName = PRESET_NAMES[idx] ?? "Custom";
+                state.customWaveform = null;
+                state.controlPoints = null;
+              }}
+              accentColor={color}
+              className="flex-1 min-w-0"
+            />
+            <button
+              type="button"
+              onClick={onOpenWaveEditor}
+              className="shrink-0 px-1.5 py-1 text-text-secondary hover:text-white bg-bg-dark border border-white/10 rounded cursor-pointer transition-colors"
+              title="Edit waveform"
+            >
+              <Pencil size={10} />
+            </button>
+            <SelectPopup
+              value={String(data.destination)}
+              options={DESTINATION_OPTIONS}
+              onChange={(v) => (state.destination = Number(v))}
+            />
+          </div>
+
+          <div className="flex gap-1.5">
+            <div className="flex-1 min-w-0">
+              <Wavetable3dViewer
+                waveformType={data.waveformType}
+                framePosition={data.framePosition}
+                customWaveform={data.customWaveform}
+                color={color}
+                spectralMorphType={data.spectralMorphType}
+                spectralMorphAmount={data.spectralMorphAmount}
+                onClick={onOpenWaveEditor}
+              />
+            </div>
+            <div className="flex flex-col justify-between">
+              <Knob
+                label="Level"
+                value={data.level}
+                min={0}
+                max={1}
+                onChange={(v) => (state.level = v)}
+                color={color}
+                modRoutes={modLevel}
+                onModDrop={handleModDrop(targets.level)}
+                modTarget={targets.level}
+                size={26}
+              />
+              <Knob
+                label="Pan"
+                value={data.pan}
+                min={-1}
+                max={1}
+                onChange={(v) => (state.pan = v)}
+                color={color}
+                modRoutes={modPan}
+                onModDrop={handleModDrop(targets.pan)}
+                modTarget={targets.pan}
+                formatValue={(v) =>
+                  Math.abs(v) < 0.01 ? "C" : v < 0 ? `L${Math.abs(Math.round(v * 100))}` : `R${Math.round(v * 100)}`
+                }
+                size={26}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 mt-2 px-0.5">
+            <Knob
+              label="Pos"
+              value={data.framePosition}
+              min={0}
+              max={1}
+              onChange={(v) => (state.framePosition = v)}
+              color={color}
+              modRoutes={modFrame}
+              onModDrop={handleModDrop(targets.frame)}
+              modTarget={targets.frame}
+              size={20}
+              formatValue={(v) => `${Math.round(v * 63)}`}
+            />
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.001}
+              value={data.framePosition}
+              onChange={(e) => (state.framePosition = Number(e.target.value))}
+              className="flex-1 h-1.5 rounded appearance-none cursor-pointer"
+              style={{
+                background: `linear-gradient(to right, ${color} ${data.framePosition * 100}%, var(--bg-darkest) ${data.framePosition * 100}%)`,
+                accentColor: color,
+              }}
+            />
+          </div>
         </div>
-        {/* 2×2 knob block: Level Pan / Trans Tune */}
-        <div className="grid grid-cols-2 gap-x-0.5 gap-y-0 content-between">
-          <Knob
-            label="Level"
-            value={data.level}
-            min={0}
-            max={1}
-            onChange={(v) => (state.level = v)}
-            color={color}
-            modRoutes={modLevel}
-            onModDrop={handleModDrop(targets.level)}
-            modTarget={targets.level}
-            size={26}
-          />
-          <Knob
-            label="Pan"
-            value={data.pan}
-            min={-1}
-            max={1}
-            onChange={(v) => (state.pan = v)}
-            color={color}
-            modRoutes={modPan}
-            onModDrop={handleModDrop(targets.pan)}
-            modTarget={targets.pan}
-            formatValue={(v) =>
-              Math.abs(v) < 0.01 ? "C" : v < 0 ? `L${Math.abs(Math.round(v * 100))}` : `R${Math.round(v * 100)}`
-            }
-            size={26}
-          />
+
+        {/* ── PITCH & PHASE SECTION ── */}
+        <div className="flex justify-between items-center bg-black/20 px-2 py-1.5 rounded border border-white/5">
           <Knob
             label="Trans"
             value={data.transpose}
@@ -204,227 +269,174 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
             formatValue={(v) => `${v > 0 ? "+" : ""}${v.toFixed(0)}ct`}
             size={26}
           />
-        </div>
-      </div>
-
-      {/* ── Row 2: preset name + edit + dest ── */}
-      <div className="flex items-center gap-1 mb-1">
-        <SelectWithArrows
-          value={String(data.waveformType)}
-          displayLabel={data.waveformType === -1 ? "Custom" : undefined}
-          options={PRESET_OPTIONS}
-          onChange={(v) => {
-            const idx = Number(v);
-            state.waveformType = idx;
-            state.waveformName = PRESET_NAMES[idx] ?? "Custom";
-            state.customWaveform = null;
-            state.controlPoints = null;
-          }}
-          accentColor={color}
-          className="flex-1 min-w-0"
-        />
-        <button
-          type="button"
-          onClick={onOpenWaveEditor}
-          className="shrink-0 px-1 py-0.5 text-text-secondary hover:text-text-primary bg-bg-surface border border-border-default rounded cursor-pointer transition-colors"
-          title="Edit waveform"
-        >
-          <Pencil size={10} />
-        </button>
-        <SelectPopup
-          value={String(data.destination)}
-          options={DESTINATION_OPTIONS}
-          onChange={(v) => (state.destination = Number(v))}
-        />
-      </div>
-
-      {/* ── Row 3: frame position slider ── */}
-      <div className="flex items-center gap-1.5 mb-1.5">
-        <Knob
-          label="Pos"
-          value={data.framePosition}
-          min={0}
-          max={1}
-          onChange={(v) => (state.framePosition = v)}
-          color={color}
-          modRoutes={modFrame}
-          onModDrop={handleModDrop(targets.frame)}
-          modTarget={targets.frame}
-          size={20}
-          formatValue={(v) => `${Math.round(v * 63)}`}
-        />
-        <input
-          type="range"
-          min={0}
-          max={1}
-          step={0.001}
-          value={data.framePosition}
-          onChange={(e) => (state.framePosition = Number(e.target.value))}
-          className="flex-1 h-1.5 rounded appearance-none cursor-pointer"
-          style={{
-            background: `linear-gradient(to right, ${color} ${data.framePosition * 100}%, var(--bg-darkest) ${data.framePosition * 100}%)`,
-            accentColor: color,
-          }}
-        />
-      </div>
-
-      {/* ── Row 4: Spectral morph ── */}
-      <div className="flex items-center gap-1 mb-0.5">
-        <span className="text-[8px] text-text-secondary shrink-0 w-10">Spectral</span>
-        <SelectPopup
-          value={String(data.spectralMorphType)}
-          options={SPECTRAL_MORPH_OPTIONS}
-          onChange={(v) => (state.spectralMorphType = Number(v))}
-        />
-        <Knob
-          label="Amt"
-          value={data.spectralMorphAmount}
-          min={0}
-          max={1}
-          onChange={(v) => (state.spectralMorphAmount = v)}
-          color={color}
-          modRoutes={modSpectralMorph}
-          onModDrop={handleModDrop(targets.spectralMorph)}
-          modTarget={targets.spectralMorph}
-          size={22}
-        />
-      </div>
-
-      {/* ── Row 5: Distortion ── */}
-      <div className="flex items-center gap-1 mb-1.5">
-        <span className="text-[8px] text-text-secondary shrink-0 w-10">Dist</span>
-        <SelectPopup
-          value={String(data.distortionType)}
-          options={DISTORTION_OPTIONS}
-          onChange={(v) => (state.distortionType = Number(v))}
-        />
-        <Knob
-          label="Amt"
-          value={data.distortionAmount}
-          min={0}
-          max={1}
-          onChange={(v) => (state.distortionAmount = v)}
-          color={color}
-          modRoutes={modWarp}
-          onModDrop={handleModDrop(targets.warp)}
-          modTarget={targets.warp}
-          size={22}
-        />
-        {showDistPhase && (
+          <div className="w-[1px] h-8 bg-white/5 mx-1" />
           <Knob
             label="Phase"
-            value={data.distortionPhase}
+            value={data.phaseOffset}
             min={0}
             max={1}
-            onChange={(v) => (state.distortionPhase = v)}
+            onChange={(v) => (state.phaseOffset = v)}
             color={color}
-            modRoutes={modDistPhase}
-            onModDrop={handleModDrop(targets.distortionPhase)}
-            modTarget={targets.distortionPhase}
-            size={22}
-          />
-        )}
-      </div>
-
-      {/* ── Row 6: Phase + Rand ── */}
-      <div className="flex items-center gap-1 mb-1.5">
-        <span className="text-[8px] text-text-secondary shrink-0 w-10">Phase</span>
-        <Knob
-          label="Offset"
-          value={data.phaseOffset}
-          min={0}
-          max={1}
-          onChange={(v) => (state.phaseOffset = v)}
-          color={color}
-          size={22}
-        />
-        <Knob
-          label="Rand"
-          value={data.randomPhase}
-          min={0}
-          max={1}
-          onChange={(v) => (state.randomPhase = v)}
-          color={color}
-          size={22}
-        />
-      </div>
-
-      {/* ── Row 7: Unison ── */}
-      <div>
-        <div className="flex items-center gap-0.5 flex-wrap mb-0.5">
-          <span className="text-[8px] text-text-secondary mr-0.5 w-10 shrink-0">Unison</span>
-          <Knob
-            label="Vx"
-            value={data.unisonVoices}
-            min={1}
-            max={16}
-            step={1}
-            onChange={(v) => (state.unisonVoices = v)}
-            color={color}
-            formatValue={(v) => v.toFixed(0)}
-            size={22}
+            size={26}
           />
           <Knob
-            label="Det"
-            value={data.unisonDetune}
+            label="Rand"
+            value={data.randomPhase}
             min={0}
             max={1}
-            onChange={(v) => (state.unisonDetune = v)}
+            onChange={(v) => (state.randomPhase = v)}
             color={color}
-            modRoutes={modUnisonDetune}
-            onModDrop={handleModDrop(targets.unisonDetune)}
-            modTarget={targets.unisonDetune}
-            formatValue={(v) => `${Math.round(v * 100)}%`}
-            size={22}
-          />
-          <Knob
-            label="Pwr"
-            value={data.unisonDetunePower}
-            min={-5}
-            max={5}
-            onChange={(v) => (state.unisonDetunePower = v)}
-            color={color}
-            formatValue={(v) => v.toFixed(1)}
-            size={22}
-          />
-          <Knob
-            label="Blend"
-            value={data.unisonBlend}
-            min={0}
-            max={1}
-            onChange={(v) => (state.unisonBlend = v)}
-            color={color}
-            size={22}
-          />
-          <Knob
-            label="Spr"
-            value={data.unisonSpread}
-            min={0}
-            max={1}
-            onChange={(v) => (state.unisonSpread = v)}
-            color={color}
-            modRoutes={modUnisonSpread}
-            onModDrop={handleModDrop(targets.unisonSpread)}
-            modTarget={targets.unisonSpread}
-            size={22}
-          />
-          <SelectPopup
-            value={String(data.unisonStackType)}
-            options={UNISON_STACK_OPTIONS}
-            onChange={(v) => (state.unisonStackType = Number(v))}
+            size={26}
           />
         </div>
-        {data.unisonVoices > 1 && (
-          <UnisonViewer
-            count={data.unisonVoices}
-            detune={data.unisonDetune}
-            blend={data.unisonBlend}
-            detunePower={data.unisonDetunePower}
-            detuneRange={data.unisonDetuneRange}
-            stereoSpread={data.unisonSpread}
-            color={color}
-          />
-        )}
+
+        {/* ── WARP SECTION ── */}
+        <div className="flex flex-col gap-1.5 bg-black/20 p-1.5 rounded border border-white/5">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[9px] font-medium text-text-secondary w-10 shrink-0">Spectral</span>
+            <div className="flex-1 min-w-0">
+              <SelectPopup
+                value={String(data.spectralMorphType)}
+                options={SPECTRAL_MORPH_OPTIONS}
+                onChange={(v) => (state.spectralMorphType = Number(v))}
+              />
+            </div>
+            <Knob
+              label="Amt"
+              value={data.spectralMorphAmount}
+              min={0}
+              max={1}
+              onChange={(v) => (state.spectralMorphAmount = v)}
+              color={color}
+              modRoutes={modSpectralMorph}
+              onModDrop={handleModDrop(targets.spectralMorph)}
+              modTarget={targets.spectralMorph}
+              size={22}
+            />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[9px] font-medium text-text-secondary w-10 shrink-0">Distort</span>
+            <div className="flex-1 min-w-0">
+              <SelectPopup
+                value={String(data.distortionType)}
+                options={DISTORTION_OPTIONS}
+                onChange={(v) => (state.distortionType = Number(v))}
+              />
+            </div>
+            <Knob
+              label="Amt"
+              value={data.distortionAmount}
+              min={0}
+              max={1}
+              onChange={(v) => (state.distortionAmount = v)}
+              color={color}
+              modRoutes={modWarp}
+              onModDrop={handleModDrop(targets.warp)}
+              modTarget={targets.warp}
+              size={22}
+            />
+            {showDistPhase ? (
+              <Knob
+                label="Phase"
+                value={data.distortionPhase}
+                min={0}
+                max={1}
+                onChange={(v) => (state.distortionPhase = v)}
+                color={color}
+                modRoutes={modDistPhase}
+                onModDrop={handleModDrop(targets.distortionPhase)}
+                modTarget={targets.distortionPhase}
+                size={22}
+              />
+            ) : (
+               <div className="w-[22px]" />
+            )}
+          </div>
+        </div>
+
+        {/* ── UNISON SECTION ── */}
+        <div className="bg-black/20 p-1.5 pb-2 rounded border border-white/5">
+          <div className="flex items-center justify-between mb-1.5 px-0.5">
+            <span className="text-[9px] font-medium text-text-secondary">Unison</span>
+            <div className="w-24">
+              <SelectPopup
+                value={String(data.unisonStackType)}
+                options={UNISON_STACK_OPTIONS}
+                onChange={(v) => (state.unisonStackType = Number(v))}
+              />
+            </div>
+          </div>
+          <div className="flex justify-between items-center px-1">
+            <Knob
+              label="Vx"
+              value={data.unisonVoices}
+              min={1}
+              max={16}
+              step={1}
+              onChange={(v) => (state.unisonVoices = v)}
+              color={color}
+              formatValue={(v) => v.toFixed(0)}
+              size={22}
+            />
+            <Knob
+              label="Det"
+              value={data.unisonDetune}
+              min={0}
+              max={1}
+              onChange={(v) => (state.unisonDetune = v)}
+              color={color}
+              modRoutes={modUnisonDetune}
+              onModDrop={handleModDrop(targets.unisonDetune)}
+              modTarget={targets.unisonDetune}
+              formatValue={(v) => `${Math.round(v * 100)}%`}
+              size={22}
+            />
+            <Knob
+              label="Pwr"
+              value={data.unisonDetunePower}
+              min={-5}
+              max={5}
+              onChange={(v) => (state.unisonDetunePower = v)}
+              color={color}
+              formatValue={(v) => v.toFixed(1)}
+              size={22}
+            />
+            <Knob
+              label="Blend"
+              value={data.unisonBlend}
+              min={0}
+              max={1}
+              onChange={(v) => (state.unisonBlend = v)}
+              color={color}
+              size={22}
+            />
+            <Knob
+              label="Spr"
+              value={data.unisonSpread}
+              min={0}
+              max={1}
+              onChange={(v) => (state.unisonSpread = v)}
+              color={color}
+              modRoutes={modUnisonSpread}
+              onModDrop={handleModDrop(targets.unisonSpread)}
+              modTarget={targets.unisonSpread}
+              size={22}
+            />
+          </div>
+          {data.unisonVoices > 1 && (
+            <div className="mt-2 pt-1 border-t border-white/5 mx-1">
+              <UnisonViewer
+                count={data.unisonVoices}
+                detune={data.unisonDetune}
+                blend={data.unisonBlend}
+                detunePower={data.unisonDetunePower}
+                detuneRange={data.unisonDetuneRange}
+                stereoSpread={data.unisonSpread}
+                color={color}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </Panel>
   );
