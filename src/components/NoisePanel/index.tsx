@@ -2,7 +2,7 @@
 import { ModTarget } from "@/audio/dsp/modulation/modMatrix";
 import { Knob } from "@/components/ui/Knob";
 import { Panel } from "@/components/ui/Panel";
-import { Select } from "@/components/ui/Select";
+import { SelectPopup } from "@/components/ui/SelectPopup";
 import type { ModSourceDragItem } from "@/dnd/types";
 import { useModRoutes } from "@/hooks/useModAmount";
 import { synthState } from "@/state/synthState";
@@ -40,7 +40,7 @@ export function NoisePanel() {
     >
       <div className="flex items-center gap-2 mb-2">
         <span className="text-[9px] text-text-muted uppercase">Type</span>
-        <Select
+        <SelectPopup
           value={String(noise.type)}
           options={NOISE_OPTIONS}
           onChange={(v) => (synthState.noise.type = Number(v))}

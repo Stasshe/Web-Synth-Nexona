@@ -16,6 +16,7 @@ import { Visualizer } from "@/components/Visualizer";
 import { VoicePage } from "@/components/VoicePage";
 import { WaveformEditor } from "@/components/WaveformEditor";
 import { Knob } from "@/components/ui/Knob";
+import { SelectPopup } from "@/components/ui/SelectPopup";
 import { useGlobalScrollLock } from "@/hooks/scrollLock";
 import { loadPatchIntoState, urlToPatch } from "@/patch/loader";
 import { patchToUrl, stateToPatch } from "@/patch/serializer";
@@ -324,15 +325,16 @@ export default function Home() {
               )}
               {recState === "done" && (
                 <>
-                  <select
+                  <SelectPopup
                     value={exportFormat}
-                    onChange={(e) => setExportFormat(e.target.value as ExportFormat)}
-                    className="px-1 py-0.5 text-[10px] bg-bg-surface border border-border-default rounded text-text-primary cursor-pointer"
-                  >
-                    <option value="wav">WAV</option>
-                    <option value="mp3">MP3</option>
-                    <option value="m4a">M4A</option>
-                  </select>
+                    options={[
+                      { value: "wav", label: "WAV" },
+                      { value: "mp3", label: "MP3" },
+                      { value: "m4a", label: "M4A" },
+                    ]}
+                    onChange={(v) => setExportFormat(v as ExportFormat)}
+                    className="w-20"
+                  />
                   <button
                     type="button"
                     onClick={handleExport}

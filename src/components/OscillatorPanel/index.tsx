@@ -5,7 +5,7 @@ import { PRESET_COUNT, PRESET_NAMES } from "@/audio/dsp/wavetable/wavetablePrese
 import { computeMorphedPreviewSamples } from "@/audio/dsp/wavetable/wavetablePreview";
 import { Knob } from "@/components/ui/Knob";
 import { Panel } from "@/components/ui/Panel";
-import { Select } from "@/components/ui/Select";
+import { SelectPopup } from "@/components/ui/SelectPopup";
 import type { ModSourceDragItem } from "@/dnd/types";
 import { useModRoutes } from "@/hooks/useModAmount";
 import { synthState } from "@/state/synthState";
@@ -211,7 +211,7 @@ function PresetListPopup({
   return (
     <div
       ref={popupRef}
-      className="absolute z-50 mt-1 left-0 right-0 bg-bg-panel border border-border-default rounded shadow-lg max-h-48 overflow-y-auto"
+      className="absolute z-50 mt-1 left-0 right-0 bg-bg-darkest border border-border-default rounded shadow-xl overflow-hidden max-h-48 overflow-y-auto"
     >
       {Array.from({ length: PRESET_COUNT }, (_, i) => (
         <button
@@ -221,10 +221,10 @@ function PresetListPopup({
             onSelect(i);
             onClose();
           }}
-          className={`w-full text-left px-2 py-1 text-[10px] cursor-pointer transition-colors ${
+          className={`w-full text-left px-2 py-1.5 text-[10px] cursor-pointer transition-colors border-l-2 ${
             i === currentType
-              ? "text-text-primary bg-bg-darkest"
-              : "text-text-secondary hover:text-text-primary hover:bg-bg-surface"
+              ? "text-text-primary bg-bg-active border-l-accent-blue"
+              : "text-text-secondary hover:text-text-primary hover:bg-bg-hover border-l-transparent"
           }`}
         >
           {PRESET_NAMES[i]}
@@ -387,7 +387,7 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
           <div className="text-[8px] text-text-secondary mb-0.5 uppercase tracking-wider">
             Spectral
           </div>
-          <Select
+          <SelectPopup
             value={String(data.spectralMorphType)}
             options={SPECTRAL_MORPH_OPTIONS}
             onChange={(v) => (state.spectralMorphType = Number(v))}
@@ -411,7 +411,7 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
           <div className="text-[8px] text-text-secondary mb-0.5 uppercase tracking-wider">
             Warp 1
           </div>
-          <Select
+          <SelectPopup
             value={String(data.warpType)}
             options={WARP_OPTIONS}
             onChange={(v) => (state.warpType = Number(v))}
@@ -435,7 +435,7 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
           <div className="text-[8px] text-text-secondary mb-0.5 uppercase tracking-wider">
             Warp 2
           </div>
-          <Select
+          <SelectPopup
             value={String(data.warp2Type)}
             options={WARP_OPTIONS}
             onChange={(v) => (state.warp2Type = Number(v))}

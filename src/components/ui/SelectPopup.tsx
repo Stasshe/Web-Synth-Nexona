@@ -1,0 +1,66 @@
+"use client";
+import { ChevronDown } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+
+interface SelectPopupProps {
+  value: string | number;
+  options: { value: string | number; label: string }[];
+  onChange: (value: string) => void;
+  className?: string;
+}
+
+export function SelectPopup({ value, options, onChange, className = "" }: SelectPopupProps) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const currentLabel =
+    options.find((o) => String(o.value) === String(value))?.label ?? String(value);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+
+  return (
+    <div ref={ref} className={`relative ${className}`}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between gap-1 px-2 py-1 text-xs text-text-secondary hover:text-text-primary bg-bg-surface border border-border-default rounded cursor-pointer transition-colors"
+      >
+        <span className="truncate">{currentLabel}</span>
+        <ChevronDown
+          size={10}
+          className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open && (
+        <div className="absolute z-50 mt-1 left-0 right-0 bg-bg-darkest border border-border-default rounded shadow-xl overflow-hidden max-h-48 overflow-y-auto">
+          {options.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => {
+                onChange(String(opt.value));
+                setOpen(false);
+              }}
+              className={`w-full text-left px-2 py-1.5 text-[10px] cursor-pointer transition-colors border-l-2 ${
+                String(opt.value) === String(value)
+                  ? "text-text-primary bg-bg-active border-l-accent-blue"
+                  : "text-text-secondary hover:text-text-primary hover:bg-bg-hover border-l-transparent"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
