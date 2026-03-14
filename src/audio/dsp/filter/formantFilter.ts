@@ -1,19 +1,27 @@
-import type { FilterDefinition, FilterProcessor } from "./filterTypes";
-import { FilterType, SVFilter } from "./svf";
-
 /**
- * Vowel formant filter.
- * Resonance (cutoff-scaled) morphs between vowel presets.
- * Uses 3 bandpass SVFs tuned to F1, F2, F3 frequencies.
+ * Formant model — vowel formant filter using parallel SVF bandpass sections.
+ * Blend morphs between vowel positions (X axis).
+ * Styles: 0=AOIE vowel sequence, 1=AIUO vowel sequence
  */
+import type { FilterModel, FilterProcessor } from "./filterTypes";
+import { SVFilter } from "./svf";
 
-// [F1, F2, F3, gain] for each vowel
-const VOWELS: [number, number, number, number][] = [
-  [800, 1200, 2500, 1.0], // A
-  [400, 2200, 2600, 0.9], // E
-  [300, 2300, 3000, 0.85], // I
-  [500, 1000, 2800, 0.9], // O
-  [300, 900, 2200, 0.85], // U
+// Vital-style vowel data: [F1, F2, F3, F4, gain]
+//   F1-F4 = first four formant frequencies in Hz
+//   gain  = relative output level
+const VOWELS_AOIE: [number, number, number, number, number][] = [
+  [800, 1150, 2900, 3400, 1.0],  // A
+  [500, 1000, 2800, 3300, 0.9],  // O
+  [300,  900, 2200, 3100, 0.85], // U (between O and I)
+  [280, 2250, 2900, 3400, 0.85], // I
+  [400, 2200, 2600, 3300, 0.9],  // E
+];
+
+const VOWELS_AIUO: [number, number, number, number, number][] = [
+  [800, 1150, 2900, 3400, 1.0],  // A
+  [280, 2250, 2900, 3400, 0.85], // I
+  [300,  900, 2200, 3100, 0.85], // U
+  [500, 1000, 2800, 3300, 0.9],  // O
 ];
 
 function lerp(a: number, b: number, t: number): number {
@@ -21,59 +29,76 @@ function lerp(a: number, b: number, t: number): number {
 }
 
 class FormantFilter implements FilterProcessor {
-  private bp1: SVFilter;
-  private bp2: SVFilter;
-  private bp3: SVFilter;
+  private bands: SVFilter[];
   private sampleRate: number;
-  private cutoffScale = 1;
+  private gain = 1;
+  private style = 0;
 
   constructor(sampleRate: number) {
     this.sampleRate = sampleRate;
-    this.bp1 = new SVFilter(sampleRate);
-    this.bp2 = new SVFilter(sampleRate);
-    this.bp3 = new SVFilter(sampleRate);
+    this.bands = Array.from({ length: 4 }, () => new SVFilter());
   }
 
-  setParams(cutoff: number, resonance: number, _sampleRate?: number): void {
-    // Cutoff (20-20000) maps to a 0-4 vowel index
-    const t =
+  setParams(
+    cutoff: number,
+    resonance: number,
+    _drive: number,
+    blend: number,
+    style: number,
+    sampleRate: number,
+  ): void {
+    this.sampleRate = sampleRate;
+    this.style = style;
+
+    const vowels = style === 1 ? VOWELS_AIUO : VOWELS_AOIE;
+    const n = vowels.length;
+
+    // Cutoff (20–20000 Hz log) → vowel X position [0, n-1]
+    // blend (-1..+1) provides fine-grain morph within the vowel space
+    const tBase =
       ((Math.log2(Math.max(cutoff, 20)) - Math.log2(20)) / (Math.log2(20000) - Math.log2(20))) *
-      (VOWELS.length - 1);
-    const i = Math.min(Math.floor(t), VOWELS.length - 2);
+      (n - 1);
+    // blend shifts the position slightly (±0.5 vowel positions)
+    const t = Math.max(0, Math.min(n - 1, tBase + blend * 0.5));
+
+    const i = Math.min(Math.floor(t), n - 2);
     const frac = t - i;
+    const v0 = vowels[i];
+    const v1 = vowels[i + 1];
 
-    const v0 = VOWELS[i];
-    const v1 = VOWELS[i + 1];
-    const f1 = lerp(v0[0], v1[0], frac);
-    const f2 = lerp(v0[1], v1[1], frac);
-    const f3 = lerp(v0[2], v1[2], frac);
+    this.gain = lerp(v0[4], v1[4], frac);
 
-    const reso = 0.5 + resonance * 0.3; // Keep resonance mild
-    this.bp1.setParams(f1, reso, 1, FilterType.BANDPASS);
-    this.bp2.setParams(f2, reso, 1, FilterType.BANDPASS);
-    this.bp3.setParams(f3, reso * 0.7, 1, FilterType.BANDPASS);
-    this.cutoffScale = lerp(v0[3], v1[3], frac);
+    // Q from resonance: mild formant peaks (0.55 base + user control)
+    const q = 0.55 + resonance * 0.35;
+
+    for (let b = 0; b < 4; b++) {
+      const freq = lerp(v0[b], v1[b], frac);
+      // SVF bandpass: use setCoeffs with resonance mapped to Q
+      // Q = 1/k, k = 2-2*r → r = 1 - 1/(2Q)
+      const r = 1 - 1 / (2 * Math.max(q, 0.5));
+      this.bands[b].setCoeffs(freq, r, sampleRate);
+    }
   }
 
   process(input: number): number {
-    const f1 = this.bp1.process(input);
-    const f2 = this.bp2.process(input) * 0.7;
-    const f3 = this.bp3.process(input) * 0.4;
-    return (f1 + f2 + f3) * this.cutoffScale;
+    let out = 0;
+    const weights = [1.0, 0.8, 0.55, 0.35];
+    for (let b = 0; b < 4; b++) {
+      const [, bp] = this.bands[b].tick(input);
+      out += bp * weights[b];
+    }
+    return out * this.gain;
   }
 
   reset(): void {
-    this.bp1.reset();
-    this.bp2.reset();
-    this.bp3.reset();
+    for (const b of this.bands) b.reset();
   }
 }
 
-export const FORMANT_FILTER_DEFINITIONS: FilterDefinition[] = [
-  {
-    id: "formant_vowel",
-    name: "Vowel",
-    category: "Formant",
-    create: (sr) => new FormantFilter(sr),
-  },
-];
+export const FORMANT_MODEL: FilterModel = {
+  id: "formant",
+  name: "Formant",
+  styleCount: 2,
+  styleNames: ["AOIE", "AIUO"],
+  create: (sr) => new FormantFilter(sr),
+};

@@ -95,7 +95,9 @@ export const synthState = proxy({
     cutoff: 8000,
     resonance: 0,
     drive: 1,
-    type: 0,
+    type: 0,       // model index: 0=Analog..7=Phaser
+    blend: -1,     // LP↔BP↔HP: -1=LP, 0=BP, +1=HP
+    style: 0,      // sub-mode index within model
     envAmount: 0,
     input: 0b1111, // bitmask: bit0=oscA, bit1=oscB, bit2=oscC, bit3=noise
   },
@@ -105,6 +107,8 @@ export const synthState = proxy({
     resonance: 0,
     drive: 1,
     type: 0,
+    blend: -1,
+    style: 0,
     envAmount: 0,
     input: 0b10000, // bitmask: bit4=filter1
   },
@@ -252,6 +256,8 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
     setParam(sabView, SabParam.FilterResonance, f.resonance);
     setParam(sabView, SabParam.FilterDrive, f.drive);
     setParam(sabView, SabParam.FilterType, f.type);
+    setParam(sabView, SabParam.FilterBlend, f.blend);
+    setParam(sabView, SabParam.FilterStyle, f.style);
     setParam(sabView, SabParam.FilterEnvAmount, f.envAmount);
     setParam(sabView, SabParam.Filter1Input, f.input);
   };
@@ -263,6 +269,8 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
     setParam(sabView, SabParam.Filter2Resonance, f.resonance);
     setParam(sabView, SabParam.Filter2Drive, f.drive);
     setParam(sabView, SabParam.Filter2Type, f.type);
+    setParam(sabView, SabParam.Filter2Blend, f.blend);
+    setParam(sabView, SabParam.Filter2Style, f.style);
     setParam(sabView, SabParam.Filter2EnvAmount, f.envAmount);
     setParam(sabView, SabParam.Filter2Input, f.input);
   };

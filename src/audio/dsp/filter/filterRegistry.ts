@@ -1,40 +1,39 @@
-import { ANALOG_FILTER_DEFINITIONS } from "./analogFilter";
-import { COMB_FILTER_DEFINITIONS } from "./combFilter";
-import { FORMANT_FILTER_DEFINITIONS } from "./formantFilter";
-import { LADDER_FILTER_DEFINITIONS } from "./ladderFilter";
-import type { FilterDefinition, FilterProcessor } from "./filterTypes";
+/**
+ * Vital-style filter registry — 8 models ordered by FilterModelIndex.
+ * The model index (0–7) is stored in the SAB as FilterType.
+ * Style (0–N) is stored separately as FilterStyle.
+ */
+import { ANALOG_MODEL } from "./analogFilter";
+import { COMB_MODEL } from "./combFilter";
+import { DIGITAL_MODEL } from "./digitalFilter";
+import { DIODE_MODEL } from "./diodeFilter";
+import { DIRTY_MODEL } from "./dirtyFilter";
+import { FORMANT_MODEL } from "./formantFilter";
+import { LADDER_MODEL } from "./ladderFilter";
+import { PHASER_MODEL } from "./phaserFilter";
+import type { FilterModel, FilterProcessor } from "./filterTypes";
 
 /**
- * All registered filter types in display order.
- * The numeric index into this array is stored in the SAB as FilterType.
+ * All 8 filter models, indexed by FilterModelIndex enum value.
+ * 0=Analog, 1=Dirty, 2=Ladder, 3=Digital, 4=Diode, 5=Formant, 6=Comb, 7=Phaser
  */
-export const FILTER_REGISTRY: FilterDefinition[] = [
-  ...ANALOG_FILTER_DEFINITIONS, // 0-6
-  ...LADDER_FILTER_DEFINITIONS, // 7-8
-  ...COMB_FILTER_DEFINITIONS, // 9-10
-  ...FORMANT_FILTER_DEFINITIONS, // 11
+export const FILTER_MODELS: FilterModel[] = [
+  ANALOG_MODEL,   // 0
+  DIRTY_MODEL,    // 1
+  LADDER_MODEL,   // 2
+  DIGITAL_MODEL,  // 3
+  DIODE_MODEL,    // 4
+  FORMANT_MODEL,  // 5
+  COMB_MODEL,     // 6
+  PHASER_MODEL,   // 7
 ];
 
-export function getFilterByIndex(index: number): FilterDefinition {
-  const def = FILTER_REGISTRY[index];
-  if (!def) return FILTER_REGISTRY[0];
-  return def;
+export function getFilterModel(modelIndex: number): FilterModel {
+  return FILTER_MODELS[modelIndex] ?? FILTER_MODELS[0];
 }
 
-export function getFilterCategories(): string[] {
-  const seen = new Set<string>();
-  const result: string[] = [];
-  for (const def of FILTER_REGISTRY) {
-    if (!seen.has(def.category)) {
-      seen.add(def.category);
-      result.push(def.category);
-    }
-  }
-  return result;
+export function createFilter(modelIndex: number, sampleRate: number): FilterProcessor {
+  return getFilterModel(modelIndex).create(sampleRate);
 }
 
-export function createFilter(index: number, sampleRate: number): FilterProcessor {
-  return getFilterByIndex(index).create(sampleRate);
-}
-
-export const FILTER_COUNT = FILTER_REGISTRY.length;
+export const FILTER_MODEL_COUNT = FILTER_MODELS.length;

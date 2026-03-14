@@ -74,6 +74,8 @@ export interface VoiceParams {
   filterResonance: number;
   filterDrive: number;
   filterType: number;
+  filterBlend: number;   // LP↔BP↔HP: -1=LP, 0=BP, +1=HP
+  filterStyle: number;   // sub-mode index within the model
   filterEnvAmount: number;
   filterOn: boolean;
   filter1Input: number; // bitmask: bit0=oscA, bit1=oscB, bit2=oscC, bit3=noise (default 0b1111=all)
@@ -82,6 +84,8 @@ export interface VoiceParams {
   filter2Resonance: number;
   filter2Drive: number;
   filter2Type: number;
+  filter2Blend: number;
+  filter2Style: number;
   filter2EnvAmount: number;
   filter2On: boolean;
   filter2Input: number; // bitmask: bit0=oscA, bit1=oscB, bit2=oscC, bit3=noise, bit4=filter1 (default 0b10000)
@@ -429,10 +433,6 @@ export class Voice {
       }
 
       const drive = clamp(p.filterDrive + modFilterDrive * 9, 1, 10);
-      if (drive > 1) {
-        f1L = Math.tanh(f1L * drive) / drive;
-        f1R = Math.tanh(f1R * drive) / drive;
-      }
       const baseCutoff = this.cutoffSmoother.tick();
       const envAmt = clamp(p.filterEnvAmount + modFilterEnvAmt, -1, 1);
       const envMod = filterEnvLevel * envAmt;
@@ -442,8 +442,8 @@ export class Voice {
         this.sampleRate * 0.49,
       );
       const reso = clamp(p.filterResonance + modFilterReso * 0.99, 0, 0.99);
-      this.filterL.setParams(cutoff, reso, this.sampleRate);
-      this.filterR.setParams(cutoff, reso, this.sampleRate);
+      this.filterL.setParams(cutoff, reso, drive, p.filterBlend, p.filterStyle, this.sampleRate);
+      this.filterR.setParams(cutoff, reso, drive, p.filterBlend, p.filterStyle, this.sampleRate);
       f1outL = this.filterL.process(f1L);
       f1outR = this.filterR.process(f1R);
     }
@@ -474,10 +474,6 @@ export class Voice {
       } // filter1 output
 
       const drive2 = clamp(p.filter2Drive + modFilter2Drive * 9, 1, 10);
-      if (drive2 > 1) {
-        f2L = Math.tanh(f2L * drive2) / drive2;
-        f2R = Math.tanh(f2R * drive2) / drive2;
-      }
       const baseCutoff2 = this.cutoff2Smoother.tick();
       const envAmt2 = clamp(p.filter2EnvAmount + modFilter2EnvAmt, -1, 1);
       const envMod2 = filterEnvLevel * envAmt2;
@@ -487,8 +483,8 @@ export class Voice {
         this.sampleRate * 0.49,
       );
       const reso2 = clamp(p.filter2Resonance + modFilter2Reso * 0.99, 0, 0.99);
-      this.filter2L.setParams(cutoff2, reso2, this.sampleRate);
-      this.filter2R.setParams(cutoff2, reso2, this.sampleRate);
+      this.filter2L.setParams(cutoff2, reso2, drive2, p.filter2Blend, p.filter2Style, this.sampleRate);
+      this.filter2R.setParams(cutoff2, reso2, drive2, p.filter2Blend, p.filter2Style, this.sampleRate);
       f2outL = this.filter2L.process(f2L);
       f2outR = this.filter2R.process(f2R);
     }

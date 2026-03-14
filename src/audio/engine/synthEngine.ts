@@ -123,6 +123,8 @@ export class SynthEngine {
     filterResonance: 0,
     filterDrive: 1,
     filterType: 0,
+    filterBlend: -1,
+    filterStyle: 0,
     filterEnvAmount: 0,
     filterOn: true,
     filter1Input: 0b1111, // all sources
@@ -131,6 +133,8 @@ export class SynthEngine {
     filter2Resonance: 0,
     filter2Drive: 1,
     filter2Type: 0,
+    filter2Blend: -1,
+    filter2Style: 0,
     filter2EnvAmount: 0,
     filter2On: true,
     filter2Input: 0b10000, // filter1 only
@@ -558,6 +562,8 @@ export class SynthEngine {
     this.voiceParams.filterResonance = getParam(this.sab, SabParam.FilterResonance);
     this.voiceParams.filterDrive = getParam(this.sab, SabParam.FilterDrive);
     this.voiceParams.filterType = Math.round(getParam(this.sab, SabParam.FilterType));
+    this.voiceParams.filterBlend = getParam(this.sab, SabParam.FilterBlend);
+    this.voiceParams.filterStyle = Math.round(getParam(this.sab, SabParam.FilterStyle));
     this.voiceParams.filterEnvAmount = getParam(this.sab, SabParam.FilterEnvAmount);
     this.voiceParams.filterOn = getParam(this.sab, SabParam.FilterOn) >= 0.5;
     this.voiceParams.filter1Input = Math.round(getParam(this.sab, SabParam.Filter1Input)) || 0b1111;
@@ -567,6 +573,8 @@ export class SynthEngine {
     this.voiceParams.filter2Resonance = getParam(this.sab, SabParam.Filter2Resonance);
     this.voiceParams.filter2Drive = getParam(this.sab, SabParam.Filter2Drive);
     this.voiceParams.filter2Type = Math.round(getParam(this.sab, SabParam.Filter2Type));
+    this.voiceParams.filter2Blend = getParam(this.sab, SabParam.Filter2Blend);
+    this.voiceParams.filter2Style = Math.round(getParam(this.sab, SabParam.Filter2Style));
     this.voiceParams.filter2EnvAmount = getParam(this.sab, SabParam.Filter2EnvAmount);
     this.voiceParams.filter2On = getParam(this.sab, SabParam.Filter2On) >= 0.5;
     this.voiceParams.filter2Input =

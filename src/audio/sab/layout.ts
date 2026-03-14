@@ -62,6 +62,8 @@ export enum SabParam {
   FilterDrive = 62,
   FilterType = 63,
   FilterEnvAmount = 64,
+  FilterBlend = 65, // LP↔BP↔HP blend: -1=LP, 0=BP, +1=HP
+  FilterStyle = 66, // sub-mode index within the model
 
   // Amp Envelope: 70-73
   AmpEnvAttack = 70,
@@ -130,6 +132,10 @@ export enum SabParam {
   // Filter on/off: 155-156
   FilterOn = 155,
   Filter2On = 156,
+
+  // Filter 2 blend/style: 157-158
+  Filter2Blend = 157,
+  Filter2Style = 158,
 
   // Distortion: 160-163
   DistortionDrive = 160,

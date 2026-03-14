@@ -25,6 +25,8 @@ export interface PatchData {
     type: number;
     envAmount: number;
     input?: number;
+    blend?: number;
+    style?: number;
   };
   filter2: {
     on: boolean;
@@ -34,6 +36,8 @@ export interface PatchData {
     type: number;
     envAmount: number;
     input?: number;
+    blend?: number;
+    style?: number;
   };
   envelopes: {
     amp: EnvPatch;
