@@ -1,10 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef } from "react";
-import {
-  svfNotchResponseDb,
-  svfResponseDb,
-  svfResponseDb24,
-} from "@/audio/dsp/filter/svf";
+import { svfNotchResponseDb, svfResponseDb, svfResponseDb24 } from "@/audio/dsp/filter/svf";
 
 interface FilterResponseGraphProps {
   modelIndex: number;
@@ -84,7 +80,8 @@ function computeResponseDb(
     }
 
     case 7: {
-      let re = 1, im = 0;
+      let re = 1,
+        im = 0;
       for (let i = 0; i < 8; i++) {
         const spread = Math.pow(2, (i - 3.5) * 0.25);
         const fc = Math.min(cutoff * spread, SR * 0.45);
@@ -107,9 +104,9 @@ function computeResponseDb(
       }
       const invertMult = st === 0 ? 1 : -1;
       const outRe = (1 + invertMult * re) * 0.5;
-      const outIm = (invertMult * im) * 0.5;
+      const outIm = invertMult * im * 0.5;
       const wet = (blend + 1) * 0.5;
-      const mixRe = (1 - wet) + wet * outRe;
+      const mixRe = 1 - wet + wet * outRe;
       const mixIm = wet * outIm;
       const mag = Math.sqrt(mixRe * mixRe + mixIm * mixIm);
       return 20 * Math.log10(Math.max(mag, 1e-6));
@@ -123,14 +120,14 @@ function computeResponseDb(
 const VOWELS_AOIE: number[][] = [
   [800, 1150, 2900, 3400],
   [500, 1000, 2800, 3300],
-  [300,  900, 2200, 3100],
+  [300, 900, 2200, 3100],
   [280, 2250, 2900, 3400],
   [400, 2200, 2600, 3300],
 ];
 const VOWELS_AIUO: number[][] = [
   [800, 1150, 2900, 3400],
   [280, 2250, 2900, 3400],
-  [300,  900, 2200, 3100],
+  [300, 900, 2200, 3100],
   [500, 1000, 2800, 3300],
 ];
 
@@ -264,7 +261,6 @@ export function FilterResponseGraph({
     ctx.arc(cx, dotY, 3, 0, Math.PI * 2);
     ctx.fillStyle = "rgba(255,255,255,0.75)";
     ctx.fill();
-
   }, [modelIndex, style, cutoff, resonance, blend, color, width, height]);
 
   useEffect(() => {

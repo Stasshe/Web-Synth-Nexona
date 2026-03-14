@@ -39,10 +39,7 @@ class LadderFilter implements FilterProcessor {
     const f = Math.min(this.cutoff / (sr * 0.5), 0.9999);
     const k = f * (1.873 - 0.4955 * f);
     const r = this.resonance * 3.98;
-    const x0 =
-      this.drive > 1
-        ? Math.tanh(this.drive * input) / this.drive
-        : input;
+    const x0 = this.drive > 1 ? Math.tanh(this.drive * input) / this.drive : input;
 
     const fb = r * this.s[3];
     let x = Math.tanh(x0 - fb);

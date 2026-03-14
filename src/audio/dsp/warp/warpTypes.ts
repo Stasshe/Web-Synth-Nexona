@@ -7,11 +7,11 @@ export enum DistortionType {
   BEND = 4,
   SQUEEZE = 5,
   PULSE_WIDTH = 6,
-  FM_OSC_A = 7,   // FM modulated by Osc A output
-  FM_OSC_B = 8,   // FM modulated by Osc B output
-  FM_SAMPLE = 9,  // FM modulated by noise/sample signal
-  RM_OSC_A = 10,  // Ring mod with Osc A
-  RM_OSC_B = 11,  // Ring mod with Osc B
+  FM_OSC_A = 7, // FM modulated by Osc A output
+  FM_OSC_B = 8, // FM modulated by Osc B output
+  FM_SAMPLE = 9, // FM modulated by noise/sample signal
+  RM_OSC_A = 10, // Ring mod with Osc A
+  RM_OSC_B = 11, // Ring mod with Osc B
   RM_SAMPLE = 12, // Ring mod with noise/sample
 }
 
@@ -99,7 +99,7 @@ export function applyDistortionPhase(
       const power = 1 + amount * 3;
       if (phase < 0.5) {
         const t = phase / 0.5;
-        return pivot * (t ** power);
+        return pivot * t ** power;
       }
       const t = (phase - 0.5) / 0.5;
       return pivot + (1 - pivot) * (1 - (1 - t) ** power);
@@ -158,13 +158,22 @@ export function applyRingMod(
   amount: number,
   fmSignal: number,
 ): number {
-  if (type === DistortionType.RM_OSC_A || type === DistortionType.RM_OSC_B || type === DistortionType.RM_SAMPLE) {
+  if (
+    type === DistortionType.RM_OSC_A ||
+    type === DistortionType.RM_OSC_B ||
+    type === DistortionType.RM_SAMPLE
+  ) {
     return sample * (1 - amount + amount * fmSignal);
   }
   return sample;
 }
 
 // Legacy export for any code still using applyWarp
-export function applyWarp(phase: number, type: DistortionType, amount: number, fmSignal = 0): number {
+export function applyWarp(
+  phase: number,
+  type: DistortionType,
+  amount: number,
+  fmSignal = 0,
+): number {
   return applyDistortionPhase(phase, 0.5, type, amount, fmSignal);
 }

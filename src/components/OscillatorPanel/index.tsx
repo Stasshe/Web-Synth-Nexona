@@ -232,7 +232,11 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
               onModDrop={handleModDrop(targets.pan)}
               modTarget={targets.pan}
               formatValue={(v) =>
-                Math.abs(v) < 0.01 ? "C" : v < 0 ? `L${Math.abs(Math.round(v * 100))}` : `R${Math.round(v * 100)}`
+                Math.abs(v) < 0.01
+                  ? "C"
+                  : v < 0
+                    ? `L${Math.abs(Math.round(v * 100))}`
+                    : `R${Math.round(v * 100)}`
               }
               size={26}
             />
@@ -290,7 +294,9 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
         {/* ── WARP SECTION ── */}
         <div className="flex flex-col gap-1.5 bg-black/20 p-1.5 rounded border border-white/5">
           <div className="flex items-center gap-1.5">
-            <span className="text-[9px] font-medium text-text-secondary w-10 shrink-0">Spectral</span>
+            <span className="text-[9px] font-medium text-text-secondary w-10 shrink-0">
+              Spectral
+            </span>
             <div className="flex-1 min-w-0">
               <SelectPopup
                 value={String(data.spectralMorphType)}
@@ -312,7 +318,9 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
             />
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="text-[9px] font-medium text-text-secondary w-10 shrink-0">Distort</span>
+            <span className="text-[9px] font-medium text-text-secondary w-10 shrink-0">
+              Distort
+            </span>
             <div className="flex-1 min-w-0">
               <SelectPopup
                 value={String(data.distortionType)}
@@ -346,7 +354,7 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
                 size={22}
               />
             ) : (
-               <div className="w-[22px]" />
+              <div className="w-[22px]" />
             )}
           </div>
         </div>

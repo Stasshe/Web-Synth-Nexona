@@ -18,14 +18,14 @@ import type { FilterModel, FilterProcessor } from "./filterTypes";
  * 0=Analog, 1=Dirty, 2=Ladder, 3=Digital, 4=Diode, 5=Formant, 6=Comb, 7=Phaser
  */
 export const FILTER_MODELS: FilterModel[] = [
-  ANALOG_MODEL,   // 0
-  DIRTY_MODEL,    // 1
-  LADDER_MODEL,   // 2
-  DIGITAL_MODEL,  // 3
-  DIODE_MODEL,    // 4
-  FORMANT_MODEL,  // 5
-  COMB_MODEL,     // 6
-  PHASER_MODEL,   // 7
+  ANALOG_MODEL, // 0
+  DIRTY_MODEL, // 1
+  LADDER_MODEL, // 2
+  DIGITAL_MODEL, // 3
+  DIODE_MODEL, // 4
+  FORMANT_MODEL, // 5
+  COMB_MODEL, // 6
+  PHASER_MODEL, // 7
 ];
 
 export function getFilterModel(modelIndex: number): FilterModel {

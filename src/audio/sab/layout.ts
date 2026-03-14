@@ -8,18 +8,18 @@ export enum SabParam {
   OscAOn = 10,
   OscAWavetableIndex = 11,
   OscAFramePosition = 12,
-  OscADistortionPhase = 13,   // repurposed from OscAPitch (was unused)
-  OscATune = 14,              // fine tune ±100 cents (same slot as old OscADetune)
+  OscADistortionPhase = 13, // repurposed from OscAPitch (was unused)
+  OscATune = 14, // fine tune ±100 cents (same slot as old OscADetune)
   OscAUnisonVoices = 15,
-  OscAUnisonDetune = 16,      // 0-1 normalized detune amount
-  OscAUnisonSpread = 17,      // stereo spread 0-1
+  OscAUnisonDetune = 16, // 0-1 normalized detune amount
+  OscAUnisonSpread = 17, // stereo spread 0-1
   OscALevel = 18,
   OscAPan = 19,
-  OscADistortionType = 20,    // was OscAWarpType
-  OscADistortionAmount = 21,  // was OscAWarpAmount
-  OscAUnisonBlend = 22,       // repurposed from OscAWarp2Type
-  OscAUnisonStackType = 23,   // repurposed from OscAWarp2Amount
-  OscATranspose = 24,         // -48 to +48 semitones (replaces old OscAOctave)
+  OscADistortionType = 20, // was OscAWarpType
+  OscADistortionAmount = 21, // was OscAWarpAmount
+  OscAUnisonBlend = 22, // repurposed from OscAWarp2Type
+  OscAUnisonStackType = 23, // repurposed from OscAWarp2Amount
+  OscATranspose = 24, // -48 to +48 semitones (replaces old OscAOctave)
   OscAUnisonDetunePower = 25, // -5 to +5 (replaces old OscASemitone)
   OscAPhaseOffset = 26,
   OscARandomPhase = 27,
@@ -185,11 +185,11 @@ export enum SabParam {
   Filter2Input = 200,
 
   // Extended oscillator params: 201-215
-  OscADetuneRange = 201,       // 0-48 semitones
-  OscAFrameSpread = 202,       // stored as -128 to +128
+  OscADetuneRange = 201, // 0-48 semitones
+  OscAFrameSpread = 202, // stored as -128 to +128
   OscASpectralMorphSpread = 203, // -0.5 to +0.5
-  OscADistortionSpread = 204,  // -0.5 to +0.5
-  OscADestination = 205,       // 0=Filter1, 1=Filter2, 2=Dual, 3=Effects
+  OscADistortionSpread = 204, // -0.5 to +0.5
+  OscADestination = 205, // 0=Filter1, 1=Filter2, 2=Dual, 3=Effects
 
   OscBDetuneRange = 206,
   OscBFrameSpread = 207,

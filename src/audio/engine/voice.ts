@@ -15,12 +15,12 @@ export interface VoiceParams {
   oscAOn: boolean;
   oscALevel: number;
   oscAFramePosition: number;
-  oscATune: number;        // ±100 cents fine tune
-  oscATranspose: number;   // ±48 semitones (integer)
+  oscATune: number; // ±100 cents fine tune
+  oscATranspose: number; // ±48 semitones (integer)
   oscAPhaseOffset: number;
   oscARandomPhase: number;
   oscAUnisonVoices: number;
-  oscAUnisonDetune: number;  // 0-1 normalized
+  oscAUnisonDetune: number; // 0-1 normalized
   oscAUnisonBlend: number;
   oscAUnisonSpread: number;
   oscAUnisonStackType: number;
@@ -31,7 +31,7 @@ export interface VoiceParams {
   oscADistortionAmount: number;
   oscADistortionPhase: number;
   oscAPan: number;
-  oscADestination: number;  // 0=F1, 1=F2, 2=Dual, 3=Effects(bypass)
+  oscADestination: number; // 0=F1, 1=F2, 2=Dual, 3=Effects(bypass)
 
   oscBOn: boolean;
   oscBLevel: number;
@@ -167,10 +167,18 @@ export class Voice {
     this.filterEnvelope.setParams(0.01, 0.1, 0, 0.3);
   }
 
-  setWavetableA(wt: Wavetable): void { this.oscA.setWavetable(wt); }
-  setWavetableB(wt: Wavetable): void { this.oscB.setWavetable(wt); }
-  setWavetableC(wt: Wavetable): void { this.oscC.setWavetable(wt); }
-  setWavetableSub(wt: Wavetable): void { this.sub.setWavetable(wt); }
+  setWavetableA(wt: Wavetable): void {
+    this.oscA.setWavetable(wt);
+  }
+  setWavetableB(wt: Wavetable): void {
+    this.oscB.setWavetable(wt);
+  }
+  setWavetableC(wt: Wavetable): void {
+    this.oscC.setWavetable(wt);
+  }
+  setWavetableSub(wt: Wavetable): void {
+    this.sub.setWavetable(wt);
+  }
 
   noteOn(note: number, vel: number): void {
     this.note = note;
@@ -201,27 +209,45 @@ export class Voice {
     this.filterEnvelope.release();
   }
 
-  startFadeOut(): void { this.fadeOut = this.FADE_SAMPLES; }
-  isIdle(): boolean { return this.ampEnvelope.isIdle() && this.fadeOut === 0; }
-  getNote(): number { return this.note; }
+  startFadeOut(): void {
+    this.fadeOut = this.FADE_SAMPLES;
+  }
+  isIdle(): boolean {
+    return this.ampEnvelope.isIdle() && this.fadeOut === 0;
+  }
+  getNote(): number {
+    return this.note;
+  }
 
   setParams(p: VoiceParams): void {
     this.oscA.setUnisonParams({
-      count: p.oscAUnisonVoices, detune: p.oscAUnisonDetune, blend: p.oscAUnisonBlend,
-      stereoSpread: p.oscAUnisonSpread, stackType: p.oscAUnisonStackType,
-      detunePower: p.oscAUnisonDetunePower, detuneRange: p.oscAUnisonDetuneRange,
+      count: p.oscAUnisonVoices,
+      detune: p.oscAUnisonDetune,
+      blend: p.oscAUnisonBlend,
+      stereoSpread: p.oscAUnisonSpread,
+      stackType: p.oscAUnisonStackType,
+      detunePower: p.oscAUnisonDetunePower,
+      detuneRange: p.oscAUnisonDetuneRange,
       frameSpread: p.oscAUnisonFrameSpread,
     });
     this.oscB.setUnisonParams({
-      count: p.oscBUnisonVoices, detune: p.oscBUnisonDetune, blend: p.oscBUnisonBlend,
-      stereoSpread: p.oscBUnisonSpread, stackType: p.oscBUnisonStackType,
-      detunePower: p.oscBUnisonDetunePower, detuneRange: p.oscBUnisonDetuneRange,
+      count: p.oscBUnisonVoices,
+      detune: p.oscBUnisonDetune,
+      blend: p.oscBUnisonBlend,
+      stereoSpread: p.oscBUnisonSpread,
+      stackType: p.oscBUnisonStackType,
+      detunePower: p.oscBUnisonDetunePower,
+      detuneRange: p.oscBUnisonDetuneRange,
       frameSpread: p.oscBUnisonFrameSpread,
     });
     this.oscC.setUnisonParams({
-      count: p.oscCUnisonVoices, detune: p.oscCUnisonDetune, blend: p.oscCUnisonBlend,
-      stereoSpread: p.oscCUnisonSpread, stackType: p.oscCUnisonStackType,
-      detunePower: p.oscCUnisonDetunePower, detuneRange: p.oscCUnisonDetuneRange,
+      count: p.oscCUnisonVoices,
+      detune: p.oscCUnisonDetune,
+      blend: p.oscCUnisonBlend,
+      stereoSpread: p.oscCUnisonSpread,
+      stackType: p.oscCUnisonStackType,
+      detunePower: p.oscCUnisonDetunePower,
+      detuneRange: p.oscCUnisonDetuneRange,
       frameSpread: p.oscCUnisonFrameSpread,
     });
 
@@ -248,7 +274,10 @@ export class Voice {
     this.cutoff2Smoother.setTarget(p.filter2Cutoff);
     this.ampEnvelope.setParams(p.ampAttack, p.ampDecay, p.ampSustain, p.ampRelease);
     this.filterEnvelope.setParams(
-      p.filterEnvAttack, p.filterEnvDecay, p.filterEnvSustain, p.filterEnvRelease,
+      p.filterEnvAttack,
+      p.filterEnvDecay,
+      p.filterEnvSustain,
+      p.filterEnvRelease,
     );
     this._params = p;
   }
@@ -326,27 +355,50 @@ export class Voice {
     };
 
     // Filter routing accumulators
-    let f1InL = 0, f1InR = 0;
-    let f2InL = 0, f2InR = 0;
-    let directL = 0, directR = 0;
+    let f1InL = 0,
+      f1InR = 0;
+    let f2InL = 0,
+      f2InR = 0;
+    let directL = 0,
+      directR = 0;
 
     const routeOsc = (l: number, r: number, dest: number) => {
       switch (dest) {
         case 1: // Filter2
-          if (p.filter2On) { f2InL += l; f2InR += r; }
-          else { directL += l; directR += r; }
+          if (p.filter2On) {
+            f2InL += l;
+            f2InR += r;
+          } else {
+            directL += l;
+            directR += r;
+          }
           break;
         case 2: // Dual
-          if (p.filterOn)  { f1InL += l; f1InR += r; }
-          if (p.filter2On) { f2InL += l; f2InR += r; }
-          if (!p.filterOn && !p.filter2On) { directL += l; directR += r; }
+          if (p.filterOn) {
+            f1InL += l;
+            f1InR += r;
+          }
+          if (p.filter2On) {
+            f2InL += l;
+            f2InR += r;
+          }
+          if (!p.filterOn && !p.filter2On) {
+            directL += l;
+            directR += r;
+          }
           break;
         case 3: // Bypass filters
-          directL += l; directR += r;
+          directL += l;
+          directR += r;
           break;
         default: // 0 = Filter1
-          if (p.filterOn) { f1InL += l; f1InR += r; }
-          else { directL += l; directR += r; }
+          if (p.filterOn) {
+            f1InL += l;
+            f1InR += r;
+          } else {
+            directL += l;
+            directR += r;
+          }
           break;
       }
     };
@@ -436,33 +488,40 @@ export class Voice {
     }
 
     // Sub (always bypasses filters)
-    let subL = 0, subR = 0;
+    let subL = 0,
+      subR = 0;
     if (p.subOn) {
       const subLvl = clamp(p.subLevel + modSubLevel, 0, 1);
       const s = this.sub.process() * subLvl;
-      subL = s; subR = s;
+      subL = s;
+      subR = s;
     }
 
     // Noise routing (bit3 in filter1Input routes noise to filter1)
     if (noiseL !== 0 || noiseR !== 0) {
-      if (p.filterOn && (p.filter1Input & 8)) {
-        f1InL += noiseL; f1InR += noiseR;
-      } else if (p.filter2On && (p.filter2Input & 8)) {
-        f2InL += noiseL; f2InR += noiseR;
+      if (p.filterOn && p.filter1Input & 8) {
+        f1InL += noiseL;
+        f1InR += noiseR;
+      } else if (p.filter2On && p.filter2Input & 8) {
+        f2InL += noiseL;
+        f2InR += noiseR;
       } else {
-        directL += noiseL; directR += noiseR;
+        directL += noiseL;
+        directR += noiseR;
       }
     }
 
     // Filter 1
-    let f1OutL = 0, f1OutR = 0;
+    let f1OutL = 0,
+      f1OutR = 0;
     if (p.filterOn) {
       const drive = clamp(p.filterDrive + modFilterDrive * 9, 1, 10);
       const baseCutoff = this.cutoffSmoother.tick();
       const envAmt = clamp(p.filterEnvAmount + modFilterEnvAmt, -1, 1);
       const cutoff = clamp(
         baseCutoff * 2 ** ((filterEnvLevel * envAmt + modFilterCutoff) * 7),
-        20, this.sampleRate * 0.49,
+        20,
+        this.sampleRate * 0.49,
       );
       const reso = clamp(p.filterResonance + modFilterReso * 0.99, 0, 0.99);
       this.filterL.setParams(cutoff, reso, drive, p.filterBlend, p.filterStyle, this.sampleRate);
@@ -474,30 +533,53 @@ export class Voice {
     }
 
     // Filter 2
-    let f2OutL = 0, f2OutR = 0;
+    let f2OutL = 0,
+      f2OutR = 0;
     if (p.filter2On) {
       const f2in = p.filter2Input;
-      if (f2in & 16) { f2InL += f1OutL; f2InR += f1OutR; } // chain from F1
+      if (f2in & 16) {
+        f2InL += f1OutL;
+        f2InR += f1OutR;
+      } // chain from F1
 
       const drive2 = clamp(p.filter2Drive + modFilter2Drive * 9, 1, 10);
       const baseCutoff2 = this.cutoff2Smoother.tick();
       const envAmt2 = clamp(p.filter2EnvAmount + modFilter2EnvAmt, -1, 1);
       const cutoff2 = clamp(
         baseCutoff2 * 2 ** ((filterEnvLevel * envAmt2 + modFilter2Cutoff) * 7),
-        20, this.sampleRate * 0.49,
+        20,
+        this.sampleRate * 0.49,
       );
       const reso2 = clamp(p.filter2Resonance + modFilter2Reso * 0.99, 0, 0.99);
-      this.filter2L.setParams(cutoff2, reso2, drive2, p.filter2Blend, p.filter2Style, this.sampleRate);
-      this.filter2R.setParams(cutoff2, reso2, drive2, p.filter2Blend, p.filter2Style, this.sampleRate);
+      this.filter2L.setParams(
+        cutoff2,
+        reso2,
+        drive2,
+        p.filter2Blend,
+        p.filter2Style,
+        this.sampleRate,
+      );
+      this.filter2R.setParams(
+        cutoff2,
+        reso2,
+        drive2,
+        p.filter2Blend,
+        p.filter2Style,
+        this.sampleRate,
+      );
       f2OutL = this.filter2L.process(f2InL);
       f2OutR = this.filter2R.process(f2InR);
 
       // If f1 wasn't chained into f2, add f1 output to direct
-      if (!(p.filter2Input & 16)) { directL += f1OutL; directR += f1OutR; }
+      if (!(p.filter2Input & 16)) {
+        directL += f1OutL;
+        directR += f1OutR;
+      }
     } else {
       this.cutoff2Smoother.tick();
       // f1 output goes to mix if f2 isn't chaining
-      directL += f1OutL; directR += f1OutR;
+      directL += f1OutL;
+      directR += f1OutR;
     }
 
     let mixL = directL + f2OutL + subL;

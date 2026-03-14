@@ -9,30 +9,30 @@ const DEFAULT_OSC = {
   waveformName: "Sine",
   customWaveform: null as number[] | null,
   controlPoints: null as unknown[] | null,
-  level: 0.7071,         // √0.5 = -6dB (Vital default)
+  level: 0.7071, // √0.5 = -6dB (Vital default)
   framePosition: 0,
-  transpose: 0,          // -48 to +48 semitones (replaces octave + semitone)
-  tune: 0,               // ±100 cents fine tune
-  distortionType: 0,     // DistortionType enum
+  transpose: 0, // -48 to +48 semitones (replaces octave + semitone)
+  tune: 0, // ±100 cents fine tune
+  distortionType: 0, // DistortionType enum
   distortionAmount: 0.5,
-  distortionPhase: 0.5,  // secondary phase param (0-1)
+  distortionPhase: 0.5, // secondary phase param (0-1)
   spectralMorphType: 0,
   spectralMorphAmount: 0,
   // Unison (Vital-style)
   unisonVoices: 1,
-  unisonDetune: 0.2,     // 0-1 normalized amount
-  unisonBlend: 0.8,      // 0-1 (center vs detuned mix)
-  unisonSpread: 1.0,     // stereo spread 0-1
-  unisonStackType: 0,    // UnisonStackType enum (0-10)
+  unisonDetune: 0.2, // 0-1 normalized amount
+  unisonBlend: 0.8, // 0-1 (center vs detuned mix)
+  unisonSpread: 1.0, // stereo spread 0-1
+  unisonStackType: 0, // UnisonStackType enum (0-10)
   unisonDetunePower: 1.5, // -5 to +5 voice spacing curve
-  unisonDetuneRange: 2,  // 0-48 semitones max span
-  unisonFrameSpread: 0,  // -128 to +128 frames
+  unisonDetuneRange: 2, // 0-48 semitones max span
+  unisonFrameSpread: 0, // -128 to +128 frames
   unisonSpectralMorphSpread: 0, // -0.5 to +0.5
-  unisonDistortionSpread: 0,    // -0.5 to +0.5
+  unisonDistortionSpread: 0, // -0.5 to +0.5
   phaseOffset: 0,
   randomPhase: 1,
   pan: 0,
-  destination: 0,        // 0=Filter1, 1=Filter2, 2=Dual, 3=Effects
+  destination: 0, // 0=Filter1, 1=Filter2, 2=Dual, 3=Effects
 };
 
 export const synthState = proxy({
@@ -58,9 +58,9 @@ export const synthState = proxy({
     cutoff: 8000,
     resonance: 0,
     drive: 1,
-    type: 0,       // model index: 0=Analog..7=Phaser
-    blend: -1,     // LP↔BP↔HP: -1=LP, 0=BP, +1=HP
-    style: 0,      // sub-mode index within model
+    type: 0, // model index: 0=Analog..7=Phaser
+    blend: -1, // LP↔BP↔HP: -1=LP, 0=BP, +1=HP
+    style: 0, // sub-mode index within model
     envAmount: 0,
     input: 0b1111, // bitmask: bit0=oscA, bit1=oscB, bit2=oscC, bit3=noise
   },
@@ -134,12 +134,31 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
   function syncOscToSAB(
     osc: typeof synthState.oscillators.a,
     slots: {
-      on: SabParam; wt: SabParam; frame: SabParam; distPhase: SabParam; tune: SabParam;
-      voices: SabParam; detune: SabParam; spread: SabParam; level: SabParam; pan: SabParam;
-      distType: SabParam; distAmt: SabParam; blend: SabParam; stackType: SabParam;
-      transpose: SabParam; detunePower: SabParam; phaseOff: SabParam; randPhase: SabParam;
-      smType: SabParam; smAmt: SabParam;
-      detuneRange: SabParam; frameSpread: SabParam; smSpread: SabParam; distSpread: SabParam; dest: SabParam;
+      on: SabParam;
+      wt: SabParam;
+      frame: SabParam;
+      distPhase: SabParam;
+      tune: SabParam;
+      voices: SabParam;
+      detune: SabParam;
+      spread: SabParam;
+      level: SabParam;
+      pan: SabParam;
+      distType: SabParam;
+      distAmt: SabParam;
+      blend: SabParam;
+      stackType: SabParam;
+      transpose: SabParam;
+      detunePower: SabParam;
+      phaseOff: SabParam;
+      randPhase: SabParam;
+      smType: SabParam;
+      smAmt: SabParam;
+      detuneRange: SabParam;
+      frameSpread: SabParam;
+      smSpread: SabParam;
+      distSpread: SabParam;
+      dest: SabParam;
     },
   ): void {
     setParam(sabView, slots.on, osc.on ? 1 : 0);
@@ -170,47 +189,86 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
   }
 
   const OSC_A_SLOTS = {
-    on: SabParam.OscAOn, wt: SabParam.OscAWavetableIndex, frame: SabParam.OscAFramePosition,
-    distPhase: SabParam.OscADistortionPhase, tune: SabParam.OscATune,
-    voices: SabParam.OscAUnisonVoices, detune: SabParam.OscAUnisonDetune,
-    spread: SabParam.OscAUnisonSpread, level: SabParam.OscALevel, pan: SabParam.OscAPan,
-    distType: SabParam.OscADistortionType, distAmt: SabParam.OscADistortionAmount,
-    blend: SabParam.OscAUnisonBlend, stackType: SabParam.OscAUnisonStackType,
-    transpose: SabParam.OscATranspose, detunePower: SabParam.OscAUnisonDetunePower,
-    phaseOff: SabParam.OscAPhaseOffset, randPhase: SabParam.OscARandomPhase,
-    smType: SabParam.OscASpectralMorphType, smAmt: SabParam.OscASpectralMorphAmount,
-    detuneRange: SabParam.OscADetuneRange, frameSpread: SabParam.OscAFrameSpread,
-    smSpread: SabParam.OscASpectralMorphSpread, distSpread: SabParam.OscADistortionSpread,
+    on: SabParam.OscAOn,
+    wt: SabParam.OscAWavetableIndex,
+    frame: SabParam.OscAFramePosition,
+    distPhase: SabParam.OscADistortionPhase,
+    tune: SabParam.OscATune,
+    voices: SabParam.OscAUnisonVoices,
+    detune: SabParam.OscAUnisonDetune,
+    spread: SabParam.OscAUnisonSpread,
+    level: SabParam.OscALevel,
+    pan: SabParam.OscAPan,
+    distType: SabParam.OscADistortionType,
+    distAmt: SabParam.OscADistortionAmount,
+    blend: SabParam.OscAUnisonBlend,
+    stackType: SabParam.OscAUnisonStackType,
+    transpose: SabParam.OscATranspose,
+    detunePower: SabParam.OscAUnisonDetunePower,
+    phaseOff: SabParam.OscAPhaseOffset,
+    randPhase: SabParam.OscARandomPhase,
+    smType: SabParam.OscASpectralMorphType,
+    smAmt: SabParam.OscASpectralMorphAmount,
+    detuneRange: SabParam.OscADetuneRange,
+    frameSpread: SabParam.OscAFrameSpread,
+    smSpread: SabParam.OscASpectralMorphSpread,
+    distSpread: SabParam.OscADistortionSpread,
     dest: SabParam.OscADestination,
   };
 
   const OSC_B_SLOTS = {
-    on: SabParam.OscBOn, wt: SabParam.OscBWavetableIndex, frame: SabParam.OscBFramePosition,
-    distPhase: SabParam.OscBDistortionPhase, tune: SabParam.OscBTune,
-    voices: SabParam.OscBUnisonVoices, detune: SabParam.OscBUnisonDetune,
-    spread: SabParam.OscBUnisonSpread, level: SabParam.OscBLevel, pan: SabParam.OscBPan,
-    distType: SabParam.OscBDistortionType, distAmt: SabParam.OscBDistortionAmount,
-    blend: SabParam.OscBUnisonBlend, stackType: SabParam.OscBUnisonStackType,
-    transpose: SabParam.OscBTranspose, detunePower: SabParam.OscBUnisonDetunePower,
-    phaseOff: SabParam.OscBPhaseOffset, randPhase: SabParam.OscBRandomPhase,
-    smType: SabParam.OscBSpectralMorphType, smAmt: SabParam.OscBSpectralMorphAmount,
-    detuneRange: SabParam.OscBDetuneRange, frameSpread: SabParam.OscBFrameSpread,
-    smSpread: SabParam.OscBSpectralMorphSpread, distSpread: SabParam.OscBDistortionSpread,
+    on: SabParam.OscBOn,
+    wt: SabParam.OscBWavetableIndex,
+    frame: SabParam.OscBFramePosition,
+    distPhase: SabParam.OscBDistortionPhase,
+    tune: SabParam.OscBTune,
+    voices: SabParam.OscBUnisonVoices,
+    detune: SabParam.OscBUnisonDetune,
+    spread: SabParam.OscBUnisonSpread,
+    level: SabParam.OscBLevel,
+    pan: SabParam.OscBPan,
+    distType: SabParam.OscBDistortionType,
+    distAmt: SabParam.OscBDistortionAmount,
+    blend: SabParam.OscBUnisonBlend,
+    stackType: SabParam.OscBUnisonStackType,
+    transpose: SabParam.OscBTranspose,
+    detunePower: SabParam.OscBUnisonDetunePower,
+    phaseOff: SabParam.OscBPhaseOffset,
+    randPhase: SabParam.OscBRandomPhase,
+    smType: SabParam.OscBSpectralMorphType,
+    smAmt: SabParam.OscBSpectralMorphAmount,
+    detuneRange: SabParam.OscBDetuneRange,
+    frameSpread: SabParam.OscBFrameSpread,
+    smSpread: SabParam.OscBSpectralMorphSpread,
+    distSpread: SabParam.OscBDistortionSpread,
     dest: SabParam.OscBDestination,
   };
 
   const OSC_C_SLOTS = {
-    on: SabParam.OscCOn, wt: SabParam.OscCWavetableIndex, frame: SabParam.OscCFramePosition,
-    distPhase: SabParam.OscCDistortionPhase, tune: SabParam.OscCTune,
-    voices: SabParam.OscCUnisonVoices, detune: SabParam.OscCUnisonDetune,
-    spread: SabParam.OscCUnisonSpread, level: SabParam.OscCLevel, pan: SabParam.OscCPan,
-    distType: SabParam.OscCDistortionType, distAmt: SabParam.OscCDistortionAmount,
-    blend: SabParam.OscCUnisonBlend, stackType: SabParam.OscCUnisonStackType,
-    transpose: SabParam.OscCTranspose, detunePower: SabParam.OscCUnisonDetunePower,
-    phaseOff: SabParam.OscCPhaseOffset, randPhase: SabParam.OscCRandomPhase,
-    smType: SabParam.OscCSpectralMorphType, smAmt: SabParam.OscCSpectralMorphAmount,
-    detuneRange: SabParam.OscCDetuneRange, frameSpread: SabParam.OscCFrameSpread,
-    smSpread: SabParam.OscCSpectralMorphSpread, distSpread: SabParam.OscCDistortionSpread,
+    on: SabParam.OscCOn,
+    wt: SabParam.OscCWavetableIndex,
+    frame: SabParam.OscCFramePosition,
+    distPhase: SabParam.OscCDistortionPhase,
+    tune: SabParam.OscCTune,
+    voices: SabParam.OscCUnisonVoices,
+    detune: SabParam.OscCUnisonDetune,
+    spread: SabParam.OscCUnisonSpread,
+    level: SabParam.OscCLevel,
+    pan: SabParam.OscCPan,
+    distType: SabParam.OscCDistortionType,
+    distAmt: SabParam.OscCDistortionAmount,
+    blend: SabParam.OscCUnisonBlend,
+    stackType: SabParam.OscCUnisonStackType,
+    transpose: SabParam.OscCTranspose,
+    detunePower: SabParam.OscCUnisonDetunePower,
+    phaseOff: SabParam.OscCPhaseOffset,
+    randPhase: SabParam.OscCRandomPhase,
+    smType: SabParam.OscCSpectralMorphType,
+    smAmt: SabParam.OscCSpectralMorphAmount,
+    detuneRange: SabParam.OscCDetuneRange,
+    frameSpread: SabParam.OscCFrameSpread,
+    smSpread: SabParam.OscCSpectralMorphSpread,
+    distSpread: SabParam.OscCDistortionSpread,
     dest: SabParam.OscCDestination,
   };
 
@@ -315,8 +373,14 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
   };
 
   const EFFECT_NAME_TO_INDEX: Record<string, number> = {
-    distortion: 0, compressor: 1, chorus: 2, flanger: 3,
-    phaser: 4, delay: 5, reverb: 6, eq: 7,
+    distortion: 0,
+    compressor: 1,
+    chorus: 2,
+    flanger: 3,
+    phaser: 4,
+    delay: 5,
+    reverb: 6,
+    eq: 7,
   };
 
   const syncEffectsOrder = () => {
@@ -347,14 +411,32 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
   unsubs.push(subscribe(synthState.envelopes.filter, syncFilterEnv));
   unsubs.push(subscribe(synthState.lfos, syncLfos));
   unsubs.push(subscribe(synthState.effects, syncEffects));
-  unsubs.push(subscribe(synthState, () => { syncEffectsOrder(); syncMisc(); }));
+  unsubs.push(
+    subscribe(synthState, () => {
+      syncEffectsOrder();
+      syncMisc();
+    }),
+  );
 
   // Initial sync
-  syncMaster(); syncOscA(); syncOscB(); syncOscC(); syncSub(); syncNoise();
-  syncFilter(); syncFilter2(); syncAmpEnv(); syncFilterEnv(); syncLfos();
-  syncEffects(); syncEffectsOrder(); syncMisc();
+  syncMaster();
+  syncOscA();
+  syncOscB();
+  syncOscC();
+  syncSub();
+  syncNoise();
+  syncFilter();
+  syncFilter2();
+  syncAmpEnv();
+  syncFilterEnv();
+  syncLfos();
+  syncEffects();
+  syncEffectsOrder();
+  syncMisc();
 
-  return () => { for (const unsub of unsubs) unsub(); };
+  return () => {
+    for (const unsub of unsubs) unsub();
+  };
 }
 
 /** Restore state from saved data (with backward compat for old schema) */
@@ -402,26 +484,43 @@ export function restoreStateFromSavedData(data: unknown): void {
   }
 
   if (saved.noise && typeof saved.noise === "object") Object.assign(synthState.noise, saved.noise);
-  if (saved.filter && typeof saved.filter === "object") Object.assign(synthState.filter, saved.filter);
-  if (saved.filter2 && typeof saved.filter2 === "object") Object.assign(synthState.filter2, saved.filter2);
+  if (saved.filter && typeof saved.filter === "object")
+    Object.assign(synthState.filter, saved.filter);
+  if (saved.filter2 && typeof saved.filter2 === "object")
+    Object.assign(synthState.filter2, saved.filter2);
 
   if (saved.envelopes && typeof saved.envelopes === "object") {
     const envData = saved.envelopes as Record<string, unknown>;
-    if (envData.amp && typeof envData.amp === "object") Object.assign(synthState.envelopes.amp, envData.amp);
-    if (envData.filter && typeof envData.filter === "object") Object.assign(synthState.envelopes.filter, envData.filter);
+    if (envData.amp && typeof envData.amp === "object")
+      Object.assign(synthState.envelopes.amp, envData.amp);
+    if (envData.filter && typeof envData.filter === "object")
+      Object.assign(synthState.envelopes.filter, envData.filter);
   }
   if (saved.lfos && typeof saved.lfos === "object") {
     const lfosData = saved.lfos as Record<string, unknown>;
-    if (lfosData.lfo1 && typeof lfosData.lfo1 === "object") Object.assign(synthState.lfos.lfo1, lfosData.lfo1);
-    if (lfosData.lfo2 && typeof lfosData.lfo2 === "object") Object.assign(synthState.lfos.lfo2, lfosData.lfo2);
+    if (lfosData.lfo1 && typeof lfosData.lfo1 === "object")
+      Object.assign(synthState.lfos.lfo1, lfosData.lfo1);
+    if (lfosData.lfo2 && typeof lfosData.lfo2 === "object")
+      Object.assign(synthState.lfos.lfo2, lfosData.lfo2);
   }
   if (saved.effects && typeof saved.effects === "object") {
     const fxData = saved.effects as Record<string, unknown>;
-    for (const key of ["distortion","compressor","chorus","flanger","phaser","delay","reverb","eq"] as const) {
-      if (fxData[key] && typeof fxData[key] === "object") Object.assign(synthState.effects[key], fxData[key]);
+    for (const key of [
+      "distortion",
+      "compressor",
+      "chorus",
+      "flanger",
+      "phaser",
+      "delay",
+      "reverb",
+      "eq",
+    ] as const) {
+      if (fxData[key] && typeof fxData[key] === "object")
+        Object.assign(synthState.effects[key], fxData[key]);
     }
   }
-  if (saved.master && typeof saved.master === "object") Object.assign(synthState.master, saved.master);
+  if (saved.master && typeof saved.master === "object")
+    Object.assign(synthState.master, saved.master);
   if (typeof saved.drift === "number") synthState.drift = saved.drift;
   if (Array.isArray(saved.macros)) synthState.macros = [...saved.macros];
   if (Array.isArray(saved.effectsOrder) && saved.effectsOrder.length === 8) {
@@ -484,7 +583,11 @@ export function setupAutoSave(): () => void {
   unsubs.push(subscribe(synthState.lfos, debouncedSave));
   unsubs.push(subscribe(synthState.effects, debouncedSave));
   unsubs.push(subscribe(synthState.master, debouncedSave));
-  unsubs.push(subscribe(synthState, () => { if (synthState.drift || synthState.macros) debouncedSave(); }));
+  unsubs.push(
+    subscribe(synthState, () => {
+      if (synthState.drift || synthState.macros) debouncedSave();
+    }),
+  );
 
   return () => {
     if (saveTimeout) clearTimeout(saveTimeout);

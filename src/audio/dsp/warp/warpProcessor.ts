@@ -1,9 +1,5 @@
 import { ParamSmoother } from "../utils/smoothing";
-import {
-  DistortionType,
-  applyDistortionPhase,
-  applyRingMod,
-} from "./warpTypes";
+import { DistortionType, applyDistortionPhase, applyRingMod } from "./warpTypes";
 
 export class WarpProcessor {
   private type: DistortionType = DistortionType.NONE;

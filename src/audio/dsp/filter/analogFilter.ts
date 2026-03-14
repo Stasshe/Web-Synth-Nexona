@@ -33,10 +33,7 @@ class AnalogFilter implements FilterProcessor {
   }
 
   process(input: number): number {
-    const x =
-      this.drive > 1
-        ? Math.tanh(input * this.drive) / this.drive
-        : input;
+    const x = this.drive > 1 ? Math.tanh(input * this.drive) / this.drive : input;
 
     if (this.style === 2) {
       const [lp, , hp] = this.svf1.tick(x);

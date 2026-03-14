@@ -62,7 +62,10 @@ class PhaserFilter implements FilterProcessor {
       const y = flushDenormal(a * (sig - this.prevY[i]) + this.prevX[i]);
       this.prevX[i] = sig;
       this.prevY[i] = y;
-      if (!Number.isFinite(this.prevY[i])) { this.prevX[i] = 0; this.prevY[i] = 0; }
+      if (!Number.isFinite(this.prevY[i])) {
+        this.prevX[i] = 0;
+        this.prevY[i] = 0;
+      }
       sig = y;
     }
 

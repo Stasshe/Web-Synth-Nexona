@@ -4,10 +4,10 @@ import { useMemo } from "react";
 
 interface UnisonViewerProps {
   count: number;
-  detune: number;       // 0-1 normalized
-  blend: number;        // 0-1
-  detunePower: number;  // -5 to +5
-  detuneRange: number;  // 0-48 semitones
+  detune: number; // 0-1 normalized
+  blend: number; // 0-1
+  detunePower: number; // -5 to +5
+  detuneRange: number; // 0-48 semitones
   stereoSpread: number; // 0-1
   color: string;
 }
@@ -52,14 +52,25 @@ function buildVoiceDisplay(
 
     const detuneCents = shapedT * totalDetuneCents * 0.5;
     const maxCents = Math.max(totalDetuneCents * 0.5, 1);
-    const pan = stereoSpread > 0 ? (detuneCents / maxCents) * stereoSpread : detuneCents / Math.max(maxCents, 0.001) * 0.001;
+    const pan =
+      stereoSpread > 0
+        ? (detuneCents / maxCents) * stereoSpread
+        : (detuneCents / Math.max(maxCents, 0.001)) * 0.001;
     const amp = (i === centerIdx ? centerAmp : detunedAmp) * normFactor;
     results.push({ pan, amp });
   }
   return results;
 }
 
-export function UnisonViewer({ count, detune, blend, detunePower, detuneRange, stereoSpread, color }: UnisonViewerProps) {
+export function UnisonViewer({
+  count,
+  detune,
+  blend,
+  detunePower,
+  detuneRange,
+  stereoSpread,
+  color,
+}: UnisonViewerProps) {
   const W = 128;
   const H = 20;
   const barW = 3;
@@ -80,7 +91,15 @@ export function UnisonViewer({ count, detune, blend, detunePower, detuneRange, s
       aria-label="Unison voice spread"
     >
       <title>Unison voice positions</title>
-      <line x1={W / 2} y1={1} x2={W / 2} y2={H - 1} stroke={color} strokeOpacity={0.1} strokeWidth={0.5} />
+      <line
+        x1={W / 2}
+        y1={1}
+        x2={W / 2}
+        y2={H - 1}
+        stroke={color}
+        strokeOpacity={0.1}
+        strokeWidth={0.5}
+      />
       {voices.map((v, i) => {
         const cx = margin + ((v.pan + 1) / 2) * usableW;
         const barH = Math.max(2, v.amp * maxBarH);

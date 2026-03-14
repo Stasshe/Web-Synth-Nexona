@@ -15,7 +15,10 @@ interface Wavetable2dViewerProps {
 }
 
 /** Compute harmonic magnitudes via DFT for the first nHarmonics partials */
-function computeSpectrum(samples: ReturnType<typeof computeMorphedPreviewSamples>, nHarmonics = 64): number[] {
+function computeSpectrum(
+  samples: ReturnType<typeof computeMorphedPreviewSamples>,
+  nHarmonics = 64,
+): number[] {
   const N = samples.length;
   const result: number[] = [];
   for (let k = 1; k <= nHarmonics; k++) {
@@ -46,7 +49,14 @@ export function Wavetable2dViewer({
   const H = 80;
 
   const currentSamples = useMemo(
-    () => computeMorphedPreviewSamples(waveformType, framePosition, customWaveform, spectralMorphType, spectralMorphAmount),
+    () =>
+      computeMorphedPreviewSamples(
+        waveformType,
+        framePosition,
+        customWaveform,
+        spectralMorphType,
+        spectralMorphAmount,
+      ),
     [waveformType, framePosition, customWaveform, spectralMorphType, spectralMorphAmount],
   );
 
@@ -63,17 +73,16 @@ export function Wavetable2dViewer({
         spectralMorphType,
         spectralMorphAmount,
       );
-      const pts = Array.from(s, (sv, i) =>
-        `${i},${((-sv + 1) * ghostH) / 2 + Math.abs(off) * 40}`
+      const pts = Array.from(
+        s,
+        (sv, i) => `${i},${((-sv + 1) * ghostH) / 2 + Math.abs(off) * 40}`,
       ).join(" ");
       return { points: pts, opacity: 0.15, offsetY: off * 20 };
     });
   }, [waveformType, framePosition, customWaveform, spectralMorphType, spectralMorphAmount]);
 
-  const mainPoints = useMemo(() =>
-    Array.from(currentSamples, (s, i) =>
-      `${i},${((-s + 1) * (H - 16)) / 2 + 8}`
-    ).join(" "),
+  const mainPoints = useMemo(
+    () => Array.from(currentSamples, (s, i) => `${i},${((-s + 1) * (H - 16)) / 2 + 8}`).join(" "),
     [currentSamples],
   );
 
@@ -89,7 +98,10 @@ export function Wavetable2dViewer({
           <button
             key={m}
             type="button"
-            onClick={(e) => { e.stopPropagation(); setMode(m); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setMode(m);
+            }}
             className="text-[8px] font-bold px-1.5 py-0.5 rounded transition-all"
             style={{
               background: mode === m ? color : "rgba(0,0,0,0.4)",
@@ -112,47 +124,48 @@ export function Wavetable2dViewer({
         onClick={onClick}
       >
         <title>Click to edit waveform</title>
-        {mode === "spectrum" && spectrum
-          ? spectrum.map((amp, i) => {
-              const maxAmp = Math.max(...spectrum, 0.001);
-              const norm = amp / maxAmp;
-              const barW = W / 64;
-              const barH = Math.max(1, norm * (H - 6));
-              return (
-                <rect
-                  key={i}
-                  x={i * barW + 0.5}
-                  y={H - barH - 3}
-                  width={barW - 1}
-                  height={barH}
-                  style={{ fill: color }}
-                  opacity={0.25 + norm * 0.75}
-                />
-              );
-            })
-          : <>
-              {ghostFrames.map((g, idx) => (
-                <polyline
-                  key={idx}
-                  points={g.points}
-                  fill="none"
-                  style={{ stroke: color }}
-                  strokeWidth="0.8"
-                  opacity={g.opacity}
-                  transform={`translate(0,${g.offsetY})`}
-                />
-              ))}
+        {mode === "spectrum" && spectrum ? (
+          spectrum.map((amp, i) => {
+            const maxAmp = Math.max(...spectrum, 0.001);
+            const norm = amp / maxAmp;
+            const barW = W / 64;
+            const barH = Math.max(1, norm * (H - 6));
+            return (
+              <rect
+                key={i}
+                x={i * barW + 0.5}
+                y={H - barH - 3}
+                width={barW - 1}
+                height={barH}
+                style={{ fill: color }}
+                opacity={0.25 + norm * 0.75}
+              />
+            );
+          })
+        ) : (
+          <>
+            {ghostFrames.map((g, idx) => (
               <polyline
-                points={mainPoints}
+                key={idx}
+                points={g.points}
                 fill="none"
                 style={{ stroke: color }}
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                opacity="0.9"
+                strokeWidth="0.8"
+                opacity={g.opacity}
+                transform={`translate(0,${g.offsetY})`}
               />
-            </>
-        }
+            ))}
+            <polyline
+              points={mainPoints}
+              fill="none"
+              style={{ stroke: color }}
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              opacity="0.9"
+            />
+          </>
+        )}
       </svg>
     </div>
   );

@@ -17,14 +17,14 @@ interface FilterPanelProps {
 
 /** Vital-style model colors */
 const MODEL_COLORS: Record<number, string> = {
-  0: "hsl(220, 80%, 65%)",   // Analog — blue
-  1: "hsl(35, 85%, 60%)",    // Dirty — orange
-  2: "hsl(280, 70%, 65%)",   // Ladder — purple
-  3: "hsl(170, 70%, 55%)",   // Digital — teal
-  4: "hsl(350, 75%, 60%)",   // Diode — red
-  5: "hsl(130, 60%, 55%)",   // Formant — green
-  6: "hsl(55, 80%, 55%)",    // Comb — yellow
-  7: "hsl(300, 65%, 65%)",   // Phaser — pink
+  0: "hsl(220, 80%, 65%)", // Analog — blue
+  1: "hsl(35, 85%, 60%)", // Dirty — orange
+  2: "hsl(280, 70%, 65%)", // Ladder — purple
+  3: "hsl(170, 70%, 55%)", // Digital — teal
+  4: "hsl(350, 75%, 60%)", // Diode — red
+  5: "hsl(130, 60%, 55%)", // Formant — green
+  6: "hsl(55, 80%, 55%)", // Comb — yellow
+  7: "hsl(300, 65%, 65%)", // Phaser — pink
 };
 
 export function FilterPanel({ filter = 1 }: FilterPanelProps) {
@@ -76,7 +76,10 @@ export function FilterPanel({ filter = 1 }: FilterPanelProps) {
       const dx = e.clientX - blendDragRef.current.startX;
       const rect = blendSliderRef.current?.getBoundingClientRect();
       const width = rect?.width ?? 200;
-      const newBlend = Math.min(1, Math.max(-1, blendDragRef.current.startBlend + (dx / width) * 2));
+      const newBlend = Math.min(
+        1,
+        Math.max(-1, blendDragRef.current.startBlend + (dx / width) * 2),
+      );
       state.blend = newBlend;
     },
     [state],
@@ -198,7 +201,11 @@ export function FilterPanel({ filter = 1 }: FilterPanelProps) {
             className="absolute -bottom-3 text-[7px] -translate-x-1/2 pointer-events-none"
             style={{ left: `${blendPct}%`, color: "rgba(255,255,255,0.5)" }}
           >
-            {f.blend === 0 ? "BP" : f.blend < 0 ? `LP${Math.abs(f.blend) > 0.5 ? "" : "·BP"}` : `HP${f.blend > 0.5 ? "" : "·BP"}`}
+            {f.blend === 0
+              ? "BP"
+              : f.blend < 0
+                ? `LP${Math.abs(f.blend) > 0.5 ? "" : "·BP"}`
+                : `HP${f.blend > 0.5 ? "" : "·BP"}`}
           </div>
         </div>
         <div className="h-3" /> {/* spacer for label */}

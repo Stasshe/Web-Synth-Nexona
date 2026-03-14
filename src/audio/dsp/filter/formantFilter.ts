@@ -10,18 +10,18 @@ import { SVFilter } from "./svf";
 //   F1-F4 = first four formant frequencies in Hz
 //   gain  = relative output level
 const VOWELS_AOIE: [number, number, number, number, number][] = [
-  [800, 1150, 2900, 3400, 1.0],  // A
-  [500, 1000, 2800, 3300, 0.9],  // O
-  [300,  900, 2200, 3100, 0.85], // U (between O and I)
+  [800, 1150, 2900, 3400, 1.0], // A
+  [500, 1000, 2800, 3300, 0.9], // O
+  [300, 900, 2200, 3100, 0.85], // U (between O and I)
   [280, 2250, 2900, 3400, 0.85], // I
-  [400, 2200, 2600, 3300, 0.9],  // E
+  [400, 2200, 2600, 3300, 0.9], // E
 ];
 
 const VOWELS_AIUO: [number, number, number, number, number][] = [
-  [800, 1150, 2900, 3400, 1.0],  // A
+  [800, 1150, 2900, 3400, 1.0], // A
   [280, 2250, 2900, 3400, 0.85], // I
-  [300,  900, 2200, 3100, 0.85], // U
-  [500, 1000, 2800, 3300, 0.9],  // O
+  [300, 900, 2200, 3100, 0.85], // U
+  [500, 1000, 2800, 3300, 0.9], // O
 ];
 
 function lerp(a: number, b: number, t: number): number {

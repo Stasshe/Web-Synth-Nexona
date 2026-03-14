@@ -267,7 +267,9 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 pr-1">
               <div className="w-1.5 h-1.5 rounded-full bg-accent-green animate-pulse shadow-[0_0_8px_var(--accent-green)]" />
-              <span className="text-[10px] font-bold tracking-widest text-text-primary">NEXONA</span>
+              <span className="text-[10px] font-bold tracking-widest text-text-primary">
+                NEXONA
+              </span>
             </div>
 
             <div className="w-px h-4 bg-border-default mx-0.5" />
@@ -277,14 +279,18 @@ export default function Home() {
             <div className="w-px h-4 bg-border-default mx-0.5" />
 
             <div className="flex items-center gap-1">
-              <span className="text-[8px] text-text-muted uppercase tracking-wider font-medium">Scope</span>
+              <span className="text-[8px] text-text-muted uppercase tracking-wider font-medium">
+                Scope
+              </span>
               <Visualizer waveformData={waveformData} />
             </div>
 
             <div className="w-px h-4 bg-border-default mx-0.5" />
 
             <div className="flex items-center gap-1">
-              <span className="text-[8px] text-text-muted uppercase tracking-wider font-medium">Out</span>
+              <span className="text-[8px] text-text-muted uppercase tracking-wider font-medium">
+                Out
+              </span>
               <LevelMeter peakL={levelData.peakL} peakR={levelData.peakR} />
             </div>
           </div>

@@ -102,24 +102,24 @@ const K_DETUNED_HIGH = 0.7;
 // --- Params interface ---
 
 export interface UnisonParams {
-  count: number;          // 1-16 voices
-  detune: number;         // 0-1 (normalized amount)
-  blend: number;          // 0-1 (center vs detuned amplitude mix)
-  stereoSpread: number;   // 0-1
+  count: number; // 1-16 voices
+  detune: number; // 0-1 (normalized amount)
+  blend: number; // 0-1 (center vs detuned amplitude mix)
+  stereoSpread: number; // 0-1
   stackType: UnisonStackType;
-  detunePower: number;    // -5 to +5 (voice spacing curve)
-  detuneRange: number;    // 0-48 semitones (max span)
-  frameSpread: number;    // -128 to +128 (per-voice frame offset in frames)
+  detunePower: number; // -5 to +5 (voice spacing curve)
+  detuneRange: number; // 0-48 semitones (max span)
+  frameSpread: number; // -128 to +128 (per-voice frame offset in frames)
 }
 
 interface UnisonVoice {
   phase: number;
-  detuneRatio: number;   // base freq multiplier from detune
-  stackMult: number;     // freq multiplier from stack type
-  pan: number;           // -1 to 1
-  ampLeft: number;       // pre-computed left amplitude
-  ampRight: number;      // pre-computed right amplitude
-  frameOffset: number;   // per-voice frame offset (0-1 normalized)
+  detuneRatio: number; // base freq multiplier from detune
+  stackMult: number; // freq multiplier from stack type
+  pan: number; // -1 to 1
+  ampLeft: number; // pre-computed left amplitude
+  ampRight: number; // pre-computed right amplitude
+  frameOffset: number; // per-voice frame offset (0-1 normalized)
 }
 
 export class UnisonEngine {
@@ -199,16 +199,7 @@ export class UnisonEngine {
   setUnisonCount(count: number, detuneCents: number, spread: number): void {
     // Map old API: detuneCents is 0-100, convert to 0-1 detune with 1-semitone range
     const detune = Math.min(1, detuneCents / 100);
-    this._buildVoices(
-      Math.round(count),
-      detune,
-      spread,
-      0.8,
-      UnisonStackType.UNISON,
-      1.5,
-      1,
-      0,
-    );
+    this._buildVoices(Math.round(count), detune, spread, 0.8, UnisonStackType.UNISON, 1.5, 1, 0);
   }
 
   /** Get last mono output sample (for cross-osc FM with 1-sample delay) */
@@ -237,7 +228,11 @@ export class UnisonEngine {
 
     for (const voice of this.voices) {
       const freq = this.baseFrequency * voice.detuneRatio * voice.stackMult;
-      const warpedPhase = this.distortion.processPhase(voice.phase, this.cachedDistAmount, fmSignal);
+      const warpedPhase = this.distortion.processPhase(
+        voice.phase,
+        this.cachedDistAmount,
+        fmSignal,
+      );
 
       // Frame position with per-voice spread
       const voiceFrame = Math.max(0, Math.min(1, this.framePosition + voice.frameOffset));
@@ -281,7 +276,7 @@ export class UnisonEngine {
 
   private _buildVoices(
     n: number,
-    detune: number,    // 0-1 normalized
+    detune: number, // 0-1 normalized
     stereoSpread: number,
     blend: number,
     stackType: UnisonStackType,
@@ -330,7 +325,7 @@ export class UnisonEngine {
       const detuneRatio = centsToRatio(detuneCentsOffset);
 
       // Stereo pan
-      const pan = n > 1 ? (t * stereoSpread) : 0;
+      const pan = n > 1 ? t * stereoSpread : 0;
       const panR = (pan + 1) * 0.5;
       const panL = 1 - panR;
 
