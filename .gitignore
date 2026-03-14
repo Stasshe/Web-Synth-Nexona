@@ -7,3 +7,6 @@ public/worklet/
 .env
 .env.local
 .vercel
+memo
+memo.txt
+memo.md
