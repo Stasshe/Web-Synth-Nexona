@@ -6,11 +6,12 @@ import { computeMorphedPreviewSamples } from "@/audio/dsp/wavetable/wavetablePre
 import { Knob } from "@/components/ui/Knob";
 import { Panel } from "@/components/ui/Panel";
 import { SelectPopup } from "@/components/ui/SelectPopup";
+import { SelectWithArrows } from "@/components/ui/SelectWithArrows";
 import type { ModSourceDragItem } from "@/dnd/types";
 import { useModRoutes } from "@/hooks/useModAmount";
 import { synthState } from "@/state/synthState";
 import { Pencil } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { useSnapshot } from "valtio";
 
 const WARP_OPTIONS = [
@@ -29,6 +30,11 @@ const WARP_OPTIONS = [
 const SPECTRAL_MORPH_OPTIONS = Object.entries(SPECTRAL_MORPH_NAMES).map(([value, label]) => ({
   value,
   label,
+}));
+
+const PRESET_OPTIONS = Array.from({ length: PRESET_COUNT }, (_, i) => ({
+  value: String(i),
+  label: PRESET_NAMES[i],
 }));
 
 interface OscillatorPanelProps {
@@ -187,61 +193,12 @@ function WaveformPreview({
   );
 }
 
-function PresetListPopup({
-  currentType,
-  onSelect,
-  onClose,
-}: {
-  currentType: number;
-  onSelect: (index: number) => void;
-  onClose: () => void;
-}) {
-  const popupRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (popupRef.current && !popupRef.current.contains(e.target as Node)) {
-        onClose();
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [onClose]);
-
-  return (
-    <div
-      ref={popupRef}
-      className="absolute z-50 mt-1 left-0 right-0 bg-bg-darkest border border-border-default rounded shadow-xl overflow-hidden max-h-48 overflow-y-auto"
-    >
-      {Array.from({ length: PRESET_COUNT }, (_, i) => (
-        <button
-          key={i}
-          type="button"
-          onClick={() => {
-            onSelect(i);
-            onClose();
-          }}
-          className={`w-full text-left px-2 py-1.5 text-[10px] cursor-pointer transition-colors border-l-2 ${
-            i === currentType
-              ? "text-text-primary bg-bg-active border-l-accent-blue"
-              : "text-text-secondary hover:text-text-primary hover:bg-bg-hover border-l-transparent"
-          }`}
-        >
-          {PRESET_NAMES[i]}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps) {
   const snap = useSnapshot(synthState);
   const data = snap.oscillators[osc];
   const state = synthState.oscillators[osc];
   const color = OSC_COLORS[osc];
   const targets = OSC_MOD_TARGETS[osc];
-  const [showPresetList, setShowPresetList] = useState(false);
-
   const modLevel = useModRoutes(targets.level);
   const modWarp = useModRoutes(targets.warp);
   const modWarp2 = useModRoutes(targets.warp2);
@@ -257,37 +214,6 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
       synthState.modulations.push({ source: item.source, target, amount: 0.5 });
     },
     [],
-  );
-
-  const presetName =
-    data.waveformType === -1 ? "Custom" : (PRESET_NAMES[data.waveformType] ?? "Unknown");
-
-  const cyclePreset = useCallback(
-    (dir: 1 | -1) => {
-      const current = data.waveformType;
-      if (current === -1) {
-        state.waveformType = dir === 1 ? 0 : PRESET_COUNT - 1;
-      } else {
-        const next = current + dir;
-        if (next < 0) state.waveformType = PRESET_COUNT - 1;
-        else if (next >= PRESET_COUNT) state.waveformType = 0;
-        else state.waveformType = next;
-      }
-      state.waveformName = PRESET_NAMES[state.waveformType] ?? "Custom";
-      state.customWaveform = null;
-      state.controlPoints = null;
-    },
-    [data.waveformType, state],
-  );
-
-  const selectPreset = useCallback(
-    (index: number) => {
-      state.waveformType = index;
-      state.waveformName = PRESET_NAMES[index] ?? "Custom";
-      state.customWaveform = null;
-      state.controlPoints = null;
-    },
-    [state],
   );
 
   return (
@@ -310,22 +236,21 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
       </div>
 
       {/* Preset selector */}
-      <div className="relative flex items-center gap-1 mb-1">
-        <button
-          type="button"
-          onClick={() => cyclePreset(-1)}
-          className="px-1.5 py-0.5 text-[10px] text-text-secondary hover:text-text-primary bg-bg-surface border border-border-default rounded cursor-pointer transition-colors"
-        >
-          &lt;
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowPresetList(!showPresetList)}
-          className="flex-1 px-2 py-0.5 text-[10px] text-text-secondary hover:text-text-primary bg-bg-surface border border-border-default rounded cursor-pointer transition-colors truncate text-center"
-          title="Select preset"
-        >
-          {presetName}
-        </button>
+      <div className="flex items-center gap-1 mb-1">
+        <SelectWithArrows
+          value={String(data.waveformType)}
+          displayLabel={data.waveformType === -1 ? "Custom" : undefined}
+          options={PRESET_OPTIONS}
+          onChange={(v) => {
+            const idx = Number(v);
+            state.waveformType = idx;
+            state.waveformName = PRESET_NAMES[idx] ?? "Custom";
+            state.customWaveform = null;
+            state.controlPoints = null;
+          }}
+          accentColor={color}
+          className="flex-1"
+        />
         <button
           type="button"
           onClick={onOpenWaveEditor}
@@ -334,20 +259,6 @@ export function OscillatorPanel({ osc, onOpenWaveEditor }: OscillatorPanelProps)
         >
           <Pencil size={10} />
         </button>
-        <button
-          type="button"
-          onClick={() => cyclePreset(1)}
-          className="px-1.5 py-0.5 text-[10px] text-text-secondary hover:text-text-primary bg-bg-surface border border-border-default rounded cursor-pointer transition-colors"
-        >
-          &gt;
-        </button>
-        {showPresetList && (
-          <PresetListPopup
-            currentType={data.waveformType}
-            onSelect={selectPreset}
-            onClose={() => setShowPresetList(false)}
-          />
-        )}
       </div>
 
       {/* Frame position */}

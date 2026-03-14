@@ -3,6 +3,7 @@ import { FILTER_REGISTRY, getFilterCategories } from "@/audio/dsp/filter/filterR
 import { ModTarget } from "@/audio/dsp/modulation/modMatrix";
 import { Knob } from "@/components/ui/Knob";
 import { Panel } from "@/components/ui/Panel";
+import { SelectWithArrows } from "@/components/ui/SelectWithArrows";
 import type { ModSourceDragItem } from "@/dnd/types";
 import { useModRoutes } from "@/hooks/useModAmount";
 import { synthState } from "@/state/synthState";
@@ -45,6 +46,11 @@ export function FilterPanel({ filter = 1 }: FilterPanelProps) {
   const currentDef = FILTER_REGISTRY[f.type] ?? FILTER_REGISTRY[0];
   const color = CATEGORY_COLORS[currentDef.category] ?? "var(--filter)";
 
+  const categoryOptions = categories.map((cat) => ({ value: cat, label: cat }));
+  const typeOptions = FILTER_REGISTRY.map((def, idx) => ({ def, idx }))
+    .filter(({ def }) => def.category === currentDef.category)
+    .map(({ def, idx }) => ({ value: String(idx), label: def.name }));
+
   return (
     <Panel
       title={`FILTER ${filter}`}
@@ -83,58 +89,26 @@ export function FilterPanel({ filter = 1 }: FilterPanelProps) {
         })}
       </div>
 
-      {/* Category tabs */}
-      <div className="flex gap-0.5 mb-1">
-        {categories.map((cat) => {
-          const catColor = CATEGORY_COLORS[cat] ?? "var(--filter)";
-          const isActive = currentDef.category === cat;
-          return (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => {
-                const first = FILTER_REGISTRY.findIndex((d) => d.category === cat);
-                if (first >= 0) state.type = first;
-              }}
-              className="flex-1 text-[9px] py-0.5 rounded border transition-colors cursor-pointer"
-              style={{
-                borderColor: isActive ? catColor : "var(--border)",
-                color: isActive ? catColor : "var(--text-muted)",
-                backgroundColor: isActive
-                  ? `color-mix(in srgb, ${catColor} 15%, transparent)`
-                  : "transparent",
-              }}
-            >
-              {cat.slice(0, 3).toUpperCase()}
-            </button>
-          );
-        })}
-      </div>
+      {/* Category selector */}
+      <SelectWithArrows
+        value={currentDef.category}
+        options={categoryOptions}
+        onChange={(cat) => {
+          const first = FILTER_REGISTRY.findIndex((d) => d.category === cat);
+          if (first >= 0) state.type = first;
+        }}
+        accentColor={color}
+        className="mb-1"
+      />
 
-      {/* Filter variants within active category */}
-      <div className="flex flex-wrap gap-0.5 mb-1.5">
-        {FILTER_REGISTRY.map((def, idx) => {
-          if (def.category !== currentDef.category) return null;
-          const isSelected = f.type === idx;
-          return (
-            <button
-              key={def.id}
-              type="button"
-              onClick={() => (state.type = idx)}
-              className="px-1.5 py-0.5 text-[9px] rounded border transition-colors cursor-pointer"
-              style={{
-                borderColor: isSelected ? color : "var(--border)",
-                color: isSelected ? color : "var(--text-muted)",
-                backgroundColor: isSelected
-                  ? `color-mix(in srgb, ${color} 20%, transparent)`
-                  : "transparent",
-              }}
-            >
-              {def.name}
-            </button>
-          );
-        })}
-      </div>
+      {/* Type selector */}
+      <SelectWithArrows
+        value={String(f.type)}
+        options={typeOptions}
+        onChange={(v) => (state.type = Number(v))}
+        accentColor={color}
+        className="mb-1.5"
+      />
 
       {/* All knobs on one row: Cutoff + Reso + Drive + Env */}
       <div className="grid grid-cols-4 gap-1">
