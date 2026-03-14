@@ -115,6 +115,7 @@ describe("EffectsChain", () => {
       compRelease: 0.1,
       compMakeup: 0,
       compMix: 0,
+      compKnee: 0,
       chorusRate: 1,
       chorusDepth: 0.3,
       chorusMix: 0.3,

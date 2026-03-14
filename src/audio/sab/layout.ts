@@ -137,45 +137,46 @@ export enum SabParam {
   DistortionMix = 162,
   DistortionMode = 163,
 
-  // Compressor: 164-169
+  // Compressor: 164-170
   CompThreshold = 164,
   CompRatio = 165,
   CompAttack = 166,
   CompRelease = 167,
   CompMakeup = 168,
   CompMix = 169,
+  CompKnee = 170,
 
-  // Flanger: 170-173
-  FlangerRate = 170,
-  FlangerDepth = 171,
-  FlangerFeedback = 172,
-  FlangerMix = 173,
+  // Flanger: 171-174
+  FlangerRate = 171,
+  FlangerDepth = 172,
+  FlangerFeedback = 173,
+  FlangerMix = 174,
 
-  // Phaser: 174-177
-  PhaserRate = 174,
-  PhaserDepth = 175,
-  PhaserFeedback = 176,
-  PhaserMix = 177,
+  // Phaser: 175-178
+  PhaserRate = 175,
+  PhaserDepth = 176,
+  PhaserFeedback = 177,
+  PhaserMix = 178,
 
-  // EQ: 178-181
-  EqLowGain = 178,
-  EqMidGain = 179,
-  EqHighGain = 180,
-  EqMix = 181,
+  // EQ: 179-182
+  EqLowGain = 179,
+  EqMidGain = 180,
+  EqHighGain = 181,
+  EqMix = 182,
 
-  // Effects order: 190-197 (value = effect index: 0=dist,1=comp,2=chorus,3=flanger,4=phaser,5=delay,6=reverb,7=eq)
-  EffectsOrder0 = 190,
-  EffectsOrder1 = 191,
-  EffectsOrder2 = 192,
-  EffectsOrder3 = 193,
-  EffectsOrder4 = 194,
-  EffectsOrder5 = 195,
-  EffectsOrder6 = 196,
-  EffectsOrder7 = 197,
+  // Effects order: 191-198 (value = effect index: 0=dist,1=comp,2=chorus,3=flanger,4=phaser,5=delay,6=reverb,7=eq)
+  EffectsOrder0 = 191,
+  EffectsOrder1 = 192,
+  EffectsOrder2 = 193,
+  EffectsOrder3 = 194,
+  EffectsOrder4 = 195,
+  EffectsOrder5 = 196,
+  EffectsOrder6 = 197,
+  EffectsOrder7 = 198,
 
-  // Filter input bitmasks: 198-199
-  Filter1Input = 198,
-  Filter2Input = 199,
+  // Filter input bitmasks: 199-200
+  Filter1Input = 199,
+  Filter2Input = 200,
 }
 
 const f32Buf = new ArrayBuffer(4);
