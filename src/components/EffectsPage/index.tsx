@@ -274,7 +274,7 @@ function EffectStrip({ name, index, enabled, onToggle, children }: EffectStripPr
   return (
     <div
       ref={ref}
-      className="flex items-stretch rounded-lg border overflow-hidden transition-all"
+      className="flex items-stretch rounded-lg border transition-all"
       style={{
         opacity: isDragging ? 0.4 : 1,
         borderColor: isOver ? "var(--effects)" : "var(--border)",
