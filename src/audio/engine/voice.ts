@@ -3,65 +3,77 @@ import { createFilter } from "../dsp/filter/filterRegistry";
 import type { FilterProcessor } from "../dsp/filter/filterTypes";
 import { ModSource, ModTarget, ModulationMatrix } from "../dsp/modulation/modMatrix";
 import { SubOscillator } from "../dsp/oscillator/subOscillator";
-import { UnisonEngine } from "../dsp/oscillator/unisonEngine";
+import { UnisonEngine, type UnisonParams } from "../dsp/oscillator/unisonEngine";
 import { AnalogDrift } from "../dsp/utils/drift";
 import { clamp, midiToFreq } from "../dsp/utils/math";
 import { NoiseGenerator, type NoiseType } from "../dsp/utils/noise";
 import { ParamSmoother } from "../dsp/utils/smoothing";
-import type { WarpType } from "../dsp/warp/warpTypes";
+import type { DistortionType } from "../dsp/warp/warpTypes";
 import type { Wavetable } from "../dsp/wavetable/wavetablePresets";
 
 export interface VoiceParams {
   oscAOn: boolean;
   oscALevel: number;
   oscAFramePosition: number;
-  oscADetune: number;
-  oscAOctave: number;
-  oscASemitone: number;
+  oscATune: number;        // ±100 cents fine tune
+  oscATranspose: number;   // ±48 semitones (integer)
   oscAPhaseOffset: number;
   oscARandomPhase: number;
   oscAUnisonVoices: number;
-  oscAUnisonDetune: number;
+  oscAUnisonDetune: number;  // 0-1 normalized
+  oscAUnisonBlend: number;
   oscAUnisonSpread: number;
-  oscAWarpType: WarpType;
-  oscAWarpAmount: number;
-  oscAWarp2Type: WarpType;
-  oscAWarp2Amount: number;
+  oscAUnisonStackType: number;
+  oscAUnisonDetunePower: number;
+  oscAUnisonDetuneRange: number;
+  oscAUnisonFrameSpread: number;
+  oscADistortionType: DistortionType;
+  oscADistortionAmount: number;
+  oscADistortionPhase: number;
   oscAPan: number;
+  oscADestination: number;  // 0=F1, 1=F2, 2=Dual, 3=Effects(bypass)
 
   oscBOn: boolean;
   oscBLevel: number;
   oscBFramePosition: number;
-  oscBDetune: number;
-  oscBOctave: number;
-  oscBSemitone: number;
+  oscBTune: number;
+  oscBTranspose: number;
   oscBPhaseOffset: number;
   oscBRandomPhase: number;
   oscBUnisonVoices: number;
   oscBUnisonDetune: number;
+  oscBUnisonBlend: number;
   oscBUnisonSpread: number;
-  oscBWarpType: WarpType;
-  oscBWarpAmount: number;
-  oscBWarp2Type: WarpType;
-  oscBWarp2Amount: number;
+  oscBUnisonStackType: number;
+  oscBUnisonDetunePower: number;
+  oscBUnisonDetuneRange: number;
+  oscBUnisonFrameSpread: number;
+  oscBDistortionType: DistortionType;
+  oscBDistortionAmount: number;
+  oscBDistortionPhase: number;
   oscBPan: number;
+  oscBDestination: number;
 
   oscCOn: boolean;
   oscCLevel: number;
   oscCFramePosition: number;
-  oscCDetune: number;
-  oscCOctave: number;
-  oscCSemitone: number;
+  oscCTune: number;
+  oscCTranspose: number;
   oscCPhaseOffset: number;
   oscCRandomPhase: number;
   oscCUnisonVoices: number;
   oscCUnisonDetune: number;
+  oscCUnisonBlend: number;
   oscCUnisonSpread: number;
-  oscCWarpType: WarpType;
-  oscCWarpAmount: number;
-  oscCWarp2Type: WarpType;
-  oscCWarp2Amount: number;
+  oscCUnisonStackType: number;
+  oscCUnisonDetunePower: number;
+  oscCUnisonDetuneRange: number;
+  oscCUnisonFrameSpread: number;
+  oscCDistortionType: DistortionType;
+  oscCDistortionAmount: number;
+  oscCDistortionPhase: number;
   oscCPan: number;
+  oscCDestination: number;
 
   subOn: boolean;
   subOctave: number;
@@ -74,11 +86,11 @@ export interface VoiceParams {
   filterResonance: number;
   filterDrive: number;
   filterType: number;
-  filterBlend: number;   // LP↔BP↔HP: -1=LP, 0=BP, +1=HP
-  filterStyle: number;   // sub-mode index within the model
+  filterBlend: number;
+  filterStyle: number;
   filterEnvAmount: number;
   filterOn: boolean;
-  filter1Input: number; // bitmask: bit0=oscA, bit1=oscB, bit2=oscC, bit3=noise (default 0b1111=all)
+  filter1Input: number; // bitmask: bit3=noise, bit4+ unused for oscs
 
   filter2Cutoff: number;
   filter2Resonance: number;
@@ -88,7 +100,7 @@ export interface VoiceParams {
   filter2Style: number;
   filter2EnvAmount: number;
   filter2On: boolean;
-  filter2Input: number; // bitmask: bit0=oscA, bit1=oscB, bit2=oscC, bit3=noise, bit4=filter1 (default 0b10000)
+  filter2Input: number; // bit4 = chain from filter1
 
   ampAttack: number;
   ampDecay: number;
@@ -155,18 +167,10 @@ export class Voice {
     this.filterEnvelope.setParams(0.01, 0.1, 0, 0.3);
   }
 
-  setWavetableA(wt: Wavetable): void {
-    this.oscA.setWavetable(wt);
-  }
-  setWavetableB(wt: Wavetable): void {
-    this.oscB.setWavetable(wt);
-  }
-  setWavetableC(wt: Wavetable): void {
-    this.oscC.setWavetable(wt);
-  }
-  setWavetableSub(wt: Wavetable): void {
-    this.sub.setWavetable(wt);
-  }
+  setWavetableA(wt: Wavetable): void { this.oscA.setWavetable(wt); }
+  setWavetableB(wt: Wavetable): void { this.oscB.setWavetable(wt); }
+  setWavetableC(wt: Wavetable): void { this.oscC.setWavetable(wt); }
+  setWavetableSub(wt: Wavetable): void { this.sub.setWavetable(wt); }
 
   noteOn(note: number, vel: number): void {
     this.note = note;
@@ -197,20 +201,29 @@ export class Voice {
     this.filterEnvelope.release();
   }
 
-  startFadeOut(): void {
-    this.fadeOut = this.FADE_SAMPLES;
-  }
-  isIdle(): boolean {
-    return this.ampEnvelope.isIdle() && this.fadeOut === 0;
-  }
-  getNote(): number {
-    return this.note;
-  }
+  startFadeOut(): void { this.fadeOut = this.FADE_SAMPLES; }
+  isIdle(): boolean { return this.ampEnvelope.isIdle() && this.fadeOut === 0; }
+  getNote(): number { return this.note; }
 
   setParams(p: VoiceParams): void {
-    this.oscA.setUnisonCount(p.oscAUnisonVoices, p.oscAUnisonDetune, p.oscAUnisonSpread);
-    this.oscB.setUnisonCount(p.oscBUnisonVoices, p.oscBUnisonDetune, p.oscBUnisonSpread);
-    this.oscC.setUnisonCount(p.oscCUnisonVoices, p.oscCUnisonDetune, p.oscCUnisonSpread);
+    this.oscA.setUnisonParams({
+      count: p.oscAUnisonVoices, detune: p.oscAUnisonDetune, blend: p.oscAUnisonBlend,
+      stereoSpread: p.oscAUnisonSpread, stackType: p.oscAUnisonStackType,
+      detunePower: p.oscAUnisonDetunePower, detuneRange: p.oscAUnisonDetuneRange,
+      frameSpread: p.oscAUnisonFrameSpread,
+    });
+    this.oscB.setUnisonParams({
+      count: p.oscBUnisonVoices, detune: p.oscBUnisonDetune, blend: p.oscBUnisonBlend,
+      stereoSpread: p.oscBUnisonSpread, stackType: p.oscBUnisonStackType,
+      detunePower: p.oscBUnisonDetunePower, detuneRange: p.oscBUnisonDetuneRange,
+      frameSpread: p.oscBUnisonFrameSpread,
+    });
+    this.oscC.setUnisonParams({
+      count: p.oscCUnisonVoices, detune: p.oscCUnisonDetune, blend: p.oscCUnisonBlend,
+      stereoSpread: p.oscCUnisonSpread, stackType: p.oscCUnisonStackType,
+      detunePower: p.oscCUnisonDetunePower, detuneRange: p.oscCUnisonDetuneRange,
+      frameSpread: p.oscCUnisonFrameSpread,
+    });
 
     this.oscA.setPhaseParams(p.oscAPhaseOffset, p.oscARandomPhase);
     this.oscB.setPhaseParams(p.oscBPhaseOffset, p.oscBRandomPhase);
@@ -218,7 +231,6 @@ export class Voice {
 
     if (this.note >= 0) this.sub.setNote(this.note, p.subOctave);
 
-    // Swap filter instances when type changes
     const ft = Math.round(p.filterType);
     if (ft !== this.filterTypeIndex) {
       this.filterTypeIndex = ft;
@@ -236,10 +248,7 @@ export class Voice {
     this.cutoff2Smoother.setTarget(p.filter2Cutoff);
     this.ampEnvelope.setParams(p.ampAttack, p.ampDecay, p.ampSustain, p.ampRelease);
     this.filterEnvelope.setParams(
-      p.filterEnvAttack,
-      p.filterEnvDecay,
-      p.filterEnvSustain,
-      p.filterEnvRelease,
+      p.filterEnvAttack, p.filterEnvDecay, p.filterEnvSustain, p.filterEnvRelease,
     );
     this._params = p;
   }
@@ -258,16 +267,19 @@ export class Voice {
 
     const modOscAPitch = this.modMatrix.getModulation(ModTarget.OSC_A_PITCH);
     const modOscAFrame = this.modMatrix.getModulation(ModTarget.OSC_A_FRAME);
-    const modOscAWarp = this.modMatrix.getModulation(ModTarget.OSC_A_WARP_AMOUNT);
+    const modOscADist = this.modMatrix.getModulation(ModTarget.OSC_A_WARP_AMOUNT);
     const modOscALevel = this.modMatrix.getModulation(ModTarget.OSC_A_LEVEL);
+    const modOscADistPhase = this.modMatrix.getModulation(ModTarget.OSC_A_DISTORTION_PHASE);
     const modOscBPitch = this.modMatrix.getModulation(ModTarget.OSC_B_PITCH);
     const modOscBFrame = this.modMatrix.getModulation(ModTarget.OSC_B_FRAME);
-    const modOscBWarp = this.modMatrix.getModulation(ModTarget.OSC_B_WARP_AMOUNT);
+    const modOscBDist = this.modMatrix.getModulation(ModTarget.OSC_B_WARP_AMOUNT);
     const modOscBLevel = this.modMatrix.getModulation(ModTarget.OSC_B_LEVEL);
+    const modOscBDistPhase = this.modMatrix.getModulation(ModTarget.OSC_B_DISTORTION_PHASE);
     const modOscCPitch = this.modMatrix.getModulation(ModTarget.OSC_C_PITCH);
     const modOscCFrame = this.modMatrix.getModulation(ModTarget.OSC_C_FRAME);
-    const modOscCWarp = this.modMatrix.getModulation(ModTarget.OSC_C_WARP_AMOUNT);
+    const modOscCDist = this.modMatrix.getModulation(ModTarget.OSC_C_WARP_AMOUNT);
     const modOscCLevel = this.modMatrix.getModulation(ModTarget.OSC_C_LEVEL);
+    const modOscCDistPhase = this.modMatrix.getModulation(ModTarget.OSC_C_DISTORTION_PHASE);
     const modFilterCutoff = this.modMatrix.getModulation(ModTarget.FILTER_CUTOFF);
     const modFilterReso = this.modMatrix.getModulation(ModTarget.FILTER_RESONANCE);
     const modFilter2Cutoff = this.modMatrix.getModulation(ModTarget.FILTER2_CUTOFF);
@@ -289,231 +301,207 @@ export class Voice {
     const modFilter2EnvAmt = this.modMatrix.getModulation(ModTarget.FILTER2_ENV_AMOUNT);
     const modNoiseLevel = this.modMatrix.getModulation(ModTarget.NOISE_LEVEL);
     const modSubLevel = this.modMatrix.getModulation(ModTarget.SUB_LEVEL);
-    const modOscAWarp2 = this.modMatrix.getModulation(ModTarget.OSC_A_WARP2_AMOUNT);
-    const modOscBWarp2 = this.modMatrix.getModulation(ModTarget.OSC_B_WARP2_AMOUNT);
-    const modOscCWarp2 = this.modMatrix.getModulation(ModTarget.OSC_C_WARP2_AMOUNT);
 
-    let mixL = 0;
-    let mixR = 0;
+    // Cross-oscillator FM/RM signals (1-sample delay — inaudible at 44.1kHz)
+    const prevOscAOut = this.oscA.getLastOutput();
+    const prevOscBOut = this.oscB.getLastOutput();
 
-    // Individual source outputs for filter routing
-    let oscAL = 0;
-    let oscAR = 0;
-    let oscBL = 0;
-    let oscBR = 0;
-    let oscCL = 0;
-    let oscCR = 0;
+    // Noise (generated once per sample for FM_SAMPLE/RM_SAMPLE use)
+    let noiseSample = 0;
     let noiseL = 0;
     let noiseR = 0;
+    if (p.noiseLevel > 0 || modNoiseLevel > 0) {
+      const noiseLvl = clamp(p.noiseLevel + modNoiseLevel, 0, 1);
+      noiseSample = this.noise.process(p.noiseType);
+      noiseL = noiseSample * noiseLvl;
+      noiseR = noiseSample * noiseLvl;
+    }
 
+    // Helper: resolve FM signal for given distortion type
+    const getFMSignal = (distType: number): number => {
+      if (distType === 7 || distType === 10) return prevOscAOut; // FM/RM ← OscA
+      if (distType === 8 || distType === 11) return prevOscBOut; // FM/RM ← OscB
+      if (distType === 9 || distType === 12) return noiseSample; // FM/RM ← Sample
+      return 0;
+    };
+
+    // Filter routing accumulators
+    let f1InL = 0, f1InR = 0;
+    let f2InL = 0, f2InR = 0;
+    let directL = 0, directR = 0;
+
+    const routeOsc = (l: number, r: number, dest: number) => {
+      switch (dest) {
+        case 1: // Filter2
+          if (p.filter2On) { f2InL += l; f2InR += r; }
+          else { directL += l; directR += r; }
+          break;
+        case 2: // Dual
+          if (p.filterOn)  { f1InL += l; f1InR += r; }
+          if (p.filter2On) { f2InL += l; f2InR += r; }
+          if (!p.filterOn && !p.filter2On) { directL += l; directR += r; }
+          break;
+        case 3: // Bypass filters
+          directL += l; directR += r;
+          break;
+        default: // 0 = Filter1
+          if (p.filterOn) { f1InL += l; f1InR += r; }
+          else { directL += l; directR += r; }
+          break;
+      }
+    };
+
+    // --- Process Oscillator A ---
     if (p.oscAOn) {
-      const pitchOffset = p.oscAOctave * 12 + p.oscASemitone + p.oscADetune / 100 + modOscAPitch;
+      const pitchOffset = Math.round(p.oscATranspose) + p.oscATune / 100 + modOscAPitch;
       const freq = midiToFreq(this.note + pitchOffset);
       this.oscA.setFrequency(freq * (p.driftAmount > 0 ? this.drift.getFreqMultiplier() : 1));
       this.oscA.setFramePosition(clamp(p.oscAFramePosition + modOscAFrame, 0, 1));
-      this.oscA.setUnisonCount(
-        p.oscAUnisonVoices,
-        clamp(p.oscAUnisonDetune + modOscAUniDet * 100, 0, 100),
-        clamp(p.oscAUnisonSpread + modOscAUniSpr, 0, 1),
+      this.oscA.setUnisonParams({
+        count: p.oscAUnisonVoices,
+        detune: clamp(p.oscAUnisonDetune + modOscAUniDet, 0, 1),
+        blend: p.oscAUnisonBlend,
+        stereoSpread: clamp(p.oscAUnisonSpread + modOscAUniSpr, 0, 1),
+        stackType: p.oscAUnisonStackType,
+        detunePower: p.oscAUnisonDetunePower,
+        detuneRange: p.oscAUnisonDetuneRange,
+        frameSpread: p.oscAUnisonFrameSpread,
+      });
+      this.oscA.setDistortion(
+        p.oscADistortionType,
+        clamp(p.oscADistortionAmount + modOscADist, 0, 1),
+        clamp(p.oscADistortionPhase + modOscADistPhase, 0, 1),
       );
-      this.oscA.setWarp(
-        p.oscAWarpType,
-        clamp(p.oscAWarpAmount + modOscAWarp, 0, 1),
-        p.oscAWarp2Type,
-        clamp(p.oscAWarp2Amount + modOscAWarp2, 0, 1),
-      );
-      const [al, ar] = this.oscA.process();
+      const [al, ar] = this.oscA.process(getFMSignal(p.oscADistortionType));
       const aLevel = clamp(p.oscALevel + modOscALevel, 0, 1);
       const aPan = clamp(p.oscAPan + modOscAPan, -1, 1);
       const aPanR = 0.5 + aPan * 0.5;
-      const aPanL = 1 - aPanR;
-      oscAL = al * aLevel * aPanL * 2;
-      oscAR = ar * aLevel * aPanR * 2;
+      routeOsc(al * aLevel * (1 - aPanR) * 2, ar * aLevel * aPanR * 2, p.oscADestination);
     }
 
+    // --- Process Oscillator B ---
     if (p.oscBOn) {
-      const pitchOffset = p.oscBOctave * 12 + p.oscBSemitone + p.oscBDetune / 100 + modOscBPitch;
+      const pitchOffset = Math.round(p.oscBTranspose) + p.oscBTune / 100 + modOscBPitch;
       const freq = midiToFreq(this.note + pitchOffset);
       this.oscB.setFrequency(freq * (p.driftAmount > 0 ? this.drift.getFreqMultiplier() : 1));
       this.oscB.setFramePosition(clamp(p.oscBFramePosition + modOscBFrame, 0, 1));
-      this.oscB.setUnisonCount(
-        p.oscBUnisonVoices,
-        clamp(p.oscBUnisonDetune + modOscBUniDet * 100, 0, 100),
-        clamp(p.oscBUnisonSpread + modOscBUniSpr, 0, 1),
+      this.oscB.setUnisonParams({
+        count: p.oscBUnisonVoices,
+        detune: clamp(p.oscBUnisonDetune + modOscBUniDet, 0, 1),
+        blend: p.oscBUnisonBlend,
+        stereoSpread: clamp(p.oscBUnisonSpread + modOscBUniSpr, 0, 1),
+        stackType: p.oscBUnisonStackType,
+        detunePower: p.oscBUnisonDetunePower,
+        detuneRange: p.oscBUnisonDetuneRange,
+        frameSpread: p.oscBUnisonFrameSpread,
+      });
+      this.oscB.setDistortion(
+        p.oscBDistortionType,
+        clamp(p.oscBDistortionAmount + modOscBDist, 0, 1),
+        clamp(p.oscBDistortionPhase + modOscBDistPhase, 0, 1),
       );
-      this.oscB.setWarp(
-        p.oscBWarpType,
-        clamp(p.oscBWarpAmount + modOscBWarp, 0, 1),
-        p.oscBWarp2Type,
-        clamp(p.oscBWarp2Amount + modOscBWarp2, 0, 1),
-      );
-      const [bl, br] = this.oscB.process();
+      const [bl, br] = this.oscB.process(getFMSignal(p.oscBDistortionType));
       const bLevel = clamp(p.oscBLevel + modOscBLevel, 0, 1);
       const bPan = clamp(p.oscBPan + modOscBPan, -1, 1);
       const bPanR = 0.5 + bPan * 0.5;
-      const bPanL = 1 - bPanR;
-      oscBL = bl * bLevel * bPanL * 2;
-      oscBR = br * bLevel * bPanR * 2;
+      routeOsc(bl * bLevel * (1 - bPanR) * 2, br * bLevel * bPanR * 2, p.oscBDestination);
     }
 
+    // --- Process Oscillator C ---
     if (p.oscCOn) {
-      const pitchOffset = p.oscCOctave * 12 + p.oscCSemitone + p.oscCDetune / 100 + modOscCPitch;
+      const pitchOffset = Math.round(p.oscCTranspose) + p.oscCTune / 100 + modOscCPitch;
       const freq = midiToFreq(this.note + pitchOffset);
       this.oscC.setFrequency(freq * (p.driftAmount > 0 ? this.drift.getFreqMultiplier() : 1));
       this.oscC.setFramePosition(clamp(p.oscCFramePosition + modOscCFrame, 0, 1));
-      this.oscC.setUnisonCount(
-        p.oscCUnisonVoices,
-        clamp(p.oscCUnisonDetune + modOscCUniDet * 100, 0, 100),
-        clamp(p.oscCUnisonSpread + modOscCUniSpr, 0, 1),
+      this.oscC.setUnisonParams({
+        count: p.oscCUnisonVoices,
+        detune: clamp(p.oscCUnisonDetune + modOscCUniDet, 0, 1),
+        blend: p.oscCUnisonBlend,
+        stereoSpread: clamp(p.oscCUnisonSpread + modOscCUniSpr, 0, 1),
+        stackType: p.oscCUnisonStackType,
+        detunePower: p.oscCUnisonDetunePower,
+        detuneRange: p.oscCUnisonDetuneRange,
+        frameSpread: p.oscCUnisonFrameSpread,
+      });
+      this.oscC.setDistortion(
+        p.oscCDistortionType,
+        clamp(p.oscCDistortionAmount + modOscCDist, 0, 1),
+        clamp(p.oscCDistortionPhase + modOscCDistPhase, 0, 1),
       );
-      this.oscC.setWarp(
-        p.oscCWarpType,
-        clamp(p.oscCWarpAmount + modOscCWarp, 0, 1),
-        p.oscCWarp2Type,
-        clamp(p.oscCWarp2Amount + modOscCWarp2, 0, 1),
-      );
-      const [cl, cr] = this.oscC.process();
+      const [cl, cr] = this.oscC.process(getFMSignal(p.oscCDistortionType));
       const cLevel = clamp(p.oscCLevel + modOscCLevel, 0, 1);
       const cPan = clamp(p.oscCPan + modOscCPan, -1, 1);
       const cPanR = 0.5 + cPan * 0.5;
-      const cPanL = 1 - cPanR;
-      oscCL = cl * cLevel * cPanL * 2;
-      oscCR = cr * cLevel * cPanR * 2;
+      routeOsc(cl * cLevel * (1 - cPanR) * 2, cr * cLevel * cPanR * 2, p.oscCDestination);
     }
 
-    let subL = 0;
-    let subR = 0;
+    // Sub (always bypasses filters)
+    let subL = 0, subR = 0;
     if (p.subOn) {
       const subLvl = clamp(p.subLevel + modSubLevel, 0, 1);
       const s = this.sub.process() * subLvl;
-      subL = s;
-      subR = s;
+      subL = s; subR = s;
     }
 
-    if (p.noiseLevel > 0 || modNoiseLevel > 0) {
-      const noiseLvl = clamp(p.noiseLevel + modNoiseLevel, 0, 1);
-      const n = this.noise.process(p.noiseType) * noiseLvl;
-      noiseL = n;
-      noiseR = n;
+    // Noise routing (bit3 in filter1Input routes noise to filter1)
+    if (noiseL !== 0 || noiseR !== 0) {
+      if (p.filterOn && (p.filter1Input & 8)) {
+        f1InL += noiseL; f1InR += noiseR;
+      } else if (p.filter2On && (p.filter2Input & 8)) {
+        f2InL += noiseL; f2InR += noiseR;
+      } else {
+        directL += noiseL; directR += noiseR;
+      }
     }
-
-    // Filter routing with bitmask-based input selection
-    const f1in = p.filter1Input;
-    const f2in = p.filter2Input;
-    let f1outL = 0;
-    let f1outR = 0;
-    let f2outL = 0;
-    let f2outR = 0;
-
-    // Track which sources are routed to any filter
-    const oscARouted = (p.filterOn && f1in & 1) || (p.filter2On && f2in & 1);
-    const oscBRouted = (p.filterOn && f1in & 2) || (p.filter2On && f2in & 2);
-    const oscCRouted = (p.filterOn && f1in & 4) || (p.filter2On && f2in & 4);
-    const noiseRouted = (p.filterOn && f1in & 8) || (p.filter2On && f2in & 8);
 
     // Filter 1
+    let f1OutL = 0, f1OutR = 0;
     if (p.filterOn) {
-      let f1L = 0;
-      let f1R = 0;
-      if (f1in & 1) {
-        f1L += oscAL;
-        f1R += oscAR;
-      }
-      if (f1in & 2) {
-        f1L += oscBL;
-        f1R += oscBR;
-      }
-      if (f1in & 4) {
-        f1L += oscCL;
-        f1R += oscCR;
-      }
-      if (f1in & 8) {
-        f1L += noiseL;
-        f1R += noiseR;
-      }
-
       const drive = clamp(p.filterDrive + modFilterDrive * 9, 1, 10);
       const baseCutoff = this.cutoffSmoother.tick();
       const envAmt = clamp(p.filterEnvAmount + modFilterEnvAmt, -1, 1);
-      const envMod = filterEnvLevel * envAmt;
       const cutoff = clamp(
-        baseCutoff * 2 ** ((envMod + modFilterCutoff) * 7),
-        20,
-        this.sampleRate * 0.49,
+        baseCutoff * 2 ** ((filterEnvLevel * envAmt + modFilterCutoff) * 7),
+        20, this.sampleRate * 0.49,
       );
       const reso = clamp(p.filterResonance + modFilterReso * 0.99, 0, 0.99);
       this.filterL.setParams(cutoff, reso, drive, p.filterBlend, p.filterStyle, this.sampleRate);
       this.filterR.setParams(cutoff, reso, drive, p.filterBlend, p.filterStyle, this.sampleRate);
-      f1outL = this.filterL.process(f1L);
-      f1outR = this.filterR.process(f1R);
+      f1OutL = this.filterL.process(f1InL);
+      f1OutR = this.filterR.process(f1InR);
+    } else {
+      this.cutoffSmoother.tick();
     }
 
     // Filter 2
+    let f2OutL = 0, f2OutR = 0;
     if (p.filter2On) {
-      let f2L = 0;
-      let f2R = 0;
-      if (f2in & 1) {
-        f2L += oscAL;
-        f2R += oscAR;
-      }
-      if (f2in & 2) {
-        f2L += oscBL;
-        f2R += oscBR;
-      }
-      if (f2in & 4) {
-        f2L += oscCL;
-        f2R += oscCR;
-      }
-      if (f2in & 8) {
-        f2L += noiseL;
-        f2R += noiseR;
-      }
-      if (f2in & 16) {
-        f2L += f1outL;
-        f2R += f1outR;
-      } // filter1 output
+      const f2in = p.filter2Input;
+      if (f2in & 16) { f2InL += f1OutL; f2InR += f1OutR; } // chain from F1
 
       const drive2 = clamp(p.filter2Drive + modFilter2Drive * 9, 1, 10);
       const baseCutoff2 = this.cutoff2Smoother.tick();
       const envAmt2 = clamp(p.filter2EnvAmount + modFilter2EnvAmt, -1, 1);
-      const envMod2 = filterEnvLevel * envAmt2;
       const cutoff2 = clamp(
-        baseCutoff2 * 2 ** ((envMod2 + modFilter2Cutoff) * 7),
-        20,
-        this.sampleRate * 0.49,
+        baseCutoff2 * 2 ** ((filterEnvLevel * envAmt2 + modFilter2Cutoff) * 7),
+        20, this.sampleRate * 0.49,
       );
       const reso2 = clamp(p.filter2Resonance + modFilter2Reso * 0.99, 0, 0.99);
       this.filter2L.setParams(cutoff2, reso2, drive2, p.filter2Blend, p.filter2Style, this.sampleRate);
       this.filter2R.setParams(cutoff2, reso2, drive2, p.filter2Blend, p.filter2Style, this.sampleRate);
-      f2outL = this.filter2L.process(f2L);
-      f2outR = this.filter2R.process(f2R);
+      f2OutL = this.filter2L.process(f2InL);
+      f2OutR = this.filter2R.process(f2InR);
+
+      // If f1 wasn't chained into f2, add f1 output to direct
+      if (!(p.filter2Input & 16)) { directL += f1OutL; directR += f1OutR; }
+    } else {
+      this.cutoff2Smoother.tick();
+      // f1 output goes to mix if f2 isn't chaining
+      directL += f1OutL; directR += f1OutR;
     }
 
-    // Sum: filtered outputs + unrouted sources (bypass direct to mix)
-    mixL = f1outL + f2outL;
-    mixR = f1outR + f2outR;
-
-    // Add sub (always unfiltered)
-    mixL += subL;
-    mixR += subR;
-
-    // Add unrouted sources directly
-    if (!oscARouted) {
-      mixL += oscAL;
-      mixR += oscAR;
-    }
-    if (!oscBRouted) {
-      mixL += oscBL;
-      mixR += oscBR;
-    }
-    if (!oscCRouted) {
-      mixL += oscCL;
-      mixR += oscCR;
-    }
-    if (!noiseRouted) {
-      mixL += noiseL;
-      mixR += noiseR;
-    }
+    let mixL = directL + f2OutL + subL;
+    let mixR = directR + f2OutR + subR;
 
     // Amp
     const level = this.levelSmoother.tick();

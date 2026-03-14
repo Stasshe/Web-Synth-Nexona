@@ -3,80 +3,43 @@ import type { ModRoute } from "../audio/dsp/modulation/modMatrix";
 import { SabParam, setParam } from "../audio/sab/layout";
 import { loadState, saveState } from "../storage/indexeddb";
 
+const DEFAULT_OSC = {
+  on: false,
+  waveformType: 0,
+  waveformName: "Sine",
+  customWaveform: null as number[] | null,
+  controlPoints: null as unknown[] | null,
+  level: 0.7071,         // √0.5 = -6dB (Vital default)
+  framePosition: 0,
+  transpose: 0,          // -48 to +48 semitones (replaces octave + semitone)
+  tune: 0,               // ±100 cents fine tune
+  distortionType: 0,     // DistortionType enum
+  distortionAmount: 0.5,
+  distortionPhase: 0.5,  // secondary phase param (0-1)
+  spectralMorphType: 0,
+  spectralMorphAmount: 0,
+  // Unison (Vital-style)
+  unisonVoices: 1,
+  unisonDetune: 0.2,     // 0-1 normalized amount
+  unisonBlend: 0.8,      // 0-1 (center vs detuned mix)
+  unisonSpread: 1.0,     // stereo spread 0-1
+  unisonStackType: 0,    // UnisonStackType enum (0-10)
+  unisonDetunePower: 1.5, // -5 to +5 voice spacing curve
+  unisonDetuneRange: 2,  // 0-48 semitones max span
+  unisonFrameSpread: 0,  // -128 to +128 frames
+  unisonSpectralMorphSpread: 0, // -0.5 to +0.5
+  unisonDistortionSpread: 0,    // -0.5 to +0.5
+  phaseOffset: 0,
+  randomPhase: 1,
+  pan: 0,
+  destination: 0,        // 0=Filter1, 1=Filter2, 2=Dual, 3=Effects
+};
+
 export const synthState = proxy({
   oscillators: {
-    a: {
-      on: true,
-      waveformType: 0,
-      waveformName: "Sine",
-      customWaveform: null as number[] | null,
-      controlPoints: null as unknown[] | null,
-      level: 0.8,
-      framePosition: 0,
-      octave: 0,
-      semitone: 0,
-      detune: 0,
-      unisonVoices: 1,
-      unisonDetune: 20,
-      unisonSpread: 0.5,
-      pan: 0,
-      warpType: 0,
-      warpAmount: 0,
-      warp2Type: 0,
-      warp2Amount: 0,
-      spectralMorphType: 0,
-      spectralMorphAmount: 0,
-      phaseOffset: 0,
-      randomPhase: 1,
-    },
-    b: {
-      on: false,
-      waveformType: 0,
-      waveformName: "Sine",
-      customWaveform: null as number[] | null,
-      controlPoints: null as unknown[] | null,
-      level: 0.8,
-      framePosition: 0,
-      octave: 0,
-      semitone: 0,
-      detune: 0,
-      unisonVoices: 1,
-      unisonDetune: 20,
-      unisonSpread: 0.5,
-      pan: 0,
-      warpType: 0,
-      warpAmount: 0,
-      warp2Type: 0,
-      warp2Amount: 0,
-      spectralMorphType: 0,
-      spectralMorphAmount: 0,
-      phaseOffset: 0,
-      randomPhase: 1,
-    },
-    c: {
-      on: false,
-      waveformType: 0,
-      waveformName: "Sine",
-      customWaveform: null as number[] | null,
-      controlPoints: null as unknown[] | null,
-      level: 0.8,
-      framePosition: 0,
-      octave: 0,
-      semitone: 0,
-      detune: 0,
-      unisonVoices: 1,
-      unisonDetune: 20,
-      unisonSpread: 0.5,
-      pan: 0,
-      warpType: 0,
-      warpAmount: 0,
-      warp2Type: 0,
-      warp2Amount: 0,
-      spectralMorphType: 0,
-      spectralMorphAmount: 0,
-      phaseOffset: 0,
-      randomPhase: 1,
-    },
+    a: { ...DEFAULT_OSC, on: true },
+    b: { ...DEFAULT_OSC },
+    c: { ...DEFAULT_OSC },
     sub: {
       on: false,
       octave: -1,
@@ -168,74 +131,92 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
     setParam(sabView, SabParam.MasterVolume, synthState.master.volume);
   };
 
-  const syncOscA = () => {
-    const a = synthState.oscillators.a;
-    setParam(sabView, SabParam.OscAOn, a.on ? 1 : 0);
-    setParam(sabView, SabParam.OscAWavetableIndex, a.waveformType);
-    setParam(sabView, SabParam.OscALevel, a.level);
-    setParam(sabView, SabParam.OscAFramePosition, a.framePosition);
-    setParam(sabView, SabParam.OscADetune, a.detune);
-    setParam(sabView, SabParam.OscAOctave, a.octave);
-    setParam(sabView, SabParam.OscASemitone, a.semitone);
-    setParam(sabView, SabParam.OscAUnisonVoices, a.unisonVoices);
-    setParam(sabView, SabParam.OscAUnisonDetune, a.unisonDetune);
-    setParam(sabView, SabParam.OscAUnisonSpread, a.unisonSpread);
-    setParam(sabView, SabParam.OscAPan, a.pan);
-    setParam(sabView, SabParam.OscAWarpType, a.warpType);
-    setParam(sabView, SabParam.OscAWarpAmount, a.warpAmount);
-    setParam(sabView, SabParam.OscAWarp2Type, a.warp2Type);
-    setParam(sabView, SabParam.OscAWarp2Amount, a.warp2Amount);
-    setParam(sabView, SabParam.OscASpectralMorphType, a.spectralMorphType);
-    setParam(sabView, SabParam.OscASpectralMorphAmount, a.spectralMorphAmount);
-    setParam(sabView, SabParam.OscAPhaseOffset, a.phaseOffset);
-    setParam(sabView, SabParam.OscARandomPhase, a.randomPhase);
+  function syncOscToSAB(
+    osc: typeof synthState.oscillators.a,
+    slots: {
+      on: SabParam; wt: SabParam; frame: SabParam; distPhase: SabParam; tune: SabParam;
+      voices: SabParam; detune: SabParam; spread: SabParam; level: SabParam; pan: SabParam;
+      distType: SabParam; distAmt: SabParam; blend: SabParam; stackType: SabParam;
+      transpose: SabParam; detunePower: SabParam; phaseOff: SabParam; randPhase: SabParam;
+      smType: SabParam; smAmt: SabParam;
+      detuneRange: SabParam; frameSpread: SabParam; smSpread: SabParam; distSpread: SabParam; dest: SabParam;
+    },
+  ): void {
+    setParam(sabView, slots.on, osc.on ? 1 : 0);
+    setParam(sabView, slots.wt, osc.waveformType);
+    setParam(sabView, slots.frame, osc.framePosition);
+    setParam(sabView, slots.distPhase, osc.distortionPhase);
+    setParam(sabView, slots.tune, osc.tune);
+    setParam(sabView, slots.voices, osc.unisonVoices);
+    setParam(sabView, slots.detune, osc.unisonDetune);
+    setParam(sabView, slots.spread, osc.unisonSpread);
+    setParam(sabView, slots.level, osc.level);
+    setParam(sabView, slots.pan, osc.pan);
+    setParam(sabView, slots.distType, osc.distortionType);
+    setParam(sabView, slots.distAmt, osc.distortionAmount);
+    setParam(sabView, slots.blend, osc.unisonBlend);
+    setParam(sabView, slots.stackType, osc.unisonStackType);
+    setParam(sabView, slots.transpose, osc.transpose);
+    setParam(sabView, slots.detunePower, osc.unisonDetunePower);
+    setParam(sabView, slots.phaseOff, osc.phaseOffset);
+    setParam(sabView, slots.randPhase, osc.randomPhase);
+    setParam(sabView, slots.smType, osc.spectralMorphType);
+    setParam(sabView, slots.smAmt, osc.spectralMorphAmount);
+    setParam(sabView, slots.detuneRange, osc.unisonDetuneRange);
+    setParam(sabView, slots.frameSpread, osc.unisonFrameSpread);
+    setParam(sabView, slots.smSpread, osc.unisonSpectralMorphSpread);
+    setParam(sabView, slots.distSpread, osc.unisonDistortionSpread);
+    setParam(sabView, slots.dest, osc.destination);
+  }
+
+  const OSC_A_SLOTS = {
+    on: SabParam.OscAOn, wt: SabParam.OscAWavetableIndex, frame: SabParam.OscAFramePosition,
+    distPhase: SabParam.OscADistortionPhase, tune: SabParam.OscATune,
+    voices: SabParam.OscAUnisonVoices, detune: SabParam.OscAUnisonDetune,
+    spread: SabParam.OscAUnisonSpread, level: SabParam.OscALevel, pan: SabParam.OscAPan,
+    distType: SabParam.OscADistortionType, distAmt: SabParam.OscADistortionAmount,
+    blend: SabParam.OscAUnisonBlend, stackType: SabParam.OscAUnisonStackType,
+    transpose: SabParam.OscATranspose, detunePower: SabParam.OscAUnisonDetunePower,
+    phaseOff: SabParam.OscAPhaseOffset, randPhase: SabParam.OscARandomPhase,
+    smType: SabParam.OscASpectralMorphType, smAmt: SabParam.OscASpectralMorphAmount,
+    detuneRange: SabParam.OscADetuneRange, frameSpread: SabParam.OscAFrameSpread,
+    smSpread: SabParam.OscASpectralMorphSpread, distSpread: SabParam.OscADistortionSpread,
+    dest: SabParam.OscADestination,
   };
 
-  const syncOscB = () => {
-    const b = synthState.oscillators.b;
-    setParam(sabView, SabParam.OscBOn, b.on ? 1 : 0);
-    setParam(sabView, SabParam.OscBWavetableIndex, b.waveformType);
-    setParam(sabView, SabParam.OscBLevel, b.level);
-    setParam(sabView, SabParam.OscBFramePosition, b.framePosition);
-    setParam(sabView, SabParam.OscBDetune, b.detune);
-    setParam(sabView, SabParam.OscBOctave, b.octave);
-    setParam(sabView, SabParam.OscBSemitone, b.semitone);
-    setParam(sabView, SabParam.OscBUnisonVoices, b.unisonVoices);
-    setParam(sabView, SabParam.OscBUnisonDetune, b.unisonDetune);
-    setParam(sabView, SabParam.OscBUnisonSpread, b.unisonSpread);
-    setParam(sabView, SabParam.OscBPan, b.pan);
-    setParam(sabView, SabParam.OscBWarpType, b.warpType);
-    setParam(sabView, SabParam.OscBWarpAmount, b.warpAmount);
-    setParam(sabView, SabParam.OscBWarp2Type, b.warp2Type);
-    setParam(sabView, SabParam.OscBWarp2Amount, b.warp2Amount);
-    setParam(sabView, SabParam.OscBSpectralMorphType, b.spectralMorphType);
-    setParam(sabView, SabParam.OscBSpectralMorphAmount, b.spectralMorphAmount);
-    setParam(sabView, SabParam.OscBPhaseOffset, b.phaseOffset);
-    setParam(sabView, SabParam.OscBRandomPhase, b.randomPhase);
+  const OSC_B_SLOTS = {
+    on: SabParam.OscBOn, wt: SabParam.OscBWavetableIndex, frame: SabParam.OscBFramePosition,
+    distPhase: SabParam.OscBDistortionPhase, tune: SabParam.OscBTune,
+    voices: SabParam.OscBUnisonVoices, detune: SabParam.OscBUnisonDetune,
+    spread: SabParam.OscBUnisonSpread, level: SabParam.OscBLevel, pan: SabParam.OscBPan,
+    distType: SabParam.OscBDistortionType, distAmt: SabParam.OscBDistortionAmount,
+    blend: SabParam.OscBUnisonBlend, stackType: SabParam.OscBUnisonStackType,
+    transpose: SabParam.OscBTranspose, detunePower: SabParam.OscBUnisonDetunePower,
+    phaseOff: SabParam.OscBPhaseOffset, randPhase: SabParam.OscBRandomPhase,
+    smType: SabParam.OscBSpectralMorphType, smAmt: SabParam.OscBSpectralMorphAmount,
+    detuneRange: SabParam.OscBDetuneRange, frameSpread: SabParam.OscBFrameSpread,
+    smSpread: SabParam.OscBSpectralMorphSpread, distSpread: SabParam.OscBDistortionSpread,
+    dest: SabParam.OscBDestination,
   };
 
-  const syncOscC = () => {
-    const c = synthState.oscillators.c;
-    setParam(sabView, SabParam.OscCOn, c.on ? 1 : 0);
-    setParam(sabView, SabParam.OscCWavetableIndex, c.waveformType);
-    setParam(sabView, SabParam.OscCLevel, c.level);
-    setParam(sabView, SabParam.OscCFramePosition, c.framePosition);
-    setParam(sabView, SabParam.OscCDetune, c.detune);
-    setParam(sabView, SabParam.OscCOctave, c.octave);
-    setParam(sabView, SabParam.OscCSemitone, c.semitone);
-    setParam(sabView, SabParam.OscCUnisonVoices, c.unisonVoices);
-    setParam(sabView, SabParam.OscCUnisonDetune, c.unisonDetune);
-    setParam(sabView, SabParam.OscCUnisonSpread, c.unisonSpread);
-    setParam(sabView, SabParam.OscCPan, c.pan);
-    setParam(sabView, SabParam.OscCWarpType, c.warpType);
-    setParam(sabView, SabParam.OscCWarpAmount, c.warpAmount);
-    setParam(sabView, SabParam.OscCWarp2Type, c.warp2Type);
-    setParam(sabView, SabParam.OscCWarp2Amount, c.warp2Amount);
-    setParam(sabView, SabParam.OscCSpectralMorphType, c.spectralMorphType);
-    setParam(sabView, SabParam.OscCSpectralMorphAmount, c.spectralMorphAmount);
-    setParam(sabView, SabParam.OscCPhaseOffset, c.phaseOffset);
-    setParam(sabView, SabParam.OscCRandomPhase, c.randomPhase);
+  const OSC_C_SLOTS = {
+    on: SabParam.OscCOn, wt: SabParam.OscCWavetableIndex, frame: SabParam.OscCFramePosition,
+    distPhase: SabParam.OscCDistortionPhase, tune: SabParam.OscCTune,
+    voices: SabParam.OscCUnisonVoices, detune: SabParam.OscCUnisonDetune,
+    spread: SabParam.OscCUnisonSpread, level: SabParam.OscCLevel, pan: SabParam.OscCPan,
+    distType: SabParam.OscCDistortionType, distAmt: SabParam.OscCDistortionAmount,
+    blend: SabParam.OscCUnisonBlend, stackType: SabParam.OscCUnisonStackType,
+    transpose: SabParam.OscCTranspose, detunePower: SabParam.OscCUnisonDetunePower,
+    phaseOff: SabParam.OscCPhaseOffset, randPhase: SabParam.OscCRandomPhase,
+    smType: SabParam.OscCSpectralMorphType, smAmt: SabParam.OscCSpectralMorphAmount,
+    detuneRange: SabParam.OscCDetuneRange, frameSpread: SabParam.OscCFrameSpread,
+    smSpread: SabParam.OscCSpectralMorphSpread, distSpread: SabParam.OscCDistortionSpread,
+    dest: SabParam.OscCDestination,
   };
+
+  const syncOscA = () => syncOscToSAB(synthState.oscillators.a, OSC_A_SLOTS);
+  const syncOscB = () => syncOscToSAB(synthState.oscillators.b, OSC_B_SLOTS);
+  const syncOscC = () => syncOscToSAB(synthState.oscillators.c, OSC_C_SLOTS);
 
   const syncSub = () => {
     const sub = synthState.oscillators.sub;
@@ -334,14 +315,8 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
   };
 
   const EFFECT_NAME_TO_INDEX: Record<string, number> = {
-    distortion: 0,
-    compressor: 1,
-    chorus: 2,
-    flanger: 3,
-    phaser: 4,
-    delay: 5,
-    reverb: 6,
-    eq: 7,
+    distortion: 0, compressor: 1, chorus: 2, flanger: 3,
+    phaser: 4, delay: 5, reverb: 6, eq: 7,
   };
 
   const syncEffectsOrder = () => {
@@ -360,7 +335,6 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
     setParam(sabView, SabParam.Macro4, synthState.macros[3]);
   };
 
-  // Subscribe to future changes
   unsubs.push(subscribe(synthState.master, syncMaster));
   unsubs.push(subscribe(synthState.oscillators.a, syncOscA));
   unsubs.push(subscribe(synthState.oscillators.b, syncOscB));
@@ -373,48 +347,53 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
   unsubs.push(subscribe(synthState.envelopes.filter, syncFilterEnv));
   unsubs.push(subscribe(synthState.lfos, syncLfos));
   unsubs.push(subscribe(synthState.effects, syncEffects));
-  unsubs.push(
-    subscribe(synthState, () => {
-      syncEffectsOrder();
-      syncMisc();
-    }),
-  );
+  unsubs.push(subscribe(synthState, () => { syncEffectsOrder(); syncMisc(); }));
 
   // Initial sync
-  syncMaster();
-  syncOscA();
-  syncOscB();
-  syncOscC();
-  syncSub();
-  syncNoise();
-  syncFilter();
-  syncFilter2();
-  syncAmpEnv();
-  syncFilterEnv();
-  syncLfos();
-  syncEffects();
-  syncEffectsOrder();
-  syncMisc();
+  syncMaster(); syncOscA(); syncOscB(); syncOscC(); syncSub(); syncNoise();
+  syncFilter(); syncFilter2(); syncAmpEnv(); syncFilterEnv(); syncLfos();
+  syncEffects(); syncEffectsOrder(); syncMisc();
 
-  return () => {
-    for (const unsub of unsubs) unsub();
-  };
+  return () => { for (const unsub of unsubs) unsub(); };
 }
 
-/**
- * Restore state from saved data
- */
+/** Restore state from saved data (with backward compat for old schema) */
 export function restoreStateFromSavedData(data: unknown): void {
   if (!data || typeof data !== "object") return;
 
   const saved = data as Record<string, unknown>;
 
-  // Restore oscillators
   if (saved.oscillators && typeof saved.oscillators === "object") {
     const oscData = saved.oscillators as Record<string, unknown>;
     for (const key of ["a", "b", "c"] as const) {
       if (oscData[key] && typeof oscData[key] === "object") {
-        Object.assign(synthState.oscillators[key], oscData[key]);
+        const raw = oscData[key] as Record<string, unknown>;
+        // Backward compat: convert old octave+semitone to transpose
+        if ("octave" in raw || "semitone" in raw) {
+          const oct = typeof raw.octave === "number" ? raw.octave : 0;
+          const semi = typeof raw.semitone === "number" ? raw.semitone : 0;
+          raw.transpose = oct * 12 + semi;
+          delete raw.octave;
+          delete raw.semitone;
+        }
+        // Backward compat: rename detune → tune
+        if ("detune" in raw && !("tune" in raw)) {
+          raw.tune = raw.detune;
+          delete raw.detune;
+        }
+        // Backward compat: rename warpType/warpAmount → distortionType/distortionAmount
+        if ("warpType" in raw && !("distortionType" in raw)) {
+          raw.distortionType = raw.warpType;
+          delete raw.warpType;
+        }
+        if ("warpAmount" in raw && !("distortionAmount" in raw)) {
+          raw.distortionAmount = raw.warpAmount;
+          delete raw.warpAmount;
+        }
+        // Remove old warp2 fields
+        delete raw.warp2Type;
+        delete raw.warp2Amount;
+        Object.assign(synthState.oscillators[key], raw);
       }
     }
     if (oscData.sub && typeof oscData.sub === "object") {
@@ -422,74 +401,39 @@ export function restoreStateFromSavedData(data: unknown): void {
     }
   }
 
-  // Restore other sections
-  if (saved.noise && typeof saved.noise === "object") {
-    Object.assign(synthState.noise, saved.noise);
-  }
-  if (saved.filter && typeof saved.filter === "object") {
-    Object.assign(synthState.filter, saved.filter);
-  }
-  if (saved.filter2 && typeof saved.filter2 === "object") {
-    Object.assign(synthState.filter2, saved.filter2);
-  }
+  if (saved.noise && typeof saved.noise === "object") Object.assign(synthState.noise, saved.noise);
+  if (saved.filter && typeof saved.filter === "object") Object.assign(synthState.filter, saved.filter);
+  if (saved.filter2 && typeof saved.filter2 === "object") Object.assign(synthState.filter2, saved.filter2);
+
   if (saved.envelopes && typeof saved.envelopes === "object") {
     const envData = saved.envelopes as Record<string, unknown>;
-    if (envData.amp && typeof envData.amp === "object") {
-      Object.assign(synthState.envelopes.amp, envData.amp);
-    }
-    if (envData.filter && typeof envData.filter === "object") {
-      Object.assign(synthState.envelopes.filter, envData.filter);
-    }
+    if (envData.amp && typeof envData.amp === "object") Object.assign(synthState.envelopes.amp, envData.amp);
+    if (envData.filter && typeof envData.filter === "object") Object.assign(synthState.envelopes.filter, envData.filter);
   }
   if (saved.lfos && typeof saved.lfos === "object") {
     const lfosData = saved.lfos as Record<string, unknown>;
-    if (lfosData.lfo1 && typeof lfosData.lfo1 === "object") {
-      Object.assign(synthState.lfos.lfo1, lfosData.lfo1);
-    }
-    if (lfosData.lfo2 && typeof lfosData.lfo2 === "object") {
-      Object.assign(synthState.lfos.lfo2, lfosData.lfo2);
-    }
+    if (lfosData.lfo1 && typeof lfosData.lfo1 === "object") Object.assign(synthState.lfos.lfo1, lfosData.lfo1);
+    if (lfosData.lfo2 && typeof lfosData.lfo2 === "object") Object.assign(synthState.lfos.lfo2, lfosData.lfo2);
   }
   if (saved.effects && typeof saved.effects === "object") {
     const fxData = saved.effects as Record<string, unknown>;
-    for (const key of [
-      "distortion",
-      "compressor",
-      "chorus",
-      "flanger",
-      "phaser",
-      "delay",
-      "reverb",
-      "eq",
-    ] as const) {
-      if (fxData[key] && typeof fxData[key] === "object") {
-        Object.assign(synthState.effects[key], fxData[key]);
-      }
+    for (const key of ["distortion","compressor","chorus","flanger","phaser","delay","reverb","eq"] as const) {
+      if (fxData[key] && typeof fxData[key] === "object") Object.assign(synthState.effects[key], fxData[key]);
     }
   }
-  if (saved.master && typeof saved.master === "object") {
-    Object.assign(synthState.master, saved.master);
-  }
-  if (typeof saved.drift === "number") {
-    synthState.drift = saved.drift;
-  }
-  if (Array.isArray(saved.macros)) {
-    synthState.macros = [...saved.macros];
-  }
+  if (saved.master && typeof saved.master === "object") Object.assign(synthState.master, saved.master);
+  if (typeof saved.drift === "number") synthState.drift = saved.drift;
+  if (Array.isArray(saved.macros)) synthState.macros = [...saved.macros];
   if (Array.isArray(saved.effectsOrder) && saved.effectsOrder.length === 8) {
     synthState.effectsOrder = [...saved.effectsOrder] as string[];
   }
 }
 
-/**
- * Setup auto-save to IndexedDB
- * Subscribe to all state changes and save
- */
+/** Setup auto-save to IndexedDB */
 export function setupAutoSave(): () => void {
   let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 
   const performSave = async () => {
-    // Create a plain object copy of the state (excluding custom waveforms which are large)
     const stateCopy = {
       oscillators: {
         a: { ...synthState.oscillators.a, customWaveform: null },
@@ -523,7 +467,6 @@ export function setupAutoSave(): () => void {
       macros: [...synthState.macros],
       effectsOrder: [...synthState.effectsOrder],
     };
-
     await saveState(stateCopy);
   };
 
@@ -532,7 +475,6 @@ export function setupAutoSave(): () => void {
     saveTimeout = setTimeout(performSave, 1000);
   };
 
-  // Subscribe to all top-level state changes
   const unsubs: (() => void)[] = [];
   unsubs.push(subscribe(synthState.oscillators, debouncedSave));
   unsubs.push(subscribe(synthState.noise, debouncedSave));
@@ -542,11 +484,7 @@ export function setupAutoSave(): () => void {
   unsubs.push(subscribe(synthState.lfos, debouncedSave));
   unsubs.push(subscribe(synthState.effects, debouncedSave));
   unsubs.push(subscribe(synthState.master, debouncedSave));
-  unsubs.push(
-    subscribe(synthState, () => {
-      if (synthState.drift || synthState.macros) debouncedSave();
-    }),
-  );
+  unsubs.push(subscribe(synthState, () => { if (synthState.drift || synthState.macros) debouncedSave(); }));
 
   return () => {
     if (saveTimeout) clearTimeout(saveTimeout);

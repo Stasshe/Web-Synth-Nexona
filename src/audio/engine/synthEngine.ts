@@ -6,7 +6,7 @@ import { SpectralMorphProcessor } from "../dsp/spectralMorph/spectralMorphProces
 import type { SpectralMorphType } from "../dsp/spectralMorph/spectralMorphTypes";
 import { NoiseType } from "../dsp/utils/noise";
 import { ParamSmoother } from "../dsp/utils/smoothing";
-import { WarpType } from "../dsp/warp/warpTypes";
+import { DistortionType } from "../dsp/warp/warpTypes";
 import { PRESET_COUNT, type Wavetable, generatePreset } from "../dsp/wavetable/wavetablePresets";
 import { SabParam, getParam } from "../sab/layout";
 import type { VoiceParams } from "./voice";
@@ -62,55 +62,67 @@ export class SynthEngine {
 
   private voiceParams: VoiceParams = {
     oscAOn: true,
-    oscALevel: 0.8,
+    oscALevel: 0.7071,
     oscAFramePosition: 0,
-    oscADetune: 0,
-    oscAOctave: 0,
-    oscASemitone: 0,
+    oscATune: 0,
+    oscATranspose: 0,
     oscAPhaseOffset: 0,
     oscARandomPhase: 1,
     oscAUnisonVoices: 1,
-    oscAUnisonDetune: 20,
-    oscAUnisonSpread: 0.5,
-    oscAWarpType: WarpType.NONE,
-    oscAWarpAmount: 0,
-    oscAWarp2Type: WarpType.NONE,
-    oscAWarp2Amount: 0,
+    oscAUnisonDetune: 0.2,
+    oscAUnisonBlend: 0.8,
+    oscAUnisonSpread: 1.0,
+    oscAUnisonStackType: 0,
+    oscAUnisonDetunePower: 1.5,
+    oscAUnisonDetuneRange: 2,
+    oscAUnisonFrameSpread: 0,
+    oscADistortionType: DistortionType.NONE,
+    oscADistortionAmount: 0.5,
+    oscADistortionPhase: 0.5,
     oscAPan: 0,
+    oscADestination: 0,
 
     oscBOn: false,
-    oscBLevel: 0.8,
+    oscBLevel: 0.7071,
     oscBFramePosition: 0,
-    oscBDetune: 0,
-    oscBOctave: 0,
-    oscBSemitone: 0,
+    oscBTune: 0,
+    oscBTranspose: 0,
     oscBPhaseOffset: 0,
     oscBRandomPhase: 1,
     oscBUnisonVoices: 1,
-    oscBUnisonDetune: 20,
-    oscBUnisonSpread: 0.5,
-    oscBWarpType: WarpType.NONE,
-    oscBWarpAmount: 0,
-    oscBWarp2Type: WarpType.NONE,
-    oscBWarp2Amount: 0,
+    oscBUnisonDetune: 0.2,
+    oscBUnisonBlend: 0.8,
+    oscBUnisonSpread: 1.0,
+    oscBUnisonStackType: 0,
+    oscBUnisonDetunePower: 1.5,
+    oscBUnisonDetuneRange: 2,
+    oscBUnisonFrameSpread: 0,
+    oscBDistortionType: DistortionType.NONE,
+    oscBDistortionAmount: 0.5,
+    oscBDistortionPhase: 0.5,
     oscBPan: 0,
+    oscBDestination: 0,
 
     oscCOn: false,
-    oscCLevel: 0.8,
+    oscCLevel: 0.7071,
     oscCFramePosition: 0,
-    oscCDetune: 0,
-    oscCOctave: 0,
-    oscCSemitone: 0,
+    oscCTune: 0,
+    oscCTranspose: 0,
     oscCPhaseOffset: 0,
     oscCRandomPhase: 1,
     oscCUnisonVoices: 1,
-    oscCUnisonDetune: 20,
-    oscCUnisonSpread: 0.5,
-    oscCWarpType: WarpType.NONE,
-    oscCWarpAmount: 0,
-    oscCWarp2Type: WarpType.NONE,
-    oscCWarp2Amount: 0,
+    oscCUnisonDetune: 0.2,
+    oscCUnisonBlend: 0.8,
+    oscCUnisonSpread: 1.0,
+    oscCUnisonStackType: 0,
+    oscCUnisonDetunePower: 1.5,
+    oscCUnisonDetuneRange: 2,
+    oscCUnisonFrameSpread: 0,
+    oscCDistortionType: DistortionType.NONE,
+    oscCDistortionAmount: 0.5,
+    oscCDistortionPhase: 0.5,
     oscCPan: 0,
+    oscCDestination: 0,
 
     subOn: false,
     subOctave: -1,
@@ -440,19 +452,23 @@ export class SynthEngine {
     this.voiceParams.oscAOn = getParam(this.sab, SabParam.OscAOn) > 0.5;
     this.voiceParams.oscALevel = getParam(this.sab, SabParam.OscALevel);
     this.voiceParams.oscAFramePosition = getParam(this.sab, SabParam.OscAFramePosition);
-    this.voiceParams.oscADetune = getParam(this.sab, SabParam.OscADetune);
-    this.voiceParams.oscAOctave = Math.round(getParam(this.sab, SabParam.OscAOctave));
-    this.voiceParams.oscASemitone = Math.round(getParam(this.sab, SabParam.OscASemitone));
+    this.voiceParams.oscATune = getParam(this.sab, SabParam.OscATune);
+    this.voiceParams.oscATranspose = Math.round(getParam(this.sab, SabParam.OscATranspose));
     this.voiceParams.oscAPhaseOffset = getParam(this.sab, SabParam.OscAPhaseOffset);
     this.voiceParams.oscARandomPhase = getParam(this.sab, SabParam.OscARandomPhase);
     this.voiceParams.oscAUnisonVoices = getParam(this.sab, SabParam.OscAUnisonVoices);
     this.voiceParams.oscAUnisonDetune = getParam(this.sab, SabParam.OscAUnisonDetune);
+    this.voiceParams.oscAUnisonBlend = getParam(this.sab, SabParam.OscAUnisonBlend);
     this.voiceParams.oscAUnisonSpread = getParam(this.sab, SabParam.OscAUnisonSpread);
-    this.voiceParams.oscAWarpType = getParam(this.sab, SabParam.OscAWarpType) as WarpType;
-    this.voiceParams.oscAWarpAmount = getParam(this.sab, SabParam.OscAWarpAmount);
-    this.voiceParams.oscAWarp2Type = getParam(this.sab, SabParam.OscAWarp2Type) as WarpType;
-    this.voiceParams.oscAWarp2Amount = getParam(this.sab, SabParam.OscAWarp2Amount);
+    this.voiceParams.oscAUnisonStackType = Math.round(getParam(this.sab, SabParam.OscAUnisonStackType));
+    this.voiceParams.oscAUnisonDetunePower = getParam(this.sab, SabParam.OscAUnisonDetunePower);
+    this.voiceParams.oscAUnisonDetuneRange = getParam(this.sab, SabParam.OscADetuneRange);
+    this.voiceParams.oscAUnisonFrameSpread = getParam(this.sab, SabParam.OscAFrameSpread);
+    this.voiceParams.oscADistortionType = Math.round(getParam(this.sab, SabParam.OscADistortionType)) as DistortionType;
+    this.voiceParams.oscADistortionAmount = getParam(this.sab, SabParam.OscADistortionAmount);
+    this.voiceParams.oscADistortionPhase = getParam(this.sab, SabParam.OscADistortionPhase);
     this.voiceParams.oscAPan = getParam(this.sab, SabParam.OscAPan);
+    this.voiceParams.oscADestination = Math.round(getParam(this.sab, SabParam.OscADestination));
 
     const newWtTypeA = Math.round(getParam(this.sab, SabParam.OscAWavetableIndex));
     if (newWtTypeA !== this.wtTypeA) {
@@ -478,19 +494,23 @@ export class SynthEngine {
     this.voiceParams.oscBOn = getParam(this.sab, SabParam.OscBOn) > 0.5;
     this.voiceParams.oscBLevel = getParam(this.sab, SabParam.OscBLevel);
     this.voiceParams.oscBFramePosition = getParam(this.sab, SabParam.OscBFramePosition);
-    this.voiceParams.oscBDetune = getParam(this.sab, SabParam.OscBDetune);
-    this.voiceParams.oscBOctave = Math.round(getParam(this.sab, SabParam.OscBOctave));
-    this.voiceParams.oscBSemitone = Math.round(getParam(this.sab, SabParam.OscBSemitone));
+    this.voiceParams.oscBTune = getParam(this.sab, SabParam.OscBTune);
+    this.voiceParams.oscBTranspose = Math.round(getParam(this.sab, SabParam.OscBTranspose));
     this.voiceParams.oscBPhaseOffset = getParam(this.sab, SabParam.OscBPhaseOffset);
     this.voiceParams.oscBRandomPhase = getParam(this.sab, SabParam.OscBRandomPhase);
     this.voiceParams.oscBUnisonVoices = getParam(this.sab, SabParam.OscBUnisonVoices);
     this.voiceParams.oscBUnisonDetune = getParam(this.sab, SabParam.OscBUnisonDetune);
+    this.voiceParams.oscBUnisonBlend = getParam(this.sab, SabParam.OscBUnisonBlend);
     this.voiceParams.oscBUnisonSpread = getParam(this.sab, SabParam.OscBUnisonSpread);
-    this.voiceParams.oscBWarpType = getParam(this.sab, SabParam.OscBWarpType) as WarpType;
-    this.voiceParams.oscBWarpAmount = getParam(this.sab, SabParam.OscBWarpAmount);
-    this.voiceParams.oscBWarp2Type = getParam(this.sab, SabParam.OscBWarp2Type) as WarpType;
-    this.voiceParams.oscBWarp2Amount = getParam(this.sab, SabParam.OscBWarp2Amount);
+    this.voiceParams.oscBUnisonStackType = Math.round(getParam(this.sab, SabParam.OscBUnisonStackType));
+    this.voiceParams.oscBUnisonDetunePower = getParam(this.sab, SabParam.OscBUnisonDetunePower);
+    this.voiceParams.oscBUnisonDetuneRange = getParam(this.sab, SabParam.OscBDetuneRange);
+    this.voiceParams.oscBUnisonFrameSpread = getParam(this.sab, SabParam.OscBFrameSpread);
+    this.voiceParams.oscBDistortionType = Math.round(getParam(this.sab, SabParam.OscBDistortionType)) as DistortionType;
+    this.voiceParams.oscBDistortionAmount = getParam(this.sab, SabParam.OscBDistortionAmount);
+    this.voiceParams.oscBDistortionPhase = getParam(this.sab, SabParam.OscBDistortionPhase);
     this.voiceParams.oscBPan = getParam(this.sab, SabParam.OscBPan);
+    this.voiceParams.oscBDestination = Math.round(getParam(this.sab, SabParam.OscBDestination));
 
     const newWtTypeB = Math.round(getParam(this.sab, SabParam.OscBWavetableIndex));
     if (newWtTypeB !== this.wtTypeB) {
@@ -516,19 +536,23 @@ export class SynthEngine {
     this.voiceParams.oscCOn = getParam(this.sab, SabParam.OscCOn) > 0.5;
     this.voiceParams.oscCLevel = getParam(this.sab, SabParam.OscCLevel);
     this.voiceParams.oscCFramePosition = getParam(this.sab, SabParam.OscCFramePosition);
-    this.voiceParams.oscCDetune = getParam(this.sab, SabParam.OscCDetune);
-    this.voiceParams.oscCOctave = Math.round(getParam(this.sab, SabParam.OscCOctave));
-    this.voiceParams.oscCSemitone = Math.round(getParam(this.sab, SabParam.OscCSemitone));
+    this.voiceParams.oscCTune = getParam(this.sab, SabParam.OscCTune);
+    this.voiceParams.oscCTranspose = Math.round(getParam(this.sab, SabParam.OscCTranspose));
     this.voiceParams.oscCPhaseOffset = getParam(this.sab, SabParam.OscCPhaseOffset);
     this.voiceParams.oscCRandomPhase = getParam(this.sab, SabParam.OscCRandomPhase);
     this.voiceParams.oscCUnisonVoices = getParam(this.sab, SabParam.OscCUnisonVoices);
     this.voiceParams.oscCUnisonDetune = getParam(this.sab, SabParam.OscCUnisonDetune);
+    this.voiceParams.oscCUnisonBlend = getParam(this.sab, SabParam.OscCUnisonBlend);
     this.voiceParams.oscCUnisonSpread = getParam(this.sab, SabParam.OscCUnisonSpread);
-    this.voiceParams.oscCWarpType = getParam(this.sab, SabParam.OscCWarpType) as WarpType;
-    this.voiceParams.oscCWarpAmount = getParam(this.sab, SabParam.OscCWarpAmount);
-    this.voiceParams.oscCWarp2Type = getParam(this.sab, SabParam.OscCWarp2Type) as WarpType;
-    this.voiceParams.oscCWarp2Amount = getParam(this.sab, SabParam.OscCWarp2Amount);
+    this.voiceParams.oscCUnisonStackType = Math.round(getParam(this.sab, SabParam.OscCUnisonStackType));
+    this.voiceParams.oscCUnisonDetunePower = getParam(this.sab, SabParam.OscCUnisonDetunePower);
+    this.voiceParams.oscCUnisonDetuneRange = getParam(this.sab, SabParam.OscCDetuneRange);
+    this.voiceParams.oscCUnisonFrameSpread = getParam(this.sab, SabParam.OscCFrameSpread);
+    this.voiceParams.oscCDistortionType = Math.round(getParam(this.sab, SabParam.OscCDistortionType)) as DistortionType;
+    this.voiceParams.oscCDistortionAmount = getParam(this.sab, SabParam.OscCDistortionAmount);
+    this.voiceParams.oscCDistortionPhase = getParam(this.sab, SabParam.OscCDistortionPhase);
     this.voiceParams.oscCPan = getParam(this.sab, SabParam.OscCPan);
+    this.voiceParams.oscCDestination = Math.round(getParam(this.sab, SabParam.OscCDestination));
 
     const newWtTypeC = Math.round(getParam(this.sab, SabParam.OscCWavetableIndex));
     if (newWtTypeC !== this.wtTypeC) {

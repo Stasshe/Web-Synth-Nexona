@@ -72,7 +72,7 @@ export interface PatchData {
   macros: number[];
 }
 
-interface OscPatch {
+export interface OscPatch {
   on: boolean;
   waveformType: number;
   waveformName: string;
@@ -80,21 +80,36 @@ interface OscPatch {
   controlPoints: ControlPointPatch[] | null;
   level: number;
   framePosition: number;
-  detune: number;
+  // Vital-compatible fields
+  tune: number;
+  transpose: number;
   unisonVoices: number;
   unisonDetune: number;
   unisonSpread: number;
+  unisonBlend: number;
+  unisonStackType: number;
+  unisonDetunePower: number;
+  unisonDetuneRange: number;
+  unisonFrameSpread: number;
+  unisonSpectralMorphSpread: number;
+  unisonDistortionSpread: number;
   pan: number;
-  warpType: number;
-  warpAmount: number;
-  warp2Type: number;
-  warp2Amount: number;
-  octave: number;
-  semitone: number;
+  distortionType: number;
+  distortionAmount: number;
+  distortionPhase: number;
   spectralMorphType: number;
   spectralMorphAmount: number;
   phaseOffset: number;
   randomPhase: number;
+  destination: number;
+  // Legacy optional fields
+  detune?: number;
+  octave?: number;
+  semitone?: number;
+  warpType?: number;
+  warpAmount?: number;
+  warp2Type?: number;
+  warp2Amount?: number;
 }
 
 interface ControlPointPatch {

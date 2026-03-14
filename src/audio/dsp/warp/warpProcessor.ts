@@ -1,45 +1,51 @@
 import { ParamSmoother } from "../utils/smoothing";
-import { WarpType, applyWarp } from "./warpTypes";
+import {
+  DistortionType,
+  applyDistortionPhase,
+  applyRingMod,
+} from "./warpTypes";
 
 export class WarpProcessor {
-  private type1: WarpType = WarpType.NONE;
-  private amount1: ParamSmoother;
-  private type2: WarpType = WarpType.NONE;
-  private amount2: ParamSmoother;
+  private type: DistortionType = DistortionType.NONE;
+  private distortionPhase = 0.5;
+  private smoother: ParamSmoother;
 
   constructor() {
-    this.amount1 = new ParamSmoother(0, 0.01);
-    this.amount2 = new ParamSmoother(0, 0.01);
+    this.smoother = new ParamSmoother(0, 0.01);
   }
 
-  setParams(type1: WarpType, amount1: number, type2: WarpType, amount2: number): void {
-    this.type1 = type1;
-    this.amount1.setTarget(amount1);
-    this.type2 = type2;
-    this.amount2.setTarget(amount2);
+  setParams(type: DistortionType, amount: number, distortionPhase: number): void {
+    this.type = type;
+    this.smoother.setTarget(amount);
+    this.distortionPhase = distortionPhase;
   }
 
-  /** Tick smoothers once per sample. Returns [amount1, amount2]. */
-  tickSmooth(): [number, number] {
-    return [this.amount1.tick(), this.amount2.tick()];
+  /** Tick smoother once per sample. Returns smoothed amount. */
+  tickSmooth(): number {
+    return this.smoother.tick();
   }
 
-  /** Apply warp using pre-ticked amounts (safe to call per unison voice). */
-  processWithCached(phase: number, amounts: [number, number], fmSignal = 0): number {
-    let p = applyWarp(phase, this.type1, amounts[0], fmSignal);
-    if (this.type2 !== WarpType.NONE) {
-      p = applyWarp(p, this.type2, amounts[1], fmSignal);
-    }
-    return p;
+  /**
+   * Apply phase distortion using pre-ticked amount.
+   * fmSignal: mono output from another oscillator / noise (for FM types).
+   */
+  processPhase(phase: number, amount: number, fmSignal = 0): number {
+    return applyDistortionPhase(phase, this.distortionPhase, this.type, amount, fmSignal);
   }
 
-  process(phase: number, fmSignal = 0): number {
-    const amounts = this.tickSmooth();
-    return this.processWithCached(phase, amounts, fmSignal);
+  /**
+   * Apply ring modulation to a sample AFTER wavetable lookup.
+   * No-op for non-RM types. Safe to always call.
+   */
+  processRM(sample: number, amount: number, fmSignal = 0): number {
+    return applyRingMod(sample, this.type, amount, fmSignal);
+  }
+
+  getType(): DistortionType {
+    return this.type;
   }
 
   reset(): void {
-    this.amount1.snap();
-    this.amount2.snap();
+    this.smoother.snap();
   }
 }
