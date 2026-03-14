@@ -24,6 +24,7 @@ export interface PatchData {
     drive: number;
     type: number;
     envAmount: number;
+    input?: number;
   };
   filter2: {
     on: boolean;
@@ -32,6 +33,7 @@ export interface PatchData {
     drive: number;
     type: number;
     envAmount: number;
+    input?: number;
   };
   envelopes: {
     amp: EnvPatch;
