@@ -30,6 +30,9 @@ export function loadPatchIntoState(patch: PatchData): void {
   Object.assign(s.envelopes.filter, patch.envelopes.filter);
   Object.assign(s.lfos.lfo1, patch.lfos.lfo1);
   Object.assign(s.lfos.lfo2, patch.lfos.lfo2);
+  // Reset customShape so LfoPanel regenerates it from controlPoints on mount
+  s.lfos.lfo1.customShape = null;
+  s.lfos.lfo2.customShape = null;
   s.modulations.splice(0, s.modulations.length, ...patch.modulations);
   // Restore all effects where present in the patch
   Object.assign(s.effects.distortion, patch.effects.distortion);

@@ -49,6 +49,13 @@ const PRESET_MODEL: Partial<Record<PresetKey, () => WaveformModel>> = {
   Square: squareModel,
 };
 
+const CURVE_LABELS: { type: CurveType; label: string }[] = [
+  { type: CurveType.LINEAR, label: "Lin" },
+  { type: CurveType.SMOOTH, label: "Cur" },
+  { type: CurveType.STEP, label: "Stp" },
+  { type: CurveType.SINE, label: "Sin" },
+];
+
 function snapToGrid(x: number, y: number) {
   return { x: Math.round(x * GRID_X) / GRID_X, y: Math.round(y * GRID_Y) / GRID_Y };
 }
@@ -194,7 +201,7 @@ export function LfoPanel({ index, onApplyShape }: LfoPanelProps) {
   // Local model for smooth drag without Valtio overhead on every move
   const [model, setModel] = useState<WaveformModel>(() => loadModel(synthState.lfos[index]));
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const dragStateRef = useRef<{ id: string; startX: number; startY: number; moved: boolean } | null>(null);
+  const dragStateRef = useRef<{ id: string; startX: number; startY: number; moved: boolean; isNew: boolean } | null>(null);
 
   const isSandH = lfo.presetName === "S&H";
 
@@ -207,15 +214,21 @@ export function LfoPanel({ index, onApplyShape }: LfoPanelProps) {
   // Populate customShape on first mount if missing (needed before engine start)
   useEffect(() => {
     if (synthState.lfos[index].customShape !== null) return;
-    const preset = synthState.lfos[index].presetName ?? "Sine";
-    const modelFn = PRESET_MODEL[preset as PresetKey] ?? sineModel;
-    const m = modelFn();
+    const lfoState = synthState.lfos[index];
+    // Prefer saved controlPoints (restores custom-drawn shapes from patch)
+    const savedPts = lfoState.controlPoints as ControlPoint[] | null;
+    let m: WaveformModel;
+    if (savedPts && savedPts.length >= 2) {
+      m = { points: savedPts.map((p) => ({ ...p })) };
+    } else {
+      const preset = lfoState.presetName ?? "Sine";
+      m = (PRESET_MODEL[preset as PresetKey] ?? sineModel)();
+    }
     const table = generateWaveformFromPoints(m, TABLE_SIZE);
     synthState.lfos[index].customShape = Array.from(table);
     synthState.lfos[index].controlPoints = m.points as unknown[];
     setModel(m);
-    // Note: onApplyShape NOT called here — engine hasn't started yet.
-    // applyCustomWavetables in page.tsx will send the table on engine start.
+    // onApplyShape NOT called — engine hasn't started yet.
   }, [index]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [{ isDragging }, dragRef] = useDrag(
@@ -236,6 +249,17 @@ export function LfoPanel({ index, onApplyShape }: LfoPanelProps) {
     synthState.lfos[index].shape = 4;
     onApplyShape?.(table);
   }, [index, onApplyShape]);
+
+  const setCurveType = useCallback((type: CurveType) => {
+    if (!selectedId) return;
+    setModel((prev) => {
+      const newModel = {
+        points: prev.points.map((p) => (p.id === selectedId ? { ...p, curveType: type } : p)),
+      };
+      commitModel(newModel, "Custom");
+      return newModel;
+    });
+  }, [selectedId, commitModel]);
 
   // Redraw whenever model/phase changes
   useEffect(() => {
@@ -270,7 +294,7 @@ export function LfoPanel({ index, onApplyShape }: LfoPanelProps) {
     const hit = findHitPoint(e.clientX, e.clientY, canvas, model);
     if (hit) {
       setSelectedId(hit);
-      dragStateRef.current = { id: hit, startX: e.clientX, startY: e.clientY, moved: false };
+      dragStateRef.current = { id: hit, startX: e.clientX, startY: e.clientY, moved: false, isNew: false };
     } else {
       const { x, y } = canvasToModel(e.clientX, e.clientY, canvas);
       if (x > 0 && x < 1) {
@@ -281,7 +305,7 @@ export function LfoPanel({ index, onApplyShape }: LfoPanelProps) {
           const newModel = { points: newPoints };
           setModel(newModel);
           setSelectedId(newPt.id);
-          dragStateRef.current = { id: newPt.id, startX: e.clientX, startY: e.clientY, moved: false };
+          dragStateRef.current = { id: newPt.id, startX: e.clientX, startY: e.clientY, moved: false, isNew: true };
           return;
         }
       }
@@ -317,7 +341,12 @@ export function LfoPanel({ index, onApplyShape }: LfoPanelProps) {
     dragStateRef.current = null;
     if (!ds) return;
     if (!ds.moved) {
-      // Tap on inner point → delete
+      if (ds.isNew) {
+        // Point was just added — commit as-is, don't delete it
+        commitModel(model, "Custom");
+        return;
+      }
+      // Tap on existing inner point → delete
       const canvas = canvasRef.current;
       if (!canvas) return;
       const hit = findHitPoint(e.clientX, e.clientY, canvas, model);
@@ -335,31 +364,6 @@ export function LfoPanel({ index, onApplyShape }: LfoPanelProps) {
     // Commit drag result
     commitModel(model, "Custom");
   }, [model, commitModel]);
-
-  // Cycle through CurveType on right-click / Ctrl+click
-  const handleContextMenu = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (isSandH) return;
-    e.preventDefault();
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const hit = findHitPoint(e.clientX, e.clientY, canvas, model);
-    if (!hit) return;
-    setModel((prev) => ({
-      points: prev.points.map((p) => {
-        if (p.id !== hit) return p;
-        const next = (p.curveType + 1) % 4;
-        return { ...p, curveType: next };
-      }),
-    }));
-    // Commit after type change (on next render via useEffect → but we need to get new model)
-    // Use setTimeout to commit after state update
-    setTimeout(() => {
-      setModel((prev) => {
-        commitModel(prev, synthState.lfos[index].presetName || "Custom");
-        return prev;
-      });
-    }, 0);
-  }, [isSandH, model, commitModel, index]);
 
   // Derive SelectWithArrows display label
   const displayLabel =
@@ -389,9 +393,34 @@ export function LfoPanel({ index, onApplyShape }: LfoPanelProps) {
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        onContextMenu={handleContextMenu}
-        title={isSandH ? "S&H — not editable" : "Click to add · Drag to move · Tap to delete · Right-click to change curve"}
+        title={isSandH ? "S&H — not editable" : "Click to add · Drag to move · Tap point to delete"}
       />
+
+      {/* Curve type selector — shown when a point is selected */}
+      {!isSandH && (
+        <div className="flex gap-1 mb-1">
+          {CURVE_LABELS.map(({ type, label: curveLabel }) => {
+            const selPt = model.points.find((p) => p.id === selectedId);
+            const active = selPt?.curveType === type;
+            return (
+              <button
+                key={type}
+                type="button"
+                disabled={!selectedId}
+                onClick={() => setCurveType(type)}
+                className={`flex-1 text-[9px] py-0.5 rounded border transition-colors ${
+                  active
+                    ? "border-lfo text-lfo"
+                    : "border-border-default text-text-muted hover:border-lfo/50"
+                } disabled:opacity-25 disabled:cursor-default`}
+                style={active ? { backgroundColor: "rgba(136,68,255,0.15)" } : undefined}
+              >
+                {curveLabel}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Rate + MOD drag */}
       <div className="flex items-center justify-center gap-2">
