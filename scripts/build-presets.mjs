@@ -10,8 +10,8 @@
  *   2. Run `npm run build:presets` (or let `npm run dev` do it)
  */
 
-import { readFileSync, readdirSync, writeFileSync, mkdirSync } from "node:fs";
-import { join, dirname } from "node:path";
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));

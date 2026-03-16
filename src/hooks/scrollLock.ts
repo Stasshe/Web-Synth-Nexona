@@ -55,7 +55,7 @@ export function useGlobalScrollLock() {
           ) {
             return true;
           }
-        } catch (e) {
+        } catch (_e) {
           // ignore
         }
         elCur = elCur.parentElement;
@@ -72,9 +72,9 @@ export function useGlobalScrollLock() {
           if (tag === "input" || tag === "textarea" || tag === "select") return true;
           if (asEl.isContentEditable) return true;
           const style = window.getComputedStyle(asEl);
-          const userSelect = style.userSelect || (style as any).webkitUserSelect;
+          const userSelect = style.userSelect || (style as CSSStyleDeclaration & { webkitUserSelect?: string }).webkitUserSelect;
           if (userSelect && userSelect !== "none") return true;
-        } catch (e) {
+        } catch (_e) {
           // ignore
         }
         elCur = elCur.parentElement;
@@ -92,10 +92,6 @@ export function useGlobalScrollLock() {
       }
     };
 
-    let touchStartY = 0;
-    const touchStart = (e: TouchEvent) => {
-      touchStartY = e.touches?.[0]?.clientY || 0;
-    };
     const touchMove = (e: TouchEvent) => {
       if (e.defaultPrevented) return;
       const target = e.target as Element | null;
@@ -110,7 +106,7 @@ export function useGlobalScrollLock() {
       if (!keysToBlock.includes(e.key)) return;
       const active = document.activeElement as Element | null;
       // Allow normal behavior inside editable fields or scrollable elements
-      const target = e.target as Element | null;
+      
       // previously we filtered out editor internals; that logic has been removed
 
       if (active) {
@@ -124,16 +120,14 @@ export function useGlobalScrollLock() {
     };
 
     // Use bubble phase so inner components (like Monaco) get first chance to handle events.
-    window.addEventListener("wheel", wheelHandler, { passive: false, capture: false });
-    window.addEventListener("touchstart", touchStart, { passive: true, capture: false });
-    window.addEventListener("touchmove", touchMove, { passive: false, capture: false });
-    window.addEventListener("keydown", keyHandler, { passive: false, capture: false });
+    window.addEventListener("wheel", wheelHandler as EventListener, { passive: false, capture: false });
+    window.addEventListener("touchmove", touchMove as EventListener, { passive: false, capture: false });
+    window.addEventListener("keydown", keyHandler as EventListener, { passive: false, capture: false });
 
     return () => {
-      window.removeEventListener("wheel", wheelHandler as any);
-      window.removeEventListener("touchstart", touchStart as any);
-      window.removeEventListener("touchmove", touchMove as any);
-      window.removeEventListener("keydown", keyHandler as any);
+      window.removeEventListener("wheel", wheelHandler as EventListener);
+      window.removeEventListener("touchmove", touchMove as EventListener);
+      window.removeEventListener("keydown", keyHandler as EventListener);
     };
   }, []);
 }

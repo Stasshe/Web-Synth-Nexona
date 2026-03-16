@@ -7,12 +7,12 @@ import { type ExportFormat, exportAudio } from "@/audio/export/exportAudio";
 import { type SynthNode, createSynthNode } from "@/audio/worklet/node";
 import { DndProvider } from "@/components/DndProvider";
 import { EffectsPage } from "@/components/EffectsPage";
-import { PresetSelector } from "@/components/PresetSelector";
 import { Keyboard } from "@/components/Keyboard";
+import { LevelMeter } from "@/components/LevelMeter";
 import { MacroStrip } from "@/components/MacroPanel";
 import { ModulatorSidebar } from "@/components/ModulatorSidebar";
 import { ParamEditor } from "@/components/ParamEditor";
-import { LevelMeter } from "@/components/LevelMeter";
+import { PresetSelector } from "@/components/PresetSelector";
 import { Visualizer } from "@/components/Visualizer";
 import { VoicePage } from "@/components/VoicePage";
 import { WaveformEditor } from "@/components/WaveformEditor";
@@ -21,13 +21,13 @@ import { SelectPopup } from "@/components/ui/SelectPopup";
 import { useGlobalScrollLock } from "@/hooks/scrollLock";
 import { loadPatchIntoState, urlToPatch } from "@/patch/loader";
 import { patchToUrl, stateToPatch } from "@/patch/serializer";
-import { updateModFeedback } from "@/state/modFeedback";
 import { audioFeedback } from "@/state/audioFeedback";
+import { updateModFeedback } from "@/state/modFeedback";
 import {
   bindStateToSAB,
-  synthState,
   restoreStateFromSavedData,
   setupAutoSave,
+  synthState,
 } from "@/state/synthState";
 import { initIndexedDB, loadState } from "@/storage/indexeddb";
 import { Circle, Code, Download, Power, Share2, Square, Upload, Volume2, X } from "lucide-react";

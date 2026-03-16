@@ -1,7 +1,7 @@
 import { proxy, subscribe } from "valtio";
 import type { ModRoute } from "../audio/dsp/modulation/modMatrix";
 import { SabParam, setParam } from "../audio/sab/layout";
-import { loadState, saveState } from "../storage/indexeddb";
+import { saveState } from "../storage/indexeddb";
 
 const DEFAULT_OSC = {
   on: false,
@@ -9,7 +9,7 @@ const DEFAULT_OSC = {
   waveformName: "Sine",
   customWaveform: null as number[] | null,
   controlPoints: null as unknown[] | null,
-  level: 0.7071, // √0.5 = -6dB (Vital default)
+  level: Math.SQRT1_2, // √0.5 = -6dB (Vital default)
   framePosition: 0,
   transpose: 0, // -48 to +48 semitones (replaces octave + semitone)
   tune: 0, // ±100 cents fine tune
@@ -467,26 +467,26 @@ export function restoreStateFromSavedData(data: unknown): void {
           const oct = typeof raw.octave === "number" ? raw.octave : 0;
           const semi = typeof raw.semitone === "number" ? raw.semitone : 0;
           raw.transpose = oct * 12 + semi;
-          delete raw.octave;
-          delete raw.semitone;
+          raw.octave = undefined;
+          raw.semitone = undefined;
         }
         // Backward compat: rename detune → tune
         if ("detune" in raw && !("tune" in raw)) {
           raw.tune = raw.detune;
-          delete raw.detune;
+          raw.detune = undefined;
         }
         // Backward compat: rename warpType/warpAmount → distortionType/distortionAmount
         if ("warpType" in raw && !("distortionType" in raw)) {
           raw.distortionType = raw.warpType;
-          delete raw.warpType;
+          raw.warpType = undefined;
         }
         if ("warpAmount" in raw && !("distortionAmount" in raw)) {
           raw.distortionAmount = raw.warpAmount;
-          delete raw.warpAmount;
+          raw.warpAmount = undefined;
         }
         // Remove old warp2 fields
-        delete raw.warp2Type;
-        delete raw.warp2Amount;
+        raw.warp2Type = undefined;
+        raw.warp2Amount = undefined;
         Object.assign(synthState.oscillators[key], raw);
       }
     }

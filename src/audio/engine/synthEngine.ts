@@ -62,7 +62,7 @@ export class SynthEngine {
 
   private voiceParams: VoiceParams = {
     oscAOn: true,
-    oscALevel: 0.7071,
+    oscALevel: Math.SQRT1_2,
     oscAFramePosition: 0,
     oscATune: 0,
     oscATranspose: 0,
@@ -83,7 +83,7 @@ export class SynthEngine {
     oscADestination: 0,
 
     oscBOn: false,
-    oscBLevel: 0.7071,
+    oscBLevel: Math.SQRT1_2,
     oscBFramePosition: 0,
     oscBTune: 0,
     oscBTranspose: 0,
@@ -104,7 +104,7 @@ export class SynthEngine {
     oscBDestination: 0,
 
     oscCOn: false,
-    oscCLevel: 0.7071,
+    oscCLevel: Math.SQRT1_2,
     oscCFramePosition: 0,
     oscCTune: 0,
     oscCTranspose: 0,
