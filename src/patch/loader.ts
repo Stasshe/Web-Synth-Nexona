@@ -1,5 +1,38 @@
+import {
+  type ControlPoint,
+  type WaveformModel,
+  sawModel,
+  sineModel,
+  squareModel,
+  triangleModel,
+} from "@/components/WaveformEditor/curveTypes";
+import { generateWaveformFromPoints } from "@/components/WaveformEditor/generateFromPoints";
 import { synthState } from "@/state/synthState";
 import { type PatchData, validatePatch } from "./schema";
+
+const TABLE_SIZE = 256;
+
+const PRESET_MODELS: Record<string, () => WaveformModel> = {
+  Sine: sineModel,
+  Triangle: triangleModel,
+  Saw: sawModel,
+  Square: squareModel,
+};
+
+/** Regenerate customShape + controlPoints for an LFO state object. */
+function buildLfoCustomShape(lfo: (typeof synthState.lfos)[keyof typeof synthState.lfos]): void {
+  const pts = lfo.controlPoints as ControlPoint[] | null;
+  let m: WaveformModel;
+  if (pts && pts.length >= 2) {
+    m = { points: pts.map((p) => ({ ...p })) };
+  } else {
+    const preset = lfo.presetName ?? "Sine";
+    m = (PRESET_MODELS[preset] ?? sineModel)();
+  }
+  const table = generateWaveformFromPoints(m, TABLE_SIZE);
+  lfo.customShape = Array.from(table);
+  lfo.controlPoints = m.points as unknown[];
+}
 
 export async function urlToPatch(base64: string): Promise<PatchData | null> {
   try {
@@ -30,9 +63,12 @@ export function loadPatchIntoState(patch: PatchData): void {
   Object.assign(s.envelopes.filter, patch.envelopes.filter);
   Object.assign(s.lfos.lfo1, patch.lfos.lfo1);
   Object.assign(s.lfos.lfo2, patch.lfos.lfo2);
-  // Reset customShape so LfoPanel regenerates it from controlPoints on mount
-  s.lfos.lfo1.customShape = null;
-  s.lfos.lfo2.customShape = null;
+  // For non-Custom presets, clear stale controlPoints so the preset name drives shape generation.
+  if (s.lfos.lfo1.presetName !== "Custom") s.lfos.lfo1.controlPoints = null;
+  if (s.lfos.lfo2.presetName !== "Custom") s.lfos.lfo2.controlPoints = null;
+  // Eagerly regenerate customShape so it's non-null for applyCustomWavetables and auto-save.
+  buildLfoCustomShape(s.lfos.lfo1);
+  buildLfoCustomShape(s.lfos.lfo2);
   s.modulations.splice(0, s.modulations.length, ...patch.modulations);
   // Restore all effects where present in the patch
   Object.assign(s.effects.distortion, patch.effects.distortion);

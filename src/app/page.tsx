@@ -158,6 +158,13 @@ export default function Home() {
       audioFeedback.compGR = gr;
     });
     applyCustomWavetables(synth);
+    // Apply any modulation routes restored from IndexedDB
+    const routes = synthState.modulations.map((r) => ({
+      source: r.source,
+      target: r.target,
+      amount: r.amount,
+    }));
+    synth.setModRoutes(routes as ModRoute[]);
     setStarted(true);
   }, [started, applyCustomWavetables]);
 

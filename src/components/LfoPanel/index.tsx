@@ -217,7 +217,8 @@ export function LfoPanel({ index, onApplyShape }: LfoPanelProps) {
     setModel(loadModel(synthState.lfos[index]));
   }, [index, controlPointsKey]);
 
-  // Populate customShape on first mount if missing (needed before engine start)
+  // Populate customShape whenever it's null — fires on mount and re-fires if IDB restore
+  // or a patch load changes controlPoints/presetName while customShape is still null.
   useEffect(() => {
     if (synthState.lfos[index].customShape !== null) return;
     const lfoState = synthState.lfos[index];
@@ -234,8 +235,8 @@ export function LfoPanel({ index, onApplyShape }: LfoPanelProps) {
     synthState.lfos[index].customShape = Array.from(table);
     synthState.lfos[index].controlPoints = m.points as unknown[];
     setModel(m);
-    // onApplyShape NOT called — engine hasn't started yet.
-  }, [index]); // eslint-disable-line react-hooks/exhaustive-deps
+    onApplyShape?.(table); // no-op before engine start; sends shape if engine is running
+  }, [index, controlPointsKey, lfo.presetName, onApplyShape]);
 
   const [{ isDragging }, dragRef] = useDrag(
     () => ({

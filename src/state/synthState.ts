@@ -489,6 +489,13 @@ export function restoreStateFromSavedData(data: unknown): void {
     if (lfosData.lfo2 && typeof lfosData.lfo2 === "object")
       Object.assign(synthState.lfos.lfo2, lfosData.lfo2);
   }
+  if (Array.isArray(saved.modulations)) {
+    synthState.modulations.splice(
+      0,
+      synthState.modulations.length,
+      ...(saved.modulations as ModRoute[]),
+    );
+  }
   if (saved.effects && typeof saved.effects === "object") {
     const fxData = saved.effects as Record<string, unknown>;
     for (const key of [
@@ -537,6 +544,7 @@ export function setupAutoSave(): () => void {
         lfo1: { ...synthState.lfos.lfo1 },
         lfo2: { ...synthState.lfos.lfo2 },
       },
+      modulations: synthState.modulations.map((r) => ({ ...r })),
       effects: {
         distortion: { ...synthState.effects.distortion },
         compressor: { ...synthState.effects.compressor },
@@ -567,6 +575,7 @@ export function setupAutoSave(): () => void {
   unsubs.push(subscribe(synthState.filter2, debouncedSave));
   unsubs.push(subscribe(synthState.envelopes, debouncedSave));
   unsubs.push(subscribe(synthState.lfos, debouncedSave));
+  unsubs.push(subscribe(synthState.modulations, debouncedSave));
   unsubs.push(subscribe(synthState.effects, debouncedSave));
   unsubs.push(subscribe(synthState.master, debouncedSave));
   unsubs.push(
