@@ -133,7 +133,7 @@ function drawCanvas(
       const p = i / steps;
       const y = Math.sin(p * 17.3 + 1.2) * 0.7;
       const x0 = p * CANVAS_W;
-      const x1 = Math.min((i + 1) / steps * CANVAS_W, CANVAS_W);
+      const x1 = Math.min(((i + 1) / steps) * CANVAS_W, CANVAS_W);
       const cy = CANVAS_H / 2 - y * (CANVAS_H / 2 - 4);
       if (i === 0) ctx.moveTo(x0, cy);
       else ctx.lineTo(x0, cy);
@@ -201,7 +201,13 @@ export function LfoPanel({ index, onApplyShape }: LfoPanelProps) {
   // Local model for smooth drag without Valtio overhead on every move
   const [model, setModel] = useState<WaveformModel>(() => loadModel(synthState.lfos[index]));
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const dragStateRef = useRef<{ id: string; startX: number; startY: number; moved: boolean; isNew: boolean } | null>(null);
+  const dragStateRef = useRef<{
+    id: string;
+    startX: number;
+    startY: number;
+    moved: boolean;
+    isNew: boolean;
+  } | null>(null);
 
   const isSandH = lfo.presetName === "S&H";
 
@@ -241,25 +247,31 @@ export function LfoPanel({ index, onApplyShape }: LfoPanelProps) {
   );
 
   // Flush model to state + worklet
-  const commitModel = useCallback((m: WaveformModel, presetName: string) => {
-    const table = generateWaveformFromPoints(m, TABLE_SIZE);
-    synthState.lfos[index].customShape = Array.from(table);
-    synthState.lfos[index].controlPoints = m.points.map((p) => ({ ...p })) as unknown[];
-    synthState.lfos[index].presetName = presetName;
-    synthState.lfos[index].shape = 4;
-    onApplyShape?.(table);
-  }, [index, onApplyShape]);
+  const commitModel = useCallback(
+    (m: WaveformModel, presetName: string) => {
+      const table = generateWaveformFromPoints(m, TABLE_SIZE);
+      synthState.lfos[index].customShape = Array.from(table);
+      synthState.lfos[index].controlPoints = m.points.map((p) => ({ ...p })) as unknown[];
+      synthState.lfos[index].presetName = presetName;
+      synthState.lfos[index].shape = 4;
+      onApplyShape?.(table);
+    },
+    [index, onApplyShape],
+  );
 
-  const setCurveType = useCallback((type: CurveType) => {
-    if (!selectedId) return;
-    setModel((prev) => {
-      const newModel = {
-        points: prev.points.map((p) => (p.id === selectedId ? { ...p, curveType: type } : p)),
-      };
-      commitModel(newModel, "Custom");
-      return newModel;
-    });
-  }, [selectedId, commitModel]);
+  const setCurveType = useCallback(
+    (type: CurveType) => {
+      if (!selectedId) return;
+      setModel((prev) => {
+        const newModel = {
+          points: prev.points.map((p) => (p.id === selectedId ? { ...p, curveType: type } : p)),
+        };
+        commitModel(newModel, "Custom");
+        return newModel;
+      });
+    },
+    [selectedId, commitModel],
+  );
 
   // Redraw whenever model/phase changes
   useEffect(() => {
@@ -269,50 +281,68 @@ export function LfoPanel({ index, onApplyShape }: LfoPanelProps) {
   }, [model, selectedId, phase, isSandH]);
 
   // Preset selection
-  const handlePresetChange = useCallback((val: string) => {
-    if (val === "S&H") {
-      synthState.lfos[index].presetName = "S&H";
-      synthState.lfos[index].shape = 3;
-      // Send a S&H indicator — DSP handles it via shape=3
+  const handlePresetChange = useCallback(
+    (val: string) => {
+      if (val === "S&H") {
+        synthState.lfos[index].presetName = "S&H";
+        synthState.lfos[index].shape = 3;
+        // Send a S&H indicator — DSP handles it via shape=3
+        setSelectedId(null);
+        return;
+      }
+      const modelFn = PRESET_MODEL[val as PresetKey];
+      if (!modelFn) return;
+      const m = modelFn();
+      setModel(m);
       setSelectedId(null);
-      return;
-    }
-    const modelFn = PRESET_MODEL[val as PresetKey];
-    if (!modelFn) return;
-    const m = modelFn();
-    setModel(m);
-    setSelectedId(null);
-    commitModel(m, val);
-  }, [index, commitModel]);
+      commitModel(m, val);
+    },
+    [index, commitModel],
+  );
 
   // Canvas pointer handlers — only when not S&H
-  const handlePointerDown = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (isSandH) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    e.currentTarget.setPointerCapture(e.pointerId);
-    const hit = findHitPoint(e.clientX, e.clientY, canvas, model);
-    if (hit) {
-      setSelectedId(hit);
-      dragStateRef.current = { id: hit, startX: e.clientX, startY: e.clientY, moved: false, isNew: false };
-    } else {
-      const { x, y } = canvasToModel(e.clientX, e.clientY, canvas);
-      if (x > 0 && x < 1) {
-        const conflicts = model.points.some((p) => Math.abs(p.x - x) < MIN_GAP);
-        if (!conflicts) {
-          const newPt: ControlPoint = { id: makePointId(), x, y, curveType: CurveType.SMOOTH };
-          const newPoints = [...model.points, newPt].sort((a, b) => a.x - b.x);
-          const newModel = { points: newPoints };
-          setModel(newModel);
-          setSelectedId(newPt.id);
-          dragStateRef.current = { id: newPt.id, startX: e.clientX, startY: e.clientY, moved: false, isNew: true };
-          return;
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent<HTMLCanvasElement>) => {
+      if (isSandH) return;
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      e.currentTarget.setPointerCapture(e.pointerId);
+      const hit = findHitPoint(e.clientX, e.clientY, canvas, model);
+      if (hit) {
+        setSelectedId(hit);
+        dragStateRef.current = {
+          id: hit,
+          startX: e.clientX,
+          startY: e.clientY,
+          moved: false,
+          isNew: false,
+        };
+      } else {
+        const { x, y } = canvasToModel(e.clientX, e.clientY, canvas);
+        if (x > 0 && x < 1) {
+          const conflicts = model.points.some((p) => Math.abs(p.x - x) < MIN_GAP);
+          if (!conflicts) {
+            const newPt: ControlPoint = { id: makePointId(), x, y, curveType: CurveType.SMOOTH };
+            const newPoints = [...model.points, newPt].sort((a, b) => a.x - b.x);
+            const newModel = { points: newPoints };
+            setModel(newModel);
+            setSelectedId(newPt.id);
+            dragStateRef.current = {
+              id: newPt.id,
+              startX: e.clientX,
+              startY: e.clientY,
+              moved: false,
+              isNew: true,
+            };
+            return;
+          }
         }
+        setSelectedId(null);
+        dragStateRef.current = null;
       }
-      setSelectedId(null);
-      dragStateRef.current = null;
-    }
-  }, [isSandH, model]);
+    },
+    [isSandH, model],
+  );
 
   const handlePointerMove = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
     const ds = dragStateRef.current;
@@ -329,46 +359,53 @@ export function LfoPanel({ index, onApplyShape }: LfoPanelProps) {
       if (!pt) return prev;
       const isEndpoint = pt.x === 0 || pt.x === 1;
       const newX = isEndpoint ? pt.x : nx;
-      if (!isEndpoint && prev.points.some((p) => p.id !== ds.id && Math.abs(p.x - newX) < MIN_GAP)) return prev;
+      if (!isEndpoint && prev.points.some((p) => p.id !== ds.id && Math.abs(p.x - newX) < MIN_GAP))
+        return prev;
       return {
-        points: prev.points.map((p) => (p.id === ds.id ? { ...p, x: newX, y: ny } : p)).sort((a, b) => a.x - b.x),
+        points: prev.points
+          .map((p) => (p.id === ds.id ? { ...p, x: newX, y: ny } : p))
+          .sort((a, b) => a.x - b.x),
       };
     });
   }, []);
 
-  const handlePointerUp = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
-    const ds = dragStateRef.current;
-    dragStateRef.current = null;
-    if (!ds) return;
-    if (!ds.moved) {
-      if (ds.isNew) {
-        // Point was just added — commit as-is, don't delete it
-        commitModel(model, "Custom");
-        return;
-      }
-      // Tap on existing inner point → delete
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const hit = findHitPoint(e.clientX, e.clientY, canvas, model);
-      if (hit) {
-        const pt = model.points.find((p) => p.id === hit);
-        if (pt && pt.x !== 0 && pt.x !== 1) {
-          const newModel = { points: model.points.filter((p) => p.id !== hit) };
-          setModel(newModel);
-          setSelectedId(null);
-          commitModel(newModel, "Custom");
+  const handlePointerUp = useCallback(
+    (e: React.PointerEvent<HTMLCanvasElement>) => {
+      const ds = dragStateRef.current;
+      dragStateRef.current = null;
+      if (!ds) return;
+      if (!ds.moved) {
+        if (ds.isNew) {
+          // Point was just added — commit as-is, don't delete it
+          commitModel(model, "Custom");
           return;
         }
+        // Tap on existing inner point → delete
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const hit = findHitPoint(e.clientX, e.clientY, canvas, model);
+        if (hit) {
+          const pt = model.points.find((p) => p.id === hit);
+          if (pt && pt.x !== 0 && pt.x !== 1) {
+            const newModel = { points: model.points.filter((p) => p.id !== hit) };
+            setModel(newModel);
+            setSelectedId(null);
+            commitModel(newModel, "Custom");
+            return;
+          }
+        }
       }
-    }
-    // Commit drag result
-    commitModel(model, "Custom");
-  }, [model, commitModel]);
+      // Commit drag result
+      commitModel(model, "Custom");
+    },
+    [model, commitModel],
+  );
 
   // Derive SelectWithArrows display label
   const displayLabel =
-    lfo.presetName === "Custom" ? "Custom" :
-    LFO_PRESETS.find((p) => p.value === lfo.presetName)?.label ?? lfo.presetName;
+    lfo.presetName === "Custom"
+      ? "Custom"
+      : (LFO_PRESETS.find((p) => p.value === lfo.presetName)?.label ?? lfo.presetName);
 
   const selectVal = LFO_PRESETS.find((p) => p.value === lfo.presetName)?.value ?? "Sine";
 

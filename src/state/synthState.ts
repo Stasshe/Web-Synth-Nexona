@@ -80,8 +80,20 @@ export const synthState = proxy({
     filter: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.3 },
   },
   lfos: {
-    lfo1: { rate: 1, shape: 4, customShape: null as number[] | null, controlPoints: null as unknown[] | null, presetName: "Sine" },
-    lfo2: { rate: 1, shape: 4, customShape: null as number[] | null, controlPoints: null as unknown[] | null, presetName: "Sine" },
+    lfo1: {
+      rate: 1,
+      shape: 4,
+      customShape: null as number[] | null,
+      controlPoints: null as unknown[] | null,
+      presetName: "Sine",
+    },
+    lfo2: {
+      rate: 1,
+      shape: 4,
+      customShape: null as number[] | null,
+      controlPoints: null as unknown[] | null,
+      presetName: "Sine",
+    },
   },
   modulations: [] as ModRoute[],
   effects: {

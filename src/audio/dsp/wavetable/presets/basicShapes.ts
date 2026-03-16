@@ -6,12 +6,12 @@ import { NUM_FRAMES, normalize } from "../wavetableCommon";
 // Each shape is computed directly in the time domain, mirroring Vital's PredefinedWaveFrames.
 export function generateBasicShapes(tableSize: number): Wavetable {
   const shapes = [
-    makeSin(tableSize),          // 0: Sin
+    makeSin(tableSize), // 0: Sin
     makeSaturatedSin(tableSize), // 1: Saturated Sin (tanh-clipped, Vital drives at amplitude 2)
-    makeTriangle(tableSize),     // 2: Triangle  (peaks at t=0, trough at t=0.5)
-    makeSquare(tableSize),       // 3: Square    (50% duty, symmetric around t=0)
-    makePulse(tableSize),        // 4: Pulse     (25% duty, Vital's "kPulse")
-    makeSaw(tableSize),          // 5: Saw       (ascending, Vital's "kSaw")
+    makeTriangle(tableSize), // 2: Triangle  (peaks at t=0, trough at t=0.5)
+    makeSquare(tableSize), // 3: Square    (50% duty, symmetric around t=0)
+    makePulse(tableSize), // 4: Pulse     (25% duty, Vital's "kPulse")
+    makeSaw(tableSize), // 5: Saw       (ascending, Vital's "kSaw")
   ];
 
   const frames: Float32Array[] = [];
@@ -66,10 +66,10 @@ function makeTriangle(tableSize: number): Float32Array {
   const s = Math.floor(tableSize / 4);
   for (let i = 0; i < s; i++) {
     const t = i / s;
-    buf[i] = 1 - t;           // 1 → 0
-    buf[i + s] = -t;          // 0 → -1
-    buf[i + 2 * s] = t - 1;  // -1 → 0
-    buf[i + 3 * s] = t;       // 0 → 1
+    buf[i] = 1 - t; // 1 → 0
+    buf[i + s] = -t; // 0 → -1
+    buf[i + 2 * s] = t - 1; // -1 → 0
+    buf[i + 3 * s] = t; // 0 → 1
   }
   return buf;
 }
@@ -110,8 +110,8 @@ function makeSaw(tableSize: number): Float32Array {
   const quarter = Math.floor(tableSize / 4);
   for (let i = 0; i < half; i++) {
     const t = i / half; // 0..1
-    buf[(i + quarter) % tableSize] = t - 1;      // ascending -1 → 0
-    buf[(i + half + quarter) % tableSize] = t;   // ascending  0 → 1
+    buf[(i + quarter) % tableSize] = t - 1; // ascending -1 → 0
+    buf[(i + half + quarter) % tableSize] = t; // ascending  0 → 1
   }
   return buf;
 }

@@ -128,8 +128,7 @@ function drawEnvCanvas(
   }
 }
 
-const fmtTime = (v: number) =>
-  v < 1 ? `${(v * 1000).toFixed(0)}ms` : `${v.toFixed(2)}s`;
+const fmtTime = (v: number) => (v < 1 ? `${(v * 1000).toFixed(0)}ms` : `${v.toFixed(2)}s`);
 const fmtPct = (v: number) => `${(v * 100).toFixed(0)}%`;
 
 export function EnvelopePanel() {
