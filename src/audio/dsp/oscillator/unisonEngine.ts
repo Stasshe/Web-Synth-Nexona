@@ -170,11 +170,6 @@ export class UnisonEngine {
     this.distortion.setParams(type, amount, distortionPhase);
   }
 
-  /** Legacy method for compatibility during transition */
-  setWarp(type1: DistortionType, amount1: number, _type2: DistortionType, _amount2: number): void {
-    this.distortion.setParams(type1, amount1, 0.5);
-  }
-
   setPhaseParams(offset: number, randomAmount: number): void {
     this.phaseOffset = offset;
     this.randomPhaseAmount = randomAmount;
@@ -193,13 +188,6 @@ export class UnisonEngine {
       p.detuneRange,
       p.frameSpread,
     );
-  }
-
-  /** Legacy simple unison setter (used by voice.ts during transition) */
-  setUnisonCount(count: number, detuneCents: number, spread: number): void {
-    // Map old API: detuneCents is 0-100, convert to 0-1 detune with 1-semitone range
-    const detune = Math.min(1, detuneCents / 100);
-    this._buildVoices(Math.round(count), detune, spread, 0.8, UnisonStackType.UNISON, 1.5, 1, 0);
   }
 
   /** Get last mono output sample (for cross-osc FM with 1-sample delay) */

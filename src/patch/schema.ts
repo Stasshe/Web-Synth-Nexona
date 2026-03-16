@@ -102,14 +102,6 @@ export interface OscPatch {
   phaseOffset: number;
   randomPhase: number;
   destination: number;
-  // Legacy optional fields
-  detune?: number;
-  octave?: number;
-  semitone?: number;
-  warpType?: number;
-  warpAmount?: number;
-  warp2Type?: number;
-  warp2Amount?: number;
 }
 
 interface ControlPointPatch {

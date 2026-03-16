@@ -68,12 +68,3 @@ export function MacroStrip() {
     </div>
   );
 }
-
-/** Legacy horizontal layout — kept for backward compatibility. */
-export function MacroPanel() {
-  return (
-    <div className="flex gap-2 justify-center bg-bg-panel border border-border-default rounded-lg px-4 py-2">
-      <MacroStrip />
-    </div>
-  );
-}

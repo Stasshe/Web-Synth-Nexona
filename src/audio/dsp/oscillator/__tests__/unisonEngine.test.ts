@@ -20,7 +20,16 @@ describe("UnisonEngine", () => {
     const engine = new UnisonEngine(SR);
     engine.setWavetable(generatePreset(0, 2048));
     engine.setFrequency(440);
-    engine.setUnisonCount(1, 20, 0.5);
+    engine.setUnisonParams({
+      count: 1,
+      detune: 0.2, // 20 / 100
+      stereoSpread: 0.5,
+      blend: 0.8,
+      stackType: 0,
+      detunePower: 1.5,
+      detuneRange: 1,
+      frameSpread: 0,
+    });
 
     let maxDiff = 0;
     for (let i = 0; i < 1000; i++) {
@@ -34,7 +43,16 @@ describe("UnisonEngine", () => {
     const engine = new UnisonEngine(SR);
     engine.setWavetable(generatePreset(0, 2048));
     engine.setFrequency(440);
-    engine.setUnisonCount(8, 30, 1.0);
+    engine.setUnisonParams({
+      count: 8,
+      detune: 0.3, // 30 / 100
+      stereoSpread: 1.0,
+      blend: 0.8,
+      stackType: 0,
+      detunePower: 1.5,
+      detuneRange: 1,
+      frameSpread: 0,
+    });
 
     let hasDifference = false;
     for (let i = 0; i < 1000; i++) {
@@ -48,7 +66,16 @@ describe("UnisonEngine", () => {
     const engine = new UnisonEngine(SR);
     engine.setWavetable(generatePreset(0, 2048));
     engine.setFrequency(440);
-    engine.setUnisonCount(16, 50, 1.0);
+    engine.setUnisonParams({
+      count: 16,
+      detune: 0.5, // 50 / 100
+      stereoSpread: 1.0,
+      blend: 0.8,
+      stackType: 0,
+      detunePower: 1.5,
+      detuneRange: 1,
+      frameSpread: 0,
+    });
 
     for (let i = 0; i < 5000; i++) {
       const [l, r] = engine.process();
