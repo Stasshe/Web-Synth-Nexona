@@ -15,9 +15,6 @@ export enum DistortionType {
   RM_SAMPLE = 12, // Ring mod with noise/sample
 }
 
-// Alias for backward compat during migration
-export { DistortionType as WarpType };
-
 export const DISTORTION_NAMES: Record<number, string> = {
   [DistortionType.NONE]: "---",
   [DistortionType.SYNC]: "Sync",
@@ -168,12 +165,3 @@ export function applyRingMod(
   return sample;
 }
 
-// Legacy export for any code still using applyWarp
-export function applyWarp(
-  phase: number,
-  type: DistortionType,
-  amount: number,
-  fmSignal = 0,
-): number {
-  return applyDistortionPhase(phase, 0.5, type, amount, fmSignal);
-}

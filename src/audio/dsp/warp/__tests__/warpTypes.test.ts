@@ -1,27 +1,27 @@
 import { describe, expect, it } from "vitest";
-import { DistortionType, WarpType, applyDistortionPhase, applyWarp } from "../warpTypes";
+import { DistortionType, applyDistortionPhase } from "../warpTypes";
 
 describe("warpTypes", () => {
   it("NONE passes phase through", () => {
-    expect(applyWarp(0.5, WarpType.NONE, 0.5)).toBe(0.5);
+    expect(applyDistortionPhase(0.5, 0.5, DistortionType.NONE, 0.5, 0)).toBe(0.5);
   });
 
   it("BEND output stays in [0, 1)", () => {
     for (let p = 0; p < 1; p += 0.1) {
-      const out = applyWarp(p, WarpType.BEND, 0.8);
+      const out = applyDistortionPhase(p, 0.5, DistortionType.BEND, 0.8, 0);
       expect(out).toBeGreaterThanOrEqual(0);
       expect(out).toBeLessThanOrEqual(1);
     }
   });
 
   it("SYNC with amount 0 passes phase through", () => {
-    expect(applyWarp(0.5, WarpType.SYNC, 0)).toBeCloseTo(0.5, 5);
+    expect(applyDistortionPhase(0.5, 0.5, DistortionType.SYNC, 0, 0)).toBeCloseTo(0.5, 5);
   });
 
   it("QUANTIZE reduces distinct values", () => {
     const values = new Set<number>();
     for (let p = 0; p < 1; p += 0.001) {
-      values.add(applyWarp(p, WarpType.QUANTIZE, 0.0));
+      values.add(applyDistortionPhase(p, 0.5, DistortionType.QUANTIZE, 0.0, 0));
     }
     // With amount=0, steps=4, so at most 4 distinct values
     expect(values.size).toBeLessThanOrEqual(5);
@@ -29,7 +29,7 @@ describe("warpTypes", () => {
 
   it("PULSE_WIDTH output wraps to [0, 1)", () => {
     for (let p = 0; p < 1; p += 0.05) {
-      const out = applyWarp(p, DistortionType.PULSE_WIDTH, 0.9);
+      const out = applyDistortionPhase(p, 0.5, DistortionType.PULSE_WIDTH, 0.9, 0);
       expect(out).toBeGreaterThanOrEqual(0);
       expect(out).toBeLessThan(1);
     }

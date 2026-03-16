@@ -451,7 +451,7 @@ export function bindStateToSAB(sabView: Int32Array): () => void {
   };
 }
 
-/** Restore state from saved data (with backward compat for old schema) */
+/** Restore state from saved data */
 export function restoreStateFromSavedData(data: unknown): void {
   if (!data || typeof data !== "object") return;
 
@@ -461,33 +461,7 @@ export function restoreStateFromSavedData(data: unknown): void {
     const oscData = saved.oscillators as Record<string, unknown>;
     for (const key of ["a", "b", "c"] as const) {
       if (oscData[key] && typeof oscData[key] === "object") {
-        const raw = oscData[key] as Record<string, unknown>;
-        // Backward compat: convert old octave+semitone to transpose
-        if ("octave" in raw || "semitone" in raw) {
-          const oct = typeof raw.octave === "number" ? raw.octave : 0;
-          const semi = typeof raw.semitone === "number" ? raw.semitone : 0;
-          raw.transpose = oct * 12 + semi;
-          raw.octave = undefined;
-          raw.semitone = undefined;
-        }
-        // Backward compat: rename detune → tune
-        if ("detune" in raw && !("tune" in raw)) {
-          raw.tune = raw.detune;
-          raw.detune = undefined;
-        }
-        // Backward compat: rename warpType/warpAmount → distortionType/distortionAmount
-        if ("warpType" in raw && !("distortionType" in raw)) {
-          raw.distortionType = raw.warpType;
-          raw.warpType = undefined;
-        }
-        if ("warpAmount" in raw && !("distortionAmount" in raw)) {
-          raw.distortionAmount = raw.warpAmount;
-          raw.warpAmount = undefined;
-        }
-        // Remove old warp2 fields
-        raw.warp2Type = undefined;
-        raw.warp2Amount = undefined;
-        Object.assign(synthState.oscillators[key], raw);
+        Object.assign(synthState.oscillators[key], oscData[key]);
       }
     }
     if (oscData.sub && typeof oscData.sub === "object") {
