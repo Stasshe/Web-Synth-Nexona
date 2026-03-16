@@ -3,6 +3,7 @@ export enum LfoShape {
   TRIANGLE = 1,
   SQUARE = 2,
   RANDOM = 3,
+  CUSTOM = 4,
 }
 
 export class LFO {
@@ -14,6 +15,7 @@ export class LFO {
   private value = 0;
   private randomTarget = 0;
   private randomValue = 0;
+  private customTable: Float32Array | null = null;
 
   constructor(sampleRate: number, blockSize = 128) {
     this.sampleRate = sampleRate;
@@ -23,6 +25,10 @@ export class LFO {
   setParams(rate: number, shape: LfoShape): void {
     this.rate = rate;
     this.shape = shape;
+  }
+
+  setCustomTable(table: Float32Array): void {
+    this.customTable = table;
   }
 
   /** Process at control rate (once per block). Returns [-1, 1]. */
@@ -50,6 +56,18 @@ export class LFO {
       case LfoShape.RANDOM:
         this.randomValue += (this.randomTarget - this.randomValue) * 0.1;
         this.value = this.randomValue;
+        break;
+      case LfoShape.CUSTOM:
+        if (this.customTable && this.customTable.length > 1) {
+          const len = this.customTable.length - 1; // table has len+1 entries, wrap-around at end
+          const pos = this.phase * len;
+          const i0 = Math.floor(pos) % len;
+          const i1 = (i0 + 1) % len;
+          const f = pos - Math.floor(pos);
+          this.value = this.customTable[i0] + (this.customTable[i1] - this.customTable[i0]) * f;
+        } else {
+          this.value = Math.sin(2 * Math.PI * this.phase);
+        }
         break;
     }
 

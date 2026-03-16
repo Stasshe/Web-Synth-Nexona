@@ -11,12 +11,15 @@ interface SynthProcessorMessage {
     | "loadWavetableA"
     | "loadWavetableB"
     | "loadWavetableC"
-    | "loadWavetableSub";
+    | "loadWavetableSub"
+    | "loadLfo1Shape"
+    | "loadLfo2Shape";
   sab?: SharedArrayBuffer;
   note: number;
   velocity?: number;
   routes?: ModRoute[];
   wavetable?: Wavetable;
+  lfoTable?: number[];
 }
 
 class SynthProcessor extends AudioWorkletProcessor {
@@ -67,6 +70,16 @@ class SynthProcessor extends AudioWorkletProcessor {
         case "loadWavetableSub":
           if (msg.wavetable) {
             this.engine.setWavetableSub(msg.wavetable);
+          }
+          break;
+        case "loadLfo1Shape":
+          if (msg.lfoTable) {
+            this.engine.setLfo1CustomShape(new Float32Array(msg.lfoTable));
+          }
+          break;
+        case "loadLfo2Shape":
+          if (msg.lfoTable) {
+            this.engine.setLfo2CustomShape(new Float32Array(msg.lfoTable));
           }
           break;
       }

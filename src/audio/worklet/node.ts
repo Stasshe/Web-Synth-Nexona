@@ -14,6 +14,8 @@ export interface SynthNode {
   loadWavetableB: (wt: Wavetable) => void;
   loadWavetableC: (wt: Wavetable) => void;
   loadWavetableSub: (wt: Wavetable) => void;
+  loadLfo1Shape: (table: Float32Array) => void;
+  loadLfo2Shape: (table: Float32Array) => void;
   onWaveformData: (callback: (data: Float32Array) => void) => void;
   onModFeedback: (callback: (feedback: ModFeedback) => void) => void;
   onLevelData: (callback: (peakL: number, peakR: number) => void) => void;
@@ -74,6 +76,12 @@ export async function createSynthNode(ctx: AudioContext): Promise<SynthNode> {
     },
     loadWavetableSub(wt: Wavetable) {
       node.port.postMessage({ type: "loadWavetableSub", wavetable: wt });
+    },
+    loadLfo1Shape(table: Float32Array) {
+      node.port.postMessage({ type: "loadLfo1Shape", lfoTable: Array.from(table) });
+    },
+    loadLfo2Shape(table: Float32Array) {
+      node.port.postMessage({ type: "loadLfo2Shape", lfoTable: Array.from(table) });
     },
     onWaveformData(callback: (data: Float32Array) => void) {
       waveformCallback = callback;

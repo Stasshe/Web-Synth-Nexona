@@ -1,12 +1,13 @@
 "use client";
 import { ModSource } from "@/audio/dsp/modulation/modMatrix";
+import { LfoShapeEditor } from "@/components/LfoShapeEditor";
 import { Knob } from "@/components/ui/Knob";
 import { Panel } from "@/components/ui/Panel";
 import { DND_TYPES, type ModSourceDragItem } from "@/dnd/types";
 import { modFeedbackState } from "@/state/modFeedback";
 import { synthState } from "@/state/synthState";
-import { GripHorizontal } from "lucide-react";
-import { useCallback, useEffect, useRef } from "react";
+import { GripHorizontal, Pencil } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useDrag } from "react-dnd";
 import { useSnapshot } from "valtio";
 
@@ -19,9 +20,10 @@ const LFO_SHAPES = [
 
 interface LfoPanelProps {
   index: "lfo1" | "lfo2";
+  onApplyShape?: (table: Float32Array) => void;
 }
 
-export function LfoPanel({ index }: LfoPanelProps) {
+export function LfoPanel({ index, onApplyShape }: LfoPanelProps) {
   const snap = useSnapshot(synthState);
   const fb = useSnapshot(modFeedbackState);
   const lfo = snap.lfos[index];
@@ -29,6 +31,7 @@ export function LfoPanel({ index }: LfoPanelProps) {
   const label = index === "lfo1" ? "LFO 1" : "LFO 2";
   const modSource = index === "lfo1" ? ModSource.LFO1 : ModSource.LFO2;
   const phase = index === "lfo1" ? fb.lfo1Phase : fb.lfo2Phase;
+  const [editorOpen, setEditorOpen] = useState(false);
 
   const [{ isDragging }, dragRef] = useDrag(
     () => ({
@@ -65,28 +68,45 @@ export function LfoPanel({ index }: LfoPanelProps) {
     ctx.lineWidth = 1.5;
     ctx.beginPath();
 
-    for (let x = 0; x < w; x++) {
-      const p = x / w;
-      let y = 0;
-      switch (lfo.shape) {
-        case 0:
-          y = Math.sin(2 * Math.PI * p);
-          break;
-        case 1:
-          if (p < 0.25) y = p * 4;
-          else if (p < 0.75) y = 2 - p * 4;
-          else y = p * 4 - 4;
-          break;
-        case 2:
-          y = p < 0.5 ? 1 : -1;
-          break;
-        case 3:
-          y = Math.sin(2 * Math.PI * p * 3) > 0 ? 0.6 : -0.4;
-          break;
+    if (lfo.shape === 4 && lfo.customShape && lfo.customShape.length > 1) {
+      // Custom waveform — interpolate from stored table
+      const table = lfo.customShape;
+      const len = table.length - 1;
+      for (let x = 0; x < w; x++) {
+        const p = x / w;
+        const pos = p * len;
+        const i0 = Math.floor(pos) % len;
+        const i1 = (i0 + 1) % len;
+        const f = pos - Math.floor(pos);
+        const y = table[i0] + (table[i1] - table[i0]) * f;
+        const py = h / 2 - (y * (h - 16)) / 2;
+        if (x === 0) ctx.moveTo(x, py);
+        else ctx.lineTo(x, py);
       }
-      const py = h / 2 - (y * (h - 16)) / 2;
-      if (x === 0) ctx.moveTo(x, py);
-      else ctx.lineTo(x, py);
+    } else {
+      for (let x = 0; x < w; x++) {
+        const p = x / w;
+        let y = 0;
+        switch (lfo.shape) {
+          case 0:
+            y = Math.sin(2 * Math.PI * p);
+            break;
+          case 1:
+            if (p < 0.25) y = p * 4;
+            else if (p < 0.75) y = 2 - p * 4;
+            else y = p * 4 - 4;
+            break;
+          case 2:
+            y = p < 0.5 ? 1 : -1;
+            break;
+          case 3:
+            y = Math.sin(2 * Math.PI * p * 3) > 0 ? 0.6 : -0.4;
+            break;
+        }
+        const py = h / 2 - (y * (h - 16)) / 2;
+        if (x === 0) ctx.moveTo(x, py);
+        else ctx.lineTo(x, py);
+      }
     }
     ctx.stroke();
 
@@ -100,7 +120,7 @@ export function LfoPanel({ index }: LfoPanelProps) {
       ctx.lineTo(px, h);
       ctx.stroke();
     }
-  }, [lfo.shape, phase]);
+  }, [lfo.shape, lfo.customShape, phase]);
 
   useEffect(() => {
     drawWaveform();
@@ -135,6 +155,22 @@ export function LfoPanel({ index }: LfoPanelProps) {
             {s.label}
           </button>
         ))}
+        {/* DRAW button (custom shape) */}
+        <button
+          type="button"
+          onClick={() => setEditorOpen(true)}
+          title="Draw custom LFO shape"
+          className={`flex items-center justify-center px-1.5 py-0.5 rounded border transition-colors ${
+            lfo.shape === 4
+              ? "border-lfo text-lfo"
+              : "bg-transparent border-border-default text-text-muted hover:border-lfo/50"
+          }`}
+          style={
+            lfo.shape === 4 ? { backgroundColor: "rgba(136,68,255,0.15)" } : undefined
+          }
+        >
+          <Pencil size={10} />
+        </button>
       </div>
 
       <div className="flex items-center justify-center gap-2">
@@ -158,6 +194,15 @@ export function LfoPanel({ index }: LfoPanelProps) {
           <span className="text-[8px] text-lfo uppercase tracking-wider">MOD</span>
         </div>
       </div>
+
+      <LfoShapeEditor
+        open={editorOpen}
+        onClose={() => setEditorOpen(false)}
+        lfo={index}
+        onApply={(table) => {
+          onApplyShape?.(table);
+        }}
+      />
     </Panel>
   );
 }

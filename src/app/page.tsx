@@ -120,6 +120,20 @@ export default function Home() {
       const wt: Wavetable = { frames: [table], tableSize: table.length - 1, numFrames: 1 };
       synth.loadWavetableSub(wt);
     }
+    // Restore LFO custom shapes
+    for (const lfoKey of ["lfo1", "lfo2"] as const) {
+      const lfoState = synthState.lfos[lfoKey];
+      if (lfoState.shape === 4 && lfoState.customShape && lfoState.customShape.length > 0) {
+        const table = new Float32Array(lfoState.customShape);
+        if (lfoKey === "lfo1") synth.loadLfo1Shape(table);
+        else synth.loadLfo2Shape(table);
+      }
+    }
+  }, []);
+
+  const handleApplyLfoShape = useCallback((lfo: "lfo1" | "lfo2", table: Float32Array) => {
+    if (lfo === "lfo1") synthRef.current?.loadLfo1Shape(table);
+    else synthRef.current?.loadLfo2Shape(table);
   }, []);
 
   const handleStart = useCallback(async () => {
@@ -445,7 +459,7 @@ export default function Home() {
           </div>
 
           {/* Right sidebar: Envelope + LFOs + Mod routes */}
-          <ModulatorSidebar />
+          <ModulatorSidebar onApplyLfoShape={handleApplyLfoShape} />
         </div>
 
         {/* Keyboard — fixed at bottom */}

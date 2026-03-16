@@ -268,6 +268,14 @@ export class SynthEngine {
     this.voiceManager.setWavetableSub(wt);
   }
 
+  setLfo1CustomShape(table: Float32Array): void {
+    this.lfo1.setCustomTable(table);
+  }
+
+  setLfo2CustomShape(table: Float32Array): void {
+    this.lfo2.setCustomTable(table);
+  }
+
   setModRoutes(routes: ModRoute[]): void {
     this.voiceManager.setModRoutes(routes);
     this.engineModMatrix.setRoutes(routes);
