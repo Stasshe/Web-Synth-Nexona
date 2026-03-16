@@ -16,11 +16,6 @@ import { LevelMeter } from "@/components/LevelMeter";
 import { Visualizer } from "@/components/Visualizer";
 import { VoicePage } from "@/components/VoicePage";
 import { WaveformEditor } from "@/components/WaveformEditor";
-import {
-  sineModel, triangleModel, sawModel, squareModel,
-  type WaveformModel,
-} from "@/components/WaveformEditor/curveTypes";
-import { generateWaveformFromPoints } from "@/components/WaveformEditor/generateFromPoints";
 import { Knob } from "@/components/ui/Knob";
 import { SelectPopup } from "@/components/ui/SelectPopup";
 import { useGlobalScrollLock } from "@/hooks/scrollLock";
@@ -125,23 +120,14 @@ export default function Home() {
       const wt: Wavetable = { frames: [table], tableSize: table.length - 1, numFrames: 1 };
       synth.loadWavetableSub(wt);
     }
-    // Restore / initialize LFO custom shapes (always shape=4)
-    const LFO_PRESET_MODELS: Record<string, WaveformModel> = {
-      Sine: sineModel(), Triangle: triangleModel(), Saw: sawModel(), Square: squareModel(),
-    };
+    // Restore LFO custom shapes (customShape is populated by LfoPanel on mount)
     for (const lfoKey of ["lfo1", "lfo2"] as const) {
-      const lfoState = synthState.lfos[lfoKey];
-      let table: Float32Array;
-      if (lfoState.customShape && lfoState.customShape.length > 0) {
-        table = new Float32Array(lfoState.customShape);
-      } else {
-        const model = LFO_PRESET_MODELS[lfoState.presetName] ?? sineModel();
-        table = generateWaveformFromPoints(model, 256);
-        synthState.lfos[lfoKey].customShape = Array.from(table);
-        synthState.lfos[lfoKey].controlPoints = model.points as unknown[];
+      const { customShape } = synthState.lfos[lfoKey];
+      if (customShape && customShape.length > 0) {
+        const table = new Float32Array(customShape);
+        if (lfoKey === "lfo1") synth.loadLfo1Shape(table);
+        else synth.loadLfo2Shape(table);
       }
-      if (lfoKey === "lfo1") synth.loadLfo1Shape(table);
-      else synth.loadLfo2Shape(table);
     }
   }, []);
 

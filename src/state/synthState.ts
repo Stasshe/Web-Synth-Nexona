@@ -502,16 +502,6 @@ export function restoreStateFromSavedData(data: unknown): void {
       Object.assign(synthState.lfos.lfo1, lfosData.lfo1);
     if (lfosData.lfo2 && typeof lfosData.lfo2 === "object")
       Object.assign(synthState.lfos.lfo2, lfosData.lfo2);
-    // Migrate legacy numeric shape (0-3) to shape=4 (CUSTOM) with preset name
-    const LEGACY_PRESET: Record<number, string> = { 0: "Sine", 1: "Triangle", 2: "Square", 3: "S&H" };
-    for (const k of ["lfo1", "lfo2"] as const) {
-      if (synthState.lfos[k].shape < 4) {
-        synthState.lfos[k].presetName = LEGACY_PRESET[synthState.lfos[k].shape] ?? "Sine";
-        synthState.lfos[k].shape = 4;
-        synthState.lfos[k].customShape = null; // will be initialized on engine start
-        synthState.lfos[k].controlPoints = null;
-      }
-    }
   }
   if (saved.effects && typeof saved.effects === "object") {
     const fxData = saved.effects as Record<string, unknown>;

@@ -204,6 +204,20 @@ export function LfoPanel({ index, onApplyShape }: LfoPanelProps) {
     setModel(loadModel(synthState.lfos[index]));
   }, [index, controlPointsKey]);
 
+  // Populate customShape on first mount if missing (needed before engine start)
+  useEffect(() => {
+    if (synthState.lfos[index].customShape !== null) return;
+    const preset = synthState.lfos[index].presetName ?? "Sine";
+    const modelFn = PRESET_MODEL[preset as PresetKey] ?? sineModel;
+    const m = modelFn();
+    const table = generateWaveformFromPoints(m, TABLE_SIZE);
+    synthState.lfos[index].customShape = Array.from(table);
+    synthState.lfos[index].controlPoints = m.points as unknown[];
+    setModel(m);
+    // Note: onApplyShape NOT called here — engine hasn't started yet.
+    // applyCustomWavetables in page.tsx will send the table on engine start.
+  }, [index]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const [{ isDragging }, dragRef] = useDrag(
     () => ({
       type: DND_TYPES.MOD_SOURCE,
