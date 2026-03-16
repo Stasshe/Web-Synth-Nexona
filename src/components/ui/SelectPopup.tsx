@@ -44,10 +44,7 @@ export function SelectPopup({
   }, [open]);
 
   useEffect(() => {
-    if (open) {
-      // small delay to ensure element is rendered
-      setTimeout(() => inputRef.current?.focus(), 0);
-    } else {
+    if (!open) {
       setQuery("");
     }
   }, [open]);
