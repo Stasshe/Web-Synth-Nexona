@@ -44,8 +44,8 @@ export interface PatchData {
     filter: EnvPatch;
   };
   lfos: {
-    lfo1: { rate: number; shape: number };
-    lfo2: { rate: number; shape: number };
+    lfo1: { rate: number; shape: number; presetName?: string };
+    lfo2: { rate: number; shape: number; presetName?: string };
   };
   modulations: ModRoute[];
   effects: {

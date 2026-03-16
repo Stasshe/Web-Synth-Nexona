@@ -1,22 +1,181 @@
 "use client";
 import { ModSource } from "@/audio/dsp/modulation/modMatrix";
-import { LfoShapeEditor } from "@/components/LfoShapeEditor";
 import { Knob } from "@/components/ui/Knob";
 import { Panel } from "@/components/ui/Panel";
+import { SelectWithArrows } from "@/components/ui/SelectWithArrows";
+import {
+  type ControlPoint,
+  CurveType,
+  type WaveformModel,
+  makePointId,
+  sineModel,
+  triangleModel,
+  sawModel,
+  squareModel,
+} from "@/components/WaveformEditor/curveTypes";
+import { generateWaveformFromPoints } from "@/components/WaveformEditor/generateFromPoints";
 import { DND_TYPES, type ModSourceDragItem } from "@/dnd/types";
 import { modFeedbackState } from "@/state/modFeedback";
 import { synthState } from "@/state/synthState";
-import { GripHorizontal, Pencil } from "lucide-react";
+import { GripHorizontal } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useDrag } from "react-dnd";
 import { useSnapshot } from "valtio";
 
-const LFO_SHAPES = [
-  { value: "0", label: "SIN" },
-  { value: "1", label: "TRI" },
-  { value: "2", label: "SQR" },
-  { value: "3", label: "RND" },
-];
+const CANVAS_W = 200;
+const CANVAS_H = 80;
+const TABLE_SIZE = 256;
+const POINT_RADIUS = 4;
+const HIT_RADIUS = 10;
+const GRID_X = 8;
+const GRID_Y = 4;
+const MIN_GAP = 1 / GRID_X;
+const DRAG_THRESHOLD = 3;
+
+const LFO_PRESETS = [
+  { value: "Sine", label: "Sine" },
+  { value: "Triangle", label: "Tri" },
+  { value: "Saw", label: "Saw" },
+  { value: "Square", label: "Sqr" },
+  { value: "S&H", label: "S&H" },
+] as const;
+
+type PresetKey = (typeof LFO_PRESETS)[number]["value"];
+
+const PRESET_MODEL: Partial<Record<PresetKey, () => WaveformModel>> = {
+  Sine: sineModel,
+  Triangle: triangleModel,
+  Saw: sawModel,
+  Square: squareModel,
+};
+
+function snapToGrid(x: number, y: number) {
+  return { x: Math.round(x * GRID_X) / GRID_X, y: Math.round(y * GRID_Y) / GRID_Y };
+}
+
+function modelToCanvas(x: number, y: number) {
+  return { cx: x * CANVAS_W, cy: CANVAS_H / 2 - y * (CANVAS_H / 2 - 4) };
+}
+
+function canvasToModel(clientX: number, clientY: number, canvas: HTMLCanvasElement) {
+  const rect = canvas.getBoundingClientRect();
+  const px = (clientX - rect.left) * (CANVAS_W / rect.width);
+  const py = (clientY - rect.top) * (CANVAS_H / rect.height);
+  const rawX = Math.max(0, Math.min(1, px / CANVAS_W));
+  const rawY = Math.max(-1, Math.min(1, -((py - CANVAS_H / 2) / (CANVAS_H / 2 - 4))));
+  return snapToGrid(rawX, rawY);
+}
+
+function findHitPoint(mx: number, my: number, canvas: HTMLCanvasElement, model: WaveformModel) {
+  const rect = canvas.getBoundingClientRect();
+  const px = (mx - rect.left) * (CANVAS_W / rect.width);
+  const py = (my - rect.top) * (CANVAS_H / rect.height);
+  let best: string | null = null;
+  let bestDist = HIT_RADIUS * HIT_RADIUS;
+  for (const pt of model.points) {
+    const { cx, cy } = modelToCanvas(pt.x, pt.y);
+    const d = (px - cx) ** 2 + (py - cy) ** 2;
+    if (d < bestDist) {
+      bestDist = d;
+      best = pt.id;
+    }
+  }
+  return best;
+}
+
+function drawCanvas(
+  canvas: HTMLCanvasElement,
+  model: WaveformModel,
+  selectedId: string | null,
+  phase: number,
+  isSandH: boolean,
+) {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  ctx.fillStyle = "#0d0d14";
+  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+  // Subtle grid
+  ctx.strokeStyle = "#181828";
+  ctx.lineWidth = 0.5;
+  for (let i = 1; i < GRID_X; i++) {
+    const x = (i / GRID_X) * CANVAS_W;
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, CANVAS_H);
+    ctx.stroke();
+  }
+
+  // Center line
+  ctx.strokeStyle = "#2a2a45";
+  ctx.lineWidth = 0.5;
+  ctx.beginPath();
+  ctx.moveTo(0, CANVAS_H / 2);
+  ctx.lineTo(CANVAS_W, CANVAS_H / 2);
+  ctx.stroke();
+
+  // Waveform
+  if (isSandH) {
+    // Stylized S&H preview
+    ctx.strokeStyle = "#8844ff";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    const steps = 8;
+    for (let i = 0; i <= steps; i++) {
+      const p = i / steps;
+      const y = Math.sin(p * 17.3 + 1.2) * 0.7;
+      const x0 = p * CANVAS_W;
+      const x1 = Math.min((i + 1) / steps * CANVAS_W, CANVAS_W);
+      const cy = CANVAS_H / 2 - y * (CANVAS_H / 2 - 4);
+      if (i === 0) ctx.moveTo(x0, cy);
+      else ctx.lineTo(x0, cy);
+      ctx.lineTo(x1, cy);
+    }
+    ctx.stroke();
+  } else {
+    // Waveform from control points
+    const wave = generateWaveformFromPoints(model, TABLE_SIZE);
+    ctx.strokeStyle = "#8844ff";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (let i = 0; i <= TABLE_SIZE; i++) {
+      const x = (i / TABLE_SIZE) * CANVAS_W;
+      const y = CANVAS_H / 2 - wave[i] * (CANVAS_H / 2 - 4);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Control point dots
+    for (const pt of model.points) {
+      const { cx, cy } = modelToCanvas(pt.x, pt.y);
+      const isSelected = pt.id === selectedId;
+      const isEndpoint = pt.x === 0 || pt.x === 1;
+      ctx.beginPath();
+      ctx.arc(cx, cy, POINT_RADIUS, 0, Math.PI * 2);
+      ctx.fillStyle = isSelected ? "#ff8844" : isEndpoint ? "#5522aa" : "#9955ff";
+      ctx.fill();
+    }
+  }
+
+  // Phase indicator
+  if (phase > 0) {
+    const px = phase * CANVAS_W;
+    ctx.strokeStyle = "rgba(136,68,255,0.45)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(px, 0);
+    ctx.lineTo(px, CANVAS_H);
+    ctx.stroke();
+  }
+}
+
+function loadModel(lfo: (typeof synthState.lfos)[keyof typeof synthState.lfos]): WaveformModel {
+  const pts = lfo.controlPoints as ControlPoint[] | null;
+  if (pts && pts.length >= 2) return { points: pts.map((p) => ({ ...p })) };
+  return sineModel();
+}
 
 interface LfoPanelProps {
   index: "lfo1" | "lfo2";
@@ -31,148 +190,196 @@ export function LfoPanel({ index, onApplyShape }: LfoPanelProps) {
   const label = index === "lfo1" ? "LFO 1" : "LFO 2";
   const modSource = index === "lfo1" ? ModSource.LFO1 : ModSource.LFO2;
   const phase = index === "lfo1" ? fb.lfo1Phase : fb.lfo2Phase;
-  const [editorOpen, setEditorOpen] = useState(false);
+
+  // Local model for smooth drag without Valtio overhead on every move
+  const [model, setModel] = useState<WaveformModel>(() => loadModel(synthState.lfos[index]));
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const dragStateRef = useRef<{ id: string; startX: number; startY: number; moved: boolean } | null>(null);
+
+  const isSandH = lfo.presetName === "S&H";
+
+  // Sync model when controlPoints change externally (preset load etc.)
+  const controlPointsKey = JSON.stringify(lfo.controlPoints);
+  useEffect(() => {
+    setModel(loadModel(synthState.lfos[index]));
+  }, [index, controlPointsKey]);
 
   const [{ isDragging }, dragRef] = useDrag(
     () => ({
       type: DND_TYPES.MOD_SOURCE,
       item: { source: modSource, label } as ModSourceDragItem,
-      collect: (monitor) => ({
-        isDragging: monitor.isDragging(),
-      }),
+      collect: (monitor) => ({ isDragging: monitor.isDragging() }),
     }),
     [modSource, label],
   );
 
-  const drawWaveform = useCallback(() => {
+  // Flush model to state + worklet
+  const commitModel = useCallback((m: WaveformModel, presetName: string) => {
+    const table = generateWaveformFromPoints(m, TABLE_SIZE);
+    synthState.lfos[index].customShape = Array.from(table);
+    synthState.lfos[index].controlPoints = m.points.map((p) => ({ ...p })) as unknown[];
+    synthState.lfos[index].presetName = presetName;
+    synthState.lfos[index].shape = 4;
+    onApplyShape?.(table);
+  }, [index, onApplyShape]);
+
+  // Redraw whenever model/phase changes
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    drawCanvas(canvas, model, selectedId, phase, isSandH);
+  }, [model, selectedId, phase, isSandH]);
 
-    const w = canvas.width;
-    const h = canvas.height;
-    ctx.fillStyle = "#0d0d14";
-    ctx.fillRect(0, 0, w, h);
+  // Preset selection
+  const handlePresetChange = useCallback((val: string) => {
+    if (val === "S&H") {
+      synthState.lfos[index].presetName = "S&H";
+      synthState.lfos[index].shape = 3;
+      // Send a S&H indicator — DSP handles it via shape=3
+      setSelectedId(null);
+      return;
+    }
+    const modelFn = PRESET_MODEL[val as PresetKey];
+    if (!modelFn) return;
+    const m = modelFn();
+    setModel(m);
+    setSelectedId(null);
+    commitModel(m, val);
+  }, [index, commitModel]);
 
-    // Center line
-    ctx.strokeStyle = "#2a2a45";
-    ctx.lineWidth = 0.5;
-    ctx.beginPath();
-    ctx.moveTo(0, h / 2);
-    ctx.lineTo(w, h / 2);
-    ctx.stroke();
-
-    // Waveform
-    ctx.strokeStyle = "#8844ff";
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-
-    if (lfo.shape === 4 && lfo.customShape && lfo.customShape.length > 1) {
-      // Custom waveform — interpolate from stored table
-      const table = lfo.customShape;
-      const len = table.length - 1;
-      for (let x = 0; x < w; x++) {
-        const p = x / w;
-        const pos = p * len;
-        const i0 = Math.floor(pos) % len;
-        const i1 = (i0 + 1) % len;
-        const f = pos - Math.floor(pos);
-        const y = table[i0] + (table[i1] - table[i0]) * f;
-        const py = h / 2 - (y * (h - 16)) / 2;
-        if (x === 0) ctx.moveTo(x, py);
-        else ctx.lineTo(x, py);
-      }
+  // Canvas pointer handlers — only when not S&H
+  const handlePointerDown = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (isSandH) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const hit = findHitPoint(e.clientX, e.clientY, canvas, model);
+    if (hit) {
+      setSelectedId(hit);
+      dragStateRef.current = { id: hit, startX: e.clientX, startY: e.clientY, moved: false };
     } else {
-      for (let x = 0; x < w; x++) {
-        const p = x / w;
-        let y = 0;
-        switch (lfo.shape) {
-          case 0:
-            y = Math.sin(2 * Math.PI * p);
-            break;
-          case 1:
-            if (p < 0.25) y = p * 4;
-            else if (p < 0.75) y = 2 - p * 4;
-            else y = p * 4 - 4;
-            break;
-          case 2:
-            y = p < 0.5 ? 1 : -1;
-            break;
-          case 3:
-            y = Math.sin(2 * Math.PI * p * 3) > 0 ? 0.6 : -0.4;
-            break;
+      const { x, y } = canvasToModel(e.clientX, e.clientY, canvas);
+      if (x > 0 && x < 1) {
+        const conflicts = model.points.some((p) => Math.abs(p.x - x) < MIN_GAP);
+        if (!conflicts) {
+          const newPt: ControlPoint = { id: makePointId(), x, y, curveType: CurveType.SMOOTH };
+          const newPoints = [...model.points, newPt].sort((a, b) => a.x - b.x);
+          const newModel = { points: newPoints };
+          setModel(newModel);
+          setSelectedId(newPt.id);
+          dragStateRef.current = { id: newPt.id, startX: e.clientX, startY: e.clientY, moved: false };
+          return;
         }
-        const py = h / 2 - (y * (h - 16)) / 2;
-        if (x === 0) ctx.moveTo(x, py);
-        else ctx.lineTo(x, py);
+      }
+      setSelectedId(null);
+      dragStateRef.current = null;
+    }
+  }, [isSandH, model]);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
+    const ds = dragStateRef.current;
+    if (!ds) return;
+    const dx = Math.abs(e.clientX - ds.startX);
+    const dy = Math.abs(e.clientY - ds.startY);
+    if (!ds.moved && dx < DRAG_THRESHOLD && dy < DRAG_THRESHOLD) return;
+    ds.moved = true;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const { x: nx, y: ny } = canvasToModel(e.clientX, e.clientY, canvas);
+    setModel((prev) => {
+      const pt = prev.points.find((p) => p.id === ds.id);
+      if (!pt) return prev;
+      const isEndpoint = pt.x === 0 || pt.x === 1;
+      const newX = isEndpoint ? pt.x : nx;
+      if (!isEndpoint && prev.points.some((p) => p.id !== ds.id && Math.abs(p.x - newX) < MIN_GAP)) return prev;
+      return {
+        points: prev.points.map((p) => (p.id === ds.id ? { ...p, x: newX, y: ny } : p)).sort((a, b) => a.x - b.x),
+      };
+    });
+  }, []);
+
+  const handlePointerUp = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
+    const ds = dragStateRef.current;
+    dragStateRef.current = null;
+    if (!ds) return;
+    if (!ds.moved) {
+      // Tap on inner point → delete
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const hit = findHitPoint(e.clientX, e.clientY, canvas, model);
+      if (hit) {
+        const pt = model.points.find((p) => p.id === hit);
+        if (pt && pt.x !== 0 && pt.x !== 1) {
+          const newModel = { points: model.points.filter((p) => p.id !== hit) };
+          setModel(newModel);
+          setSelectedId(null);
+          commitModel(newModel, "Custom");
+          return;
+        }
       }
     }
-    ctx.stroke();
+    // Commit drag result
+    commitModel(model, "Custom");
+  }, [model, commitModel]);
 
-    // Phase indicator (playhead)
-    if (phase > 0) {
-      const px = phase * w;
-      ctx.strokeStyle = "rgba(136, 68, 255, 0.5)";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(px, 0);
-      ctx.lineTo(px, h);
-      ctx.stroke();
-    }
-  }, [lfo.shape, lfo.customShape, phase]);
+  // Cycle through CurveType on right-click / Ctrl+click
+  const handleContextMenu = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (isSandH) return;
+    e.preventDefault();
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const hit = findHitPoint(e.clientX, e.clientY, canvas, model);
+    if (!hit) return;
+    setModel((prev) => ({
+      points: prev.points.map((p) => {
+        if (p.id !== hit) return p;
+        const next = (p.curveType + 1) % 4;
+        return { ...p, curveType: next };
+      }),
+    }));
+    // Commit after type change (on next render via useEffect → but we need to get new model)
+    // Use setTimeout to commit after state update
+    setTimeout(() => {
+      setModel((prev) => {
+        commitModel(prev, synthState.lfos[index].presetName || "Custom");
+        return prev;
+      });
+    }, 0);
+  }, [isSandH, model, commitModel, index]);
 
-  useEffect(() => {
-    drawWaveform();
-  }, [drawWaveform]);
+  // Derive SelectWithArrows display label
+  const displayLabel =
+    lfo.presetName === "Custom" ? "Custom" :
+    LFO_PRESETS.find((p) => p.value === lfo.presetName)?.label ?? lfo.presetName;
+
+  const selectVal = LFO_PRESETS.find((p) => p.value === lfo.presetName)?.value ?? "Sine";
 
   return (
     <Panel title={label} color="var(--lfo)">
-      <canvas
-        ref={canvasRef}
-        width={200}
-        height={40}
-        className="w-full h-[40px] rounded bg-bg-dark mb-1"
+      {/* Preset selector */}
+      <SelectWithArrows
+        value={selectVal}
+        options={LFO_PRESETS as unknown as { value: string; label: string }[]}
+        onChange={handlePresetChange}
+        displayLabel={lfo.presetName === "Custom" ? "Custom" : undefined}
+        accentColor="var(--lfo)"
+        className="mb-1"
       />
 
-      <div className="flex gap-1 mb-2">
-        {LFO_SHAPES.map((s) => (
-          <button
-            key={s.value}
-            type="button"
-            onClick={() => (synthState.lfos[index].shape = Number(s.value))}
-            className={`flex-1 text-[9px] py-0.5 rounded border transition-colors ${
-              lfo.shape === Number(s.value)
-                ? "border-lfo text-lfo"
-                : "bg-transparent border-border-default text-text-muted"
-            }`}
-            style={
-              lfo.shape === Number(s.value)
-                ? { backgroundColor: "rgba(136,68,255,0.15)" }
-                : undefined
-            }
-          >
-            {s.label}
-          </button>
-        ))}
-        {/* DRAW button (custom shape) */}
-        <button
-          type="button"
-          onClick={() => setEditorOpen(true)}
-          title="Draw custom LFO shape"
-          className={`flex items-center justify-center px-1.5 py-0.5 rounded border transition-colors ${
-            lfo.shape === 4
-              ? "border-lfo text-lfo"
-              : "bg-transparent border-border-default text-text-muted hover:border-lfo/50"
-          }`}
-          style={
-            lfo.shape === 4 ? { backgroundColor: "rgba(136,68,255,0.15)" } : undefined
-          }
-        >
-          <Pencil size={10} />
-        </button>
-      </div>
+      {/* Inline editable canvas */}
+      <canvas
+        ref={canvasRef}
+        width={CANVAS_W}
+        height={CANVAS_H}
+        className={`w-full h-[80px] rounded bg-bg-dark mb-1 ${isSandH ? "cursor-default" : "cursor-crosshair"}`}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onContextMenu={handleContextMenu}
+        title={isSandH ? "S&H — not editable" : "Click to add · Drag to move · Tap to delete · Right-click to change curve"}
+      />
 
+      {/* Rate + MOD drag */}
       <div className="flex items-center justify-center gap-2">
         <Knob
           label="Rate"
@@ -194,15 +401,6 @@ export function LfoPanel({ index, onApplyShape }: LfoPanelProps) {
           <span className="text-[8px] text-lfo uppercase tracking-wider">MOD</span>
         </div>
       </div>
-
-      <LfoShapeEditor
-        open={editorOpen}
-        onClose={() => setEditorOpen(false)}
-        lfo={index}
-        onApply={(table) => {
-          onApplyShape?.(table);
-        }}
-      />
     </Panel>
   );
 }

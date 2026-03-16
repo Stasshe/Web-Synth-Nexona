@@ -70,8 +70,8 @@ export function stateToPatch(name = "Init"): PatchData {
       filter: { ...s.envelopes.filter },
     },
     lfos: {
-      lfo1: { ...s.lfos.lfo1 },
-      lfo2: { ...s.lfos.lfo2 },
+      lfo1: { rate: s.lfos.lfo1.rate, shape: s.lfos.lfo1.shape, presetName: s.lfos.lfo1.presetName },
+      lfo2: { rate: s.lfos.lfo2.rate, shape: s.lfos.lfo2.shape, presetName: s.lfos.lfo2.presetName },
     },
     modulations: s.modulations.map((r) => ({ ...r })),
     effects: {

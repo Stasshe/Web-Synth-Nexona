@@ -4,17 +4,17 @@
   "oscillators": {
     "a": {
       "on": true,
-      "waveformType": 6, // 0..3 (6)
+      "waveformType": 6,
       "waveformName": "Pluck",
       "customWaveform": null,
       "controlPoints": null,
-      "level": 0.82, // 0..1
-      "framePosition": 0.182, // 0..1
+      "level": 0.82,
+      "framePosition": 0.182,
       "tune": 0,
       "transpose": 0,
-      "unisonVoices": 1, // 1..16
-      "unisonDetune": 0.2, // 0..100
-      "unisonSpread": 0.5, // 0..1
+      "unisonVoices": 1,
+      "unisonDetune": 0.2,
+      "unisonSpread": 0.5,
       "unisonBlend": 0.8,
       "unisonStackType": 0,
       "unisonDetunePower": 1.5,
@@ -22,7 +22,7 @@
       "unisonFrameSpread": 0,
       "unisonSpectralMorphSpread": 0,
       "unisonDistortionSpread": 0,
-      "pan": 0, // -1..1
+      "pan": 0,
       "distortionType": 3,
       "distortionAmount": 0.5,
       "distortionPhase": 0.5,
@@ -34,17 +34,17 @@
     },
     "b": {
       "on": false,
-      "waveformType": 0, // 0..3 (SINE)
+      "waveformType": 0,
       "waveformName": "Init",
       "customWaveform": null,
       "controlPoints": null,
-      "level": 0.7, // 0..1
-      "framePosition": 0, // 0..1
+      "level": 0.7,
+      "framePosition": 0,
       "tune": 0,
       "transpose": 0,
-      "unisonVoices": 1, // 1..16
-      "unisonDetune": 0.2, // 0..100
-      "unisonSpread": 0.5, // 0..1
+      "unisonVoices": 1,
+      "unisonDetune": 0.2,
+      "unisonSpread": 0.5,
       "unisonBlend": 0.8,
       "unisonStackType": 0,
       "unisonDetunePower": 1.5,
@@ -52,7 +52,7 @@
       "unisonFrameSpread": 0,
       "unisonSpectralMorphSpread": 0,
       "unisonDistortionSpread": 0,
-      "pan": 0, // -1..1
+      "pan": 0,
       "distortionType": 0,
       "distortionAmount": 0,
       "distortionPhase": 0.5,
@@ -64,17 +64,17 @@
     },
     "c": {
       "on": false,
-      "waveformType": 0, // 0..3 (SINE)
+      "waveformType": 0,
       "waveformName": "Init",
       "customWaveform": null,
       "controlPoints": null,
-      "level": 0.7, // 0..1
-      "framePosition": 0, // 0..1
+      "level": 0.7,
+      "framePosition": 0,
       "tune": 0,
       "transpose": 0,
-      "unisonVoices": 1, // 1..16
-      "unisonDetune": 0.2, // 0..100
-      "unisonSpread": 0.5, // 0..1
+      "unisonVoices": 1,
+      "unisonDetune": 0.2,
+      "unisonSpread": 0.5,
       "unisonBlend": 0.8,
       "unisonStackType": 0,
       "unisonDetunePower": 1.5,
@@ -82,7 +82,7 @@
       "unisonFrameSpread": 0,
       "unisonSpectralMorphSpread": 0,
       "unisonDistortionSpread": 0,
-      "pan": 0, // -1..1
+      "pan": 0,
       "distortionType": 0,
       "distortionAmount": 0,
       "distortionPhase": 0.5,
@@ -94,111 +94,113 @@
     },
     "sub": {
       "on": false,
-      "octave": -1, // -2..0
-      "level": 0.5, // 0..1
+      "octave": -1,
+      "level": 0.5,
       "waveformName": "Init",
       "customWaveform": null,
       "controlPoints": null
     }
   },
   "noise": {
-    "type": 0, // 0..2 (WHITE)
-    "level": 0 // 0..1
+    "type": 0,
+    "level": 0
   },
   "filter": {
     "on": true,
-    "cutoff": 472.03043814296166, // 20..20000
-    "resonance": 0, // 0..0.99
-    "drive": 0.1, // 1..10
-    "type": 0, // 0..3 (LOWPASS)
+    "cutoff": 472.03043814296166,
+    "resonance": 0,
+    "drive": 0.1,
+    "type": 0,
     "blend": -1,
     "style": 0,
-    "envAmount": 0.55, // -1..1
+    "envAmount": 0.55,
     "input": 1
   },
   "filter2": {
     "on": true,
-    "cutoff": 2838.507113868603, // 20..20000
-    "resonance": 0, // 0..0.99
-    "drive": 0, // 1..10
-    "type": 0, // 0..3 (LOWPASS)
+    "cutoff": 2838.507113868603,
+    "resonance": 0,
+    "drive": 0,
+    "type": 0,
     "blend": -1,
     "style": 1,
-    "envAmount": 0, // -1..1
+    "envAmount": 0,
     "input": 16
   },
   "envelopes": {
     "amp": {
-      "attack": 0.001, // 0.001..5
-      "decay": 0.45, // 0.001..5
-      "sustain": 0, // 0..1
-      "release": 0.3 // 0.001..10
+      "attack": 0.001,
+      "decay": 0.45,
+      "sustain": 0,
+      "release": 0.3
     },
     "filter": {
-      "attack": 0.001, // 0.001..5
-      "decay": 0.3, // 0.001..5
-      "sustain": 0, // 0..1
-      "release": 0.25 // 0.001..10
+      "attack": 0.001,
+      "decay": 0.3,
+      "sustain": 0,
+      "release": 0.25
     }
   },
   "lfos": {
     "lfo1": {
-      "rate": 0.5, // 0.01..20
-      "shape": 0 // 0..3 (SINE)
+      "rate": 0.5,
+      "shape": 4,
+      "presetName": "Sine"
     },
     "lfo2": {
-      "rate": 0.5, // 0.01..20
-      "shape": 0 // 0..3 (SINE)
+      "rate": 0.5,
+      "shape": 4,
+      "presetName": "Sine"
     }
   },
-  "modulations": [], // [{source, target, amount}]
+  "modulations": [],
   "effects": {
     "distortion": {
-      "drive": 1, // 1..10
+      "drive": 1,
       "tone": 0.5,
-      "mix": 0, // 0..1
+      "mix": 0,
       "mode": 0
     },
     "compressor": {
       "threshold": -12,
       "ratio": 4,
-      "attack": 0.01, // 0.001..5
-      "release": 0.1, // 0.001..10
+      "attack": 0.01,
+      "release": 0.1,
       "makeup": 0,
-      "mix": 0, // 0..1
+      "mix": 0,
       "knee": 6
     },
     "chorus": {
-      "rate": 0.5, // 0.01..20
-      "depth": 0.3, // 0..1
-      "mix": 0 // 0..1
+      "rate": 0.5,
+      "depth": 0.3,
+      "mix": 0
     },
     "flanger": {
-      "rate": 0.5, // 0.01..20
-      "depth": 0.5, // 0..1
-      "feedback": 0.5, // 0..0.95
-      "mix": 0 // 0..1
+      "rate": 0.5,
+      "depth": 0.5,
+      "feedback": 0.5,
+      "mix": 0
     },
     "phaser": {
-      "rate": 0.5, // 0.01..20
-      "depth": 0.5, // 0..1
-      "feedback": 0.5, // 0..0.95
-      "mix": 0 // 0..1
+      "rate": 0.5,
+      "depth": 0.5,
+      "feedback": 0.5,
+      "mix": 0
     },
     "delay": {
-      "time": 0.375, // 0.01..2
-      "feedback": 0.25, // 0..0.95
-      "mix": 0.2 // 0..1
+      "time": 0.375,
+      "feedback": 0.25,
+      "mix": 0.2
     },
     "reverb": {
-      "decay": 0.4, // 0.001..5
-      "mix": 0.15 // 0..1
+      "decay": 0.4,
+      "mix": 0.15
     },
     "eq": {
       "lowGain": 0,
       "midGain": 0,
       "highGain": 0,
-      "mix": 0 // 0..1
+      "mix": 0
     },
     "effectsOrder": [
       "distortion",
@@ -212,8 +214,13 @@
     ]
   },
   "master": {
-    "volume": 0.8 // 0..1
+    "volume": 0.8
   },
   "drift": 0,
-  "macros": [0, 0, 0, 0]
+  "macros": [
+    0,
+    0,
+    0,
+    0
+  ]
 }

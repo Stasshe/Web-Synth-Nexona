@@ -30,6 +30,16 @@ export function loadPatchIntoState(patch: PatchData): void {
   Object.assign(s.envelopes.filter, patch.envelopes.filter);
   Object.assign(s.lfos.lfo1, patch.lfos.lfo1);
   Object.assign(s.lfos.lfo2, patch.lfos.lfo2);
+  // Migrate legacy shape 0-3 to shape=4 (CUSTOM) with presetName
+  const LEGACY: Record<number, string> = { 0: "Sine", 1: "Triangle", 2: "Square", 3: "S&H" };
+  for (const k of ["lfo1", "lfo2"] as const) {
+    if (s.lfos[k].shape < 4) {
+      s.lfos[k].presetName = LEGACY[s.lfos[k].shape] ?? "Sine";
+      s.lfos[k].shape = 4;
+      s.lfos[k].customShape = null;
+      s.lfos[k].controlPoints = null;
+    }
+  }
   s.modulations.splice(0, s.modulations.length, ...patch.modulations);
   // Restore all effects where present in the patch
   Object.assign(s.effects.distortion, patch.effects.distortion);
