@@ -6,7 +6,7 @@
     "source.fixAll": "always",
     "source.organizeImports": "never"
   },
-  "files.autoSave": "onFocusChange",
+  "files.autoSave": "afterDelay",
   "files.exclude": {
     "**/node_modules": true,
     "**/.git": true,
